@@ -1,3 +1,5 @@
+import type { SubjectCode } from "./uiTypes";
+
 export type Role = "admin" | "user";
 
 export type User = {
@@ -17,6 +19,7 @@ export type PublicOption = {
 
 export type Question = {
   id: number;
+  subject: SubjectCode;
   content: string;
   explanation?: string | null;
   isActive?: boolean;
@@ -88,9 +91,10 @@ export async function apiRequest<T>(
     body?: unknown;
   } = {}
 ): Promise<T> {
-  const headers: HeadersInit = {
-    "Content-Type": "application/json"
-  };
+  const isFormData = options.body instanceof FormData;
+  const requestBody: BodyInit | undefined =
+    options.body === undefined ? undefined : isFormData ? (options.body as FormData) : JSON.stringify(options.body);
+  const headers: HeadersInit = isFormData ? {} : { "Content-Type": "application/json" };
 
   if (options.token) {
     headers.Authorization = `Bearer ${options.token}`;
@@ -99,7 +103,7 @@ export async function apiRequest<T>(
   const response = await fetch(`${apiUrl}${path}`, {
     method: options.method ?? "GET",
     headers,
-    body: options.body === undefined ? undefined : JSON.stringify(options.body)
+    body: requestBody
   });
 
   if (response.status === 204) {

@@ -18,12 +18,22 @@ import {
   User,
   apiRequest
 } from "./api";
-import { AccountForm, AdminTab, Screen, emptyAccountForm, emptyQuestionForm } from "./uiTypes";
+import {
+  AccountForm,
+  AdminTab,
+  ImportedQuestionForm,
+  Screen,
+  emptyAccountForm,
+  emptyQuestionForm,
+  type SubjectCode
+} from "./uiTypes";
 
 type AuthState = {
   token: string;
   user: User;
 };
+
+type ImportedQuestionDraft = Omit<ImportedQuestionForm, "subject">;
 
 const tokenKey = "cnxh_token";
 const deviceKey = "cnxh_device_id";
@@ -43,6 +53,7 @@ function App() {
   const [quizBusy, setQuizBusy] = useState(false);
   const [result, setResult] = useState<QuizResult | null>(null);
   const [attempts, setAttempts] = useState<Attempt[]>([]);
+  const [selectedSubject, setSelectedSubject] = useState<SubjectCode>("dich_te");
 
   const [adminTab, setAdminTab] = useState<AdminTab>("questions");
   const [adminQuestions, setAdminQuestions] = useState<Question[]>([]);
@@ -52,6 +63,10 @@ function App() {
   const [accountForm, setAccountForm] = useState<AccountForm>(emptyAccountForm);
   const [editingAccountId, setEditingAccountId] = useState<string | null>(null);
   const [adminBusy, setAdminBusy] = useState(false);
+  const [importedQuestions, setImportedQuestions] = useState<ImportedQuestionForm[]>([]);
+  const [importWarnings, setImportWarnings] = useState<string[]>([]);
+  const [importSubject, setImportSubject] = useState<SubjectCode>("dich_te");
+  const [importBusy, setImportBusy] = useState(false);
 
   const authedRequest = useCallback(
     async <T,>(path: string, options: { method?: string; body?: unknown } = {}) => {
@@ -105,7 +120,7 @@ function App() {
     }
 
     apiRequest<{ user: User }>("/api/auth/me", { token })
-      .then((data) => setAuth({ token, user: data.user }))
+      .then((data) => setAuth({ token, user: normalizeUser(data.user) }))
       .catch(() => localStorage.removeItem(tokenKey))
       .finally(() => setBooting(false));
   }, []);
@@ -117,7 +132,7 @@ function App() {
 
     const timer = window.setInterval(() => {
       apiRequest<{ user: User }>("/api/auth/me", { token: auth.token })
-        .then((data) => setAuth((current) => (current ? { ...current, user: data.user } : current)))
+        .then((data) => setAuth((current) => (current ? { ...current, user: normalizeUser(data.user) } : current)))
         .catch(handleError);
     }, 10000);
 
@@ -187,7 +202,7 @@ function App() {
       });
 
       localStorage.setItem(tokenKey, data.token);
-      setAuth({ token: data.token, user: data.user });
+      setAuth({ token: data.token, user: normalizeUser(data.user) });
       setScreen("start");
       setNotice("Đăng nhập thành công");
     } catch (error) {
@@ -212,7 +227,9 @@ function App() {
     setQuizBusy(true);
 
     try {
-      const data = await authedRequest<{ questions: Question[] }>("/api/questions");
+      const data = await authedRequest<{ questions: Question[] }>(
+        `/api/questions?subject=${encodeURIComponent(selectedSubject)}`
+      );
       const usableQuestions = data.questions.filter((question) => question.options.length >= 2);
       setQuestions(usableQuestions);
       setAnswers({});
@@ -220,7 +237,7 @@ function App() {
       setResult(null);
 
       if (usableQuestions.length === 0) {
-        setNotice("Chưa có câu hỏi khả dụng");
+        setNotice("Chưa có câu hỏi khả dụng cho môn đã chọn");
         return;
       }
 
@@ -266,6 +283,7 @@ function App() {
   function editQuestion(question: Question) {
     setEditingQuestionId(question.id);
     setQuestionForm({
+      subject: question.subject ?? "dich_te",
       content: question.content,
       explanation: question.explanation ?? "",
       isActive: question.isActive ?? true,
@@ -304,8 +322,8 @@ function App() {
     }
   }
 
-  async function hideQuestionById(id: number) {
-    if (!window.confirm("Ẩn câu hỏi này khỏi bài ôn?")) {
+  async function deleteQuestionById(id: number) {
+    if (!window.confirm("Xóa vĩnh viễn câu hỏi này?")) {
       return;
     }
 
@@ -314,7 +332,83 @@ function App() {
     try {
       await authedRequest(`/api/questions/${id}`, { method: "DELETE" });
       await loadAdminData();
-      setNotice("Đã ẩn câu hỏi");
+      setNotice("Đã xóa câu hỏi");
+    } catch (error) {
+      handleError(error);
+    } finally {
+      setAdminBusy(false);
+    }
+  }
+
+  async function importQuestionFile(file: File) {
+    setImportBusy(true);
+
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      const data = await authedRequest<{ questions: ImportedQuestionDraft[]; warnings: string[] }>("/api/questions/import", {
+        method: "POST",
+        body: formData
+      });
+      setImportedQuestions(data.questions.map((question) => ({ ...question, subject: importSubject })));
+      setImportWarnings(data.warnings);
+      setNotice(data.questions.length > 0 ? `Đã đọc ${data.questions.length} câu hỏi từ file` : "Không tìm thấy câu hỏi hợp lệ");
+    } catch (error) {
+      handleError(error);
+    } finally {
+      setImportBusy(false);
+    }
+  }
+
+  function changeImportedQuestion(index: number, question: ImportedQuestionForm) {
+    setImportedQuestions((current) => current.map((item, itemIndex) => (itemIndex === index ? question : item)));
+  }
+
+  function removeImportedQuestion(index: number) {
+    setImportedQuestions((current) => current.filter((_, itemIndex) => itemIndex !== index));
+  }
+
+  function changeImportSubject(value: SubjectCode) {
+    setImportSubject(value);
+    setImportedQuestions((current) => current.map((question) => ({ ...question, subject: value })));
+  }
+
+  async function saveImportedQuestions() {
+    const invalidIndex = importedQuestions.findIndex(
+      (question) =>
+        !question.content.trim() ||
+        question.options.filter((option) => option.content.trim()).length < 2 ||
+        question.options.filter((option) => option.isCorrect).length !== 1
+    );
+
+    if (invalidIndex >= 0) {
+      setNotice(`Câu nháp ${invalidIndex + 1} chưa hợp lệ`);
+      return;
+    }
+
+    setAdminBusy(true);
+
+    try {
+      for (const question of importedQuestions) {
+        await authedRequest("/api/questions", {
+          method: "POST",
+          body: {
+            subject: question.subject,
+            content: question.content,
+            explanation: question.explanation,
+            isActive: question.isActive,
+            options: question.options.map((option) => ({
+              content: option.content,
+              isCorrect: option.isCorrect
+            }))
+          }
+        });
+      }
+
+      setImportedQuestions([]);
+      setImportWarnings([]);
+      await loadAdminData();
+      setNotice("Đã thêm các câu hỏi từ file");
     } catch (error) {
       handleError(error);
     } finally {
@@ -405,7 +499,9 @@ function App() {
                 <StartScreen
                   user={auth.user}
                   attempts={attempts}
+                  selectedSubject={selectedSubject}
                   busy={quizBusy}
+                  onSubjectChange={setSelectedSubject}
                   onStart={startQuiz}
                   onHistory={() => {
                     void loadAttempts();
@@ -434,6 +530,14 @@ function App() {
                       void submitQuiz();
                     } else {
                       setQuestionIndex((current) => Math.min(questions.length - 1, current + 1));
+                    }
+                  }}
+                  onHome={() => {
+                    if (window.confirm("Bạn có chắc muốn quay lại trang chủ? Bài làm hiện tại sẽ không được lưu.")) {
+                      setScreen("start");
+                      setQuestions([]);
+                      setAnswers({});
+                      setQuestionIndex(0);
                     }
                   }}
                 />
@@ -474,10 +578,19 @@ function App() {
               onReload={loadAdminData}
               onSaveQuestion={saveQuestion}
               onEditQuestion={editQuestion}
-              onHideQuestion={hideQuestionById}
+              onDeleteQuestion={deleteQuestionById}
               onSaveAccount={saveAccount}
               onEditAccount={editAccount}
               onDeleteAccount={deleteAccountById}
+              importedQuestions={importedQuestions}
+              importWarnings={importWarnings}
+              importSubject={importSubject}
+              importBusy={importBusy}
+              onImportFile={importQuestionFile}
+              onImportSubjectChange={changeImportSubject}
+              onChangeImportedQuestion={changeImportedQuestion}
+              onRemoveImportedQuestion={removeImportedQuestion}
+              onSaveImportedQuestions={saveImportedQuestions}
             />
           )}
         </section>
@@ -512,5 +625,17 @@ function getDeviceId() {
   return generated;
 }
 
-export default App;
+function normalizeUser(user: User) {
+  const displayNameLooksBroken = /[?�]|Ã|áº|á»/.test(user.displayName);
 
+  if (user.username === "admin" && displayNameLooksBroken) {
+    return {
+      ...user,
+      displayName: "Quản trị viên"
+    };
+  }
+
+  return user;
+}
+
+export default App;

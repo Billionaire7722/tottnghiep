@@ -5,6 +5,7 @@ import type { AnswerSubmitInput } from "@/src/validation";
 
 type QuestionOptionForGrading = {
   questionId: number;
+  subject: string;
   questionContent: string;
   optionId: number;
   optionContent: string;
@@ -33,6 +34,7 @@ export async function submitAnswers(input: AnswerSubmitInput, user: AuthUser) {
     `
       SELECT
         q.id AS "questionId",
+        q.subject,
         q.content AS "questionContent",
         o.id AS "optionId",
         o.content AS "optionContent",
@@ -50,6 +52,7 @@ export async function submitAnswers(input: AnswerSubmitInput, user: AuthUser) {
     number,
     {
       id: number;
+      subject: string;
       content: string;
       options: QuestionOptionForGrading[];
     }
@@ -58,6 +61,7 @@ export async function submitAnswers(input: AnswerSubmitInput, user: AuthUser) {
   for (const row of rows.rows) {
     const question = questionMap.get(row.questionId) ?? {
       id: row.questionId,
+      subject: row.subject,
       content: row.questionContent,
       options: []
     };
@@ -67,6 +71,12 @@ export async function submitAnswers(input: AnswerSubmitInput, user: AuthUser) {
 
   if (questionMap.size !== uniqueQuestionIds.length) {
     throw new ApiError(400, "QUESTION_UNAVAILABLE", "Một số câu hỏi không còn khả dụng");
+  }
+
+  const submittedSubjects = new Set([...questionMap.values()].map((question) => question.subject));
+
+  if (submittedSubjects.size > 1) {
+    throw new ApiError(400, "MIXED_SUBJECTS", "Bài làm chỉ được chứa câu hỏi của một môn");
   }
 
   const answerDetails = input.answers.map((answer) => {
@@ -171,4 +181,3 @@ export async function listAttempts(user: AuthUser) {
     percentage: Number(attempt.percentage)
   }));
 }
-

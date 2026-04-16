@@ -1,6 +1,16 @@
 import type { Dispatch, FormEvent, SetStateAction } from "react";
 import type { Account, Question, User } from "./api";
-import { AccountForm, AdminTab, QuestionForm, emptyAccountForm, emptyQuestionForm } from "./uiTypes";
+import {
+  AccountForm,
+  AdminTab,
+  ImportedQuestionForm,
+  QuestionForm,
+  emptyAccountForm,
+  emptyQuestionForm,
+  subjectLabel,
+  subjectOptions,
+  type SubjectCode
+} from "./uiTypes";
 
 type AdminWorkspaceProps = {
   tab: AdminTab;
@@ -22,10 +32,19 @@ type AdminWorkspaceProps = {
   onReload: () => void;
   onSaveQuestion: (event: FormEvent<HTMLFormElement>) => void;
   onEditQuestion: (question: Question) => void;
-  onHideQuestion: (id: number) => void;
+  onDeleteQuestion: (id: number) => void;
   onSaveAccount: (event: FormEvent<HTMLFormElement>) => void;
   onEditAccount: (account: Account) => void;
   onDeleteAccount: (id: string) => void;
+  importedQuestions: ImportedQuestionForm[];
+  importWarnings: string[];
+  importSubject: SubjectCode;
+  importBusy: boolean;
+  onImportFile: (file: File) => void;
+  onImportSubjectChange: (value: SubjectCode) => void;
+  onChangeImportedQuestion: (index: number, question: ImportedQuestionForm) => void;
+  onRemoveImportedQuestion: (index: number) => void;
+  onSaveImportedQuestions: () => void;
 };
 
 export function AdminWorkspace(props: AdminWorkspaceProps) {
@@ -46,7 +65,7 @@ export function AdminWorkspace(props: AdminWorkspaceProps) {
             Màn hình học
           </button>
           <button className="ghost-button" type="button" onClick={onLogout}>
-            Thoát
+            Đăng xuất
           </button>
         </div>
       </header>
@@ -72,110 +91,196 @@ function QuestionAdmin({
   busy,
   onSaveQuestion,
   onEditQuestion,
-  onHideQuestion
+  onDeleteQuestion,
+  importedQuestions,
+  importWarnings,
+  importSubject,
+  importBusy,
+  onImportFile,
+  onImportSubjectChange,
+  onChangeImportedQuestion,
+  onRemoveImportedQuestion,
+  onSaveImportedQuestions
 }: AdminWorkspaceProps) {
   return (
     <div className="admin-grid">
-      <form className="admin-panel form-panel" onSubmit={onSaveQuestion}>
-        <div className="panel-title">
-          <span>{editingQuestionId ? "Sửa câu hỏi" : "Thêm câu hỏi"}</span>
-          {editingQuestionId && (
-            <button
-              className="ghost-button"
-              type="button"
-              onClick={() => {
-                setEditingQuestionId(null);
-                setQuestionForm(emptyQuestionForm());
+      <div className="admin-left-column">
+        <section className="admin-panel import-panel">
+          <div className="panel-title">
+            <span>Nhập câu hỏi từ file</span>
+          </div>
+          <label>
+            Môn áp dụng cho file
+            <select value={importSubject} onChange={(event) => onImportSubjectChange(event.target.value as SubjectCode)}>
+              {subjectOptions.map((subject) => (
+                <option key={subject.value} value={subject.value}>
+                  {subject.label}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label>
+            Chọn file .txt, .md, .csv hoặc .docx
+            <input
+              type="file"
+              accept=".txt,.md,.csv,.docx,text/plain,text/markdown"
+              disabled={importBusy}
+              onChange={(event) => {
+                const file = event.target.files?.[0];
+
+                if (file) {
+                  onImportFile(file);
+                  event.target.value = "";
+                }
               }}
-            >
-              Hủy sửa
-            </button>
-          )}
-        </div>
-        <label>
-          Nội dung câu hỏi
-          <textarea
-            value={questionForm.content}
-            onChange={(event) => setQuestionForm((current) => ({ ...current, content: event.target.value }))}
-            rows={4}
-          />
-        </label>
-        <label>
-          Giải thích sau khi nộp bài
-          <textarea
-            value={questionForm.explanation}
-            onChange={(event) => setQuestionForm((current) => ({ ...current, explanation: event.target.value }))}
-            rows={3}
-          />
-        </label>
-        <label className="inline-check">
-          <input
-            checked={questionForm.isActive}
-            onChange={(event) => setQuestionForm((current) => ({ ...current, isActive: event.target.checked }))}
-            type="checkbox"
-          />
-          Đang hiển thị trong bài ôn
-        </label>
-        <div className="option-editor">
-          {questionForm.options.map((option, index) => (
-            <div className="option-row" key={index}>
-              <button
-                className={option.isCorrect ? "correct-toggle active" : "correct-toggle"}
-                type="button"
-                onClick={() =>
-                  setQuestionForm((current) => ({
-                    ...current,
-                    options: current.options.map((item, itemIndex) => ({
-                      ...item,
-                      isCorrect: itemIndex === index
-                    }))
-                  }))
-                }
-              >
-                {String.fromCharCode(65 + index)}
-              </button>
-              <input
-                value={option.content}
-                onChange={(event) =>
-                  setQuestionForm((current) => ({
-                    ...current,
-                    options: current.options.map((item, itemIndex) =>
-                      itemIndex === index ? { ...item, content: event.target.value } : item
-                    )
-                  }))
-                }
-                placeholder="Nội dung đáp án"
-              />
-              {questionForm.options.length > 2 && (
-                <button
-                  className="ghost-button compact"
-                  type="button"
-                  onClick={() => removeOption(index, setQuestionForm)}
-                >
-                  Xóa
-                </button>
-              )}
+            />
+          </label>
+          <p className="hint-text">
+            Định dạng gợi ý: Câu 1: nội dung, A. đáp án, B. đáp án, Đáp án: A, Giải thích: ...
+          </p>
+          {importWarnings.length > 0 && (
+            <div className="warning-list">
+              {importWarnings.slice(0, 4).map((warning, index) => (
+                <span key={`${warning}-${index}`}>{warning}</span>
+              ))}
+              {importWarnings.length > 4 && <span>Và {importWarnings.length - 4} cảnh báo khác</span>}
             </div>
-          ))}
-          <button
-            className="secondary-button"
-            type="button"
-            disabled={questionForm.options.length >= 6}
-            onClick={() =>
-              setQuestionForm((current) => ({
-                ...current,
-                options: [...current.options, { content: "", isCorrect: false }]
-              }))
-            }
-          >
-            Thêm đáp án
+          )}
+        </section>
+        <form className="admin-panel form-panel" onSubmit={onSaveQuestion}>
+          <div className="panel-title">
+            <span>{editingQuestionId ? "Sửa câu hỏi" : "Thêm câu hỏi"}</span>
+            {editingQuestionId && (
+              <button
+                className="ghost-button"
+                type="button"
+                onClick={() => {
+                  setEditingQuestionId(null);
+                  setQuestionForm(emptyQuestionForm());
+                }}
+              >
+                Hủy sửa
+              </button>
+            )}
+          </div>
+          <label>
+            Môn học
+            <select
+              value={questionForm.subject}
+              onChange={(event) =>
+                setQuestionForm((current) => ({ ...current, subject: event.target.value as SubjectCode }))
+              }
+            >
+              {subjectOptions.map((subject) => (
+                <option key={subject.value} value={subject.value}>
+                  {subject.label}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label>
+            Nội dung câu hỏi
+            <textarea
+              value={questionForm.content}
+              onChange={(event) => setQuestionForm((current) => ({ ...current, content: event.target.value }))}
+              rows={4}
+            />
+          </label>
+          <label>
+            Giải thích sau khi nộp bài
+            <textarea
+              value={questionForm.explanation}
+              onChange={(event) => setQuestionForm((current) => ({ ...current, explanation: event.target.value }))}
+              rows={3}
+            />
+          </label>
+          <label className="inline-check">
+            <input
+              checked={questionForm.isActive}
+              onChange={(event) => setQuestionForm((current) => ({ ...current, isActive: event.target.checked }))}
+              type="checkbox"
+            />
+            Đang hiển thị trong bài ôn
+          </label>
+          <div className="option-editor">
+            {questionForm.options.map((option, index) => (
+              <div className="option-row" key={index}>
+                <button
+                  className={option.isCorrect ? "correct-toggle active" : "correct-toggle"}
+                  type="button"
+                  onClick={() =>
+                    setQuestionForm((current) => ({
+                      ...current,
+                      options: current.options.map((item, itemIndex) => ({
+                        ...item,
+                        isCorrect: itemIndex === index
+                      }))
+                    }))
+                  }
+                >
+                  {String.fromCharCode(65 + index)}
+                </button>
+                <input
+                  value={option.content}
+                  onChange={(event) =>
+                    setQuestionForm((current) => ({
+                      ...current,
+                      options: current.options.map((item, itemIndex) =>
+                        itemIndex === index ? { ...item, content: event.target.value } : item
+                      )
+                    }))
+                  }
+                  placeholder="Nội dung đáp án"
+                />
+                {questionForm.options.length > 2 && (
+                  <button className="ghost-button compact" type="button" onClick={() => removeOption(index, setQuestionForm)}>
+                    Xóa
+                  </button>
+                )}
+              </div>
+            ))}
+            <button
+              className="secondary-button"
+              type="button"
+              disabled={questionForm.options.length >= 6}
+              onClick={() =>
+                setQuestionForm((current) => ({
+                  ...current,
+                  options: [...current.options, { content: "", isCorrect: false }]
+                }))
+              }
+            >
+              Thêm đáp án
+            </button>
+          </div>
+          <button type="submit" disabled={busy}>
+            {busy ? "Đang lưu" : editingQuestionId ? "Lưu thay đổi" : "Thêm câu hỏi"}
           </button>
-        </div>
-        <button type="submit" disabled={busy}>
-          {busy ? "Đang lưu" : editingQuestionId ? "Lưu thay đổi" : "Thêm câu hỏi"}
-        </button>
-      </form>
+        </form>
+      </div>
       <section className="admin-panel list-panel">
+        {importedQuestions.length > 0 && (
+          <div className="import-preview">
+            <div className="panel-title">
+              <span>Câu hỏi đọc từ file</span>
+              <small>{importedQuestions.length} câu nháp</small>
+            </div>
+            <div className="import-preview-list">
+              {importedQuestions.map((question, index) => (
+                <ImportedQuestionEditor
+                  key={index}
+                  index={index}
+                  question={question}
+                  onChange={(nextQuestion) => onChangeImportedQuestion(index, nextQuestion)}
+                  onRemove={() => onRemoveImportedQuestion(index)}
+                />
+              ))}
+            </div>
+            <button type="button" disabled={busy || importedQuestions.length === 0} onClick={onSaveImportedQuestions}>
+              Thêm tất cả câu hợp lệ
+            </button>
+          </div>
+        )}
         <div className="panel-title">
           <span>Danh sách câu hỏi</span>
           <small>{questions.length} câu</small>
@@ -184,7 +289,10 @@ function QuestionAdmin({
           {questions.map((question) => (
             <article className="admin-question-item" key={question.id}>
               <div>
-                <span className={question.isActive ? "status active" : "status"}>{question.isActive ? "Hiện" : "Ẩn"}</span>
+                <div className="question-badges">
+                  <span className={question.isActive ? "status active" : "status"}>{question.isActive ? "Hiện" : "Ẩn"}</span>
+                  <span className="status subject-status">{subjectLabel(question.subject)}</span>
+                </div>
                 <h3>{question.content}</h3>
                 <p>Đáp án đúng: {question.options.find((option) => option.isCorrect)?.content ?? "Chưa có"}</p>
               </div>
@@ -192,8 +300,8 @@ function QuestionAdmin({
                 <button className="secondary-button" type="button" onClick={() => onEditQuestion(question)}>
                   Sửa
                 </button>
-                <button className="ghost-button" type="button" onClick={() => onHideQuestion(question.id)}>
-                  Ẩn
+                <button className="ghost-button" type="button" onClick={() => onDeleteQuestion(question.id)}>
+                  Xóa
                 </button>
               </div>
             </article>
@@ -201,6 +309,112 @@ function QuestionAdmin({
         </div>
       </section>
     </div>
+  );
+}
+
+function ImportedQuestionEditor({
+  index,
+  question,
+  onChange,
+  onRemove
+}: {
+  index: number;
+  question: ImportedQuestionForm;
+  onChange: (question: ImportedQuestionForm) => void;
+  onRemove: () => void;
+}) {
+  return (
+    <article className="import-draft">
+      <div className="panel-title">
+        <span>Câu nháp {index + 1}</span>
+        <button className="ghost-button compact" type="button" onClick={onRemove}>
+          Bỏ qua
+        </button>
+      </div>
+      {question.warnings && question.warnings.length > 0 && (
+        <div className="warning-list">
+          {question.warnings.map((warning, warningIndex) => (
+            <span key={`${warning}-${warningIndex}`}>{warning}</span>
+          ))}
+        </div>
+      )}
+      <label>
+        Môn học
+        <select value={question.subject} onChange={(event) => onChange({ ...question, subject: event.target.value as SubjectCode })}>
+          {subjectOptions.map((subject) => (
+            <option key={subject.value} value={subject.value}>
+              {subject.label}
+            </option>
+          ))}
+        </select>
+      </label>
+      <label>
+        Nội dung câu hỏi
+        <textarea value={question.content} rows={3} onChange={(event) => onChange({ ...question, content: event.target.value })} />
+      </label>
+      <label>
+        Giải thích
+        <textarea
+          value={question.explanation}
+          rows={2}
+          onChange={(event) => onChange({ ...question, explanation: event.target.value })}
+        />
+      </label>
+      <div className="option-editor">
+        {question.options.map((option, optionIndex) => (
+          <div className="option-row" key={optionIndex}>
+            <button
+              className={option.isCorrect ? "correct-toggle active" : "correct-toggle"}
+              type="button"
+              onClick={() =>
+                onChange({
+                  ...question,
+                  options: question.options.map((item, itemIndex) => ({
+                    ...item,
+                    isCorrect: itemIndex === optionIndex
+                  }))
+                })
+              }
+            >
+              {String.fromCharCode(65 + optionIndex)}
+            </button>
+            <input
+              value={option.content}
+              onChange={(event) =>
+                onChange({
+                  ...question,
+                  options: question.options.map((item, itemIndex) =>
+                    itemIndex === optionIndex ? { ...item, content: event.target.value } : item
+                  )
+                })
+              }
+            />
+            {question.options.length > 2 && (
+              <button
+                className="ghost-button compact"
+                type="button"
+                onClick={() =>
+                  onChange({
+                    ...question,
+                    options: ensureOneCorrect(question.options.filter((_, itemIndex) => itemIndex !== optionIndex))
+                  })
+                }
+              >
+                Xóa
+              </button>
+            )}
+          </div>
+        ))}
+        <button
+          className="secondary-button"
+          type="button"
+          disabled={question.options.length >= 6}
+          onClick={() => onChange({ ...question, options: [...question.options, { content: "", isCorrect: false }] })}
+        >
+          Thêm đáp án
+        </button>
+      </div>
+    </article>
   );
 }
 
@@ -319,6 +533,14 @@ function AccountAdmin({
   );
 }
 
+function ensureOneCorrect(options: QuestionForm["options"]) {
+  if (options.some((option) => option.isCorrect)) {
+    return options;
+  }
+
+  return options.map((option, index) => ({ ...option, isCorrect: index === 0 }));
+}
+
 function removeOption(index: number, setQuestionForm: Dispatch<SetStateAction<QuestionForm>>) {
   setQuestionForm((current) => {
     const nextOptions = current.options.filter((_, itemIndex) => itemIndex !== index);
@@ -330,4 +552,3 @@ function removeOption(index: number, setQuestionForm: Dispatch<SetStateAction<Qu
     };
   });
 }
-

@@ -114,6 +114,7 @@ async function initializeDatabase() {
   await pool.query(`
     CREATE TABLE IF NOT EXISTS questions (
       id serial PRIMARY KEY,
+      subject text NOT NULL DEFAULT 'dich_te',
       content text NOT NULL,
       explanation text,
       is_active boolean NOT NULL DEFAULT true,
@@ -121,6 +122,26 @@ async function initializeDatabase() {
       created_at timestamptz NOT NULL DEFAULT now(),
       updated_at timestamptz NOT NULL DEFAULT now()
     )
+  `);
+
+  await pool.query("ALTER TABLE questions ADD COLUMN IF NOT EXISTS subject text NOT NULL DEFAULT 'dich_te'");
+  await pool.query(`
+    DO $$
+    BEGIN
+      IF NOT EXISTS (
+        SELECT 1
+        FROM pg_constraint
+        WHERE conname = 'questions_subject_check'
+      ) THEN
+        ALTER TABLE questions
+        ADD CONSTRAINT questions_subject_check
+        CHECK (subject IN ('dich_te', 'suc_khoe_nghe_nghiep', 'dinh_duong', 'suc_khoe_moi_truong'));
+      END IF;
+    END $$;
+  `);
+  await pool.query(`
+    CREATE INDEX IF NOT EXISTS questions_subject_active_idx
+    ON questions (subject, is_active)
   `);
 
   await pool.query(`
@@ -170,7 +191,7 @@ async function initializeDatabase() {
 
 async function seedAdmin() {
   const username = (process.env.ADMIN_USERNAME ?? "admin").trim().toLowerCase();
-  const displayName = (process.env.ADMIN_DISPLAY_NAME ?? "Quản trị viên").trim();
+  const displayName = cleanAdminDisplayName(process.env.ADMIN_DISPLAY_NAME);
   const password = process.env.ADMIN_PASSWORD ?? "Admin@12345";
   const passwordHash = await bcrypt.hash(password, 12);
 
@@ -182,6 +203,31 @@ async function seedAdmin() {
     `,
     [username, displayName || "Quản trị viên", passwordHash]
   );
+
+  await pool.query(
+    `
+      UPDATE users
+      SET display_name = $2,
+          updated_at = now()
+      WHERE username = $1
+        AND role = 'admin'
+        AND (
+          display_name LIKE '%?%'
+          OR display_name LIKE '%�%'
+          OR display_name LIKE '%Ã%'
+          OR display_name LIKE '%áº%'
+          OR display_name LIKE '%á»%'
+        )
+    `,
+    [username, displayName]
+  );
+}
+
+function cleanAdminDisplayName(value: string | undefined) {
+  const displayName = (value ?? "Quản trị viên").trim();
+  const looksBroken = /[?�]|Ã|áº|á»/.test(displayName);
+
+  return looksBroken || !displayName ? "Quản trị viên" : displayName;
 }
 
 async function seedQuestions() {

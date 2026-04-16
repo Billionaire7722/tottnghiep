@@ -1,7 +1,7 @@
 import type { FormEvent, ReactNode } from "react";
 import cnxhMark from "./assets/cnxh-mark.svg";
 import type { Attempt, Question, QuizResult, User } from "./api";
-import { formatDate } from "./uiTypes";
+import { formatDate, subjectOptions, type SubjectCode } from "./uiTypes";
 
 export function PhoneShell({ children }: { children: ReactNode }) {
   return (
@@ -65,7 +65,7 @@ export function TopBar({ user, onLogout }: { user: User; onLogout: () => void })
         <span>{user.role === "admin" ? "Quản trị" : "Người học"}</span>
       </div>
       <button className="ghost-button" type="button" onClick={onLogout}>
-        Thoát
+        Đăng xuất
       </button>
     </header>
   );
@@ -74,14 +74,18 @@ export function TopBar({ user, onLogout }: { user: User; onLogout: () => void })
 export function StartScreen({
   user,
   attempts,
+  selectedSubject,
   busy,
+  onSubjectChange,
   onStart,
   onHistory,
   onAdmin
 }: {
   user: User;
   attempts: Attempt[];
+  selectedSubject: SubjectCode;
   busy: boolean;
+  onSubjectChange: (value: SubjectCode) => void;
   onStart: () => void;
   onHistory: () => void;
   onAdmin: () => void;
@@ -93,9 +97,19 @@ export function StartScreen({
       <div className="brand-block">
         <img className="brand-mark" src={cnxhMark} alt="Biểu tượng CNXH" />
         <h1>CNXH</h1>
-        <p>Sẵn sàng ôn tập</p>
+        <p>Sẵn sàng thi tốt nghiệp</p>
       </div>
       <div className="start-actions">
+        <label className="subject-picker">
+          Chọn môn thi
+          <select value={selectedSubject} onChange={(event) => onSubjectChange(event.target.value as SubjectCode)}>
+            {subjectOptions.map((subject) => (
+              <option key={subject.value} value={subject.value}>
+                {subject.label}
+              </option>
+            ))}
+          </select>
+        </label>
         <button type="button" onClick={onStart} disabled={busy}>
           {busy ? "Đang tải câu hỏi" : "Bắt đầu"}
         </button>
@@ -129,7 +143,8 @@ export function QuizScreen({
   busy,
   onSelect,
   onBack,
-  onNext
+  onNext,
+  onHome
 }: {
   question: Question;
   index: number;
@@ -140,6 +155,7 @@ export function QuizScreen({
   onSelect: (optionId: number) => void;
   onBack: () => void;
   onNext: () => void;
+  onHome: () => void;
 }) {
   return (
     <div className="quiz-screen">
@@ -166,6 +182,9 @@ export function QuizScreen({
         ))}
       </div>
       <footer className="quiz-footer">
+        <button className="ghost-button" type="button" onClick={onHome} disabled={busy}>
+          Quay lại
+        </button>
         <button className="secondary-button" type="button" onClick={onBack} disabled={index === 0 || busy}>
           Trước
         </button>
@@ -264,4 +283,3 @@ export function HistoryScreen({
     </div>
   );
 }
-

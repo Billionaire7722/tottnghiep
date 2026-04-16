@@ -1,6 +1,7 @@
 import { getAuthContext, requireAdmin } from "@/src/auth";
 import { createQuestion, listQuestions } from "@/src/questions";
 import { errorResponse, jsonResponse, optionsResponse, readJson } from "@/src/http";
+import { isSubjectCode } from "@/src/subjects";
 import { questionSchema } from "@/src/validation";
 
 export const runtime = "nodejs";
@@ -13,8 +14,19 @@ export async function GET(request: Request) {
   try {
     const context = await getAuthContext(request);
     const url = new URL(request.url);
-    const includeInactive = context.user.role === "admin" && url.searchParams.get("includeInactive") === "true";
-    const questions = await listQuestions(includeInactive, context.user.role === "admin");
+    const adminListMode = context.user.role === "admin" && url.searchParams.get("includeInactive") === "true";
+    const requestedSubject = url.searchParams.get("subject");
+    const subject = isSubjectCode(requestedSubject) ? requestedSubject : null;
+
+    if (!adminListMode && !subject) {
+      return jsonResponse(
+        { code: "SUBJECT_REQUIRED", message: "Vui lòng chọn môn trước khi bắt đầu làm bài" },
+        request,
+        400
+      );
+    }
+
+    const questions = await listQuestions(adminListMode, adminListMode, subject);
 
     return jsonResponse({ questions }, request);
   } catch (error) {
@@ -33,4 +45,3 @@ export async function POST(request: Request) {
     return errorResponse(error, request);
   }
 }
-

@@ -1,5 +1,5 @@
 import { requireAdmin } from "@/src/auth";
-import { hideQuestion, updateQuestion } from "@/src/questions";
+import { deleteQuestion, updateQuestion } from "@/src/questions";
 import { emptyResponse, errorResponse, jsonResponse, optionsResponse, readJson, routeParamId } from "@/src/http";
 import { questionSchema } from "@/src/validation";
 
@@ -30,11 +30,10 @@ export async function DELETE(request: Request, context: RouteContext) {
   try {
     await requireAdmin(request);
     const id = routeParamId(await context.params);
-    await hideQuestion(id);
+    await deleteQuestion(id);
 
     return emptyResponse(request);
   } catch (error) {
     return errorResponse(error, request);
   }
 }
-

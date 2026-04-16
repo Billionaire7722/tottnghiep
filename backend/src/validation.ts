@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { subjects } from "@/src/subjects";
 
 const usernameSchema = z
   .string()
@@ -21,6 +22,7 @@ export const optionSchema = z.object({
 
 export const questionSchema = z
   .object({
+    subject: z.enum(subjects).default("dich_te"),
     content: z.string().trim().min(5, "Câu hỏi cần ít nhất 5 ký tự").max(1200),
     explanation: z.string().trim().max(2000).optional().nullable(),
     isActive: z.boolean().optional(),
@@ -70,4 +72,3 @@ export type QuestionInput = z.infer<typeof questionSchema>;
 export type AccountCreateInput = z.infer<typeof accountCreateSchema>;
 export type AccountUpdateInput = z.infer<typeof accountUpdateSchema>;
 export type AnswerSubmitInput = z.infer<typeof answerSubmitSchema>;
-

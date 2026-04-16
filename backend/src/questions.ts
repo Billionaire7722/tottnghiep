@@ -1,6 +1,7 @@
 import type { PoolClient } from "pg";
 import { dbQuery, withTransaction } from "@/src/db";
 import { ApiError } from "@/src/http";
+import type { SubjectCode } from "@/src/subjects";
 import type { QuestionInput } from "@/src/validation";
 
 type QuestionOptionRow = {
@@ -12,6 +13,7 @@ type QuestionOptionRow = {
 
 type QuestionRow = {
   id: number;
+  subject: SubjectCode;
   content: string;
   explanation: string | null;
   isActive: boolean;
@@ -22,11 +24,12 @@ type QuestionRow = {
 
 const labels = ["A", "B", "C", "D", "E", "F"];
 
-export async function listQuestions(includeInactive: boolean, includeAnswers: boolean) {
+export async function listQuestions(includeInactive: boolean, includeAnswers: boolean, subject?: SubjectCode | null) {
   const result = await dbQuery<QuestionRow>(
     `
       SELECT
         q.id,
+        q.subject,
         q.content,
         q.explanation,
         q.is_active AS "isActive",
@@ -47,29 +50,32 @@ export async function listQuestions(includeInactive: boolean, includeAnswers: bo
       FROM questions q
       LEFT JOIN options o ON o.question_id = q.id
       WHERE ($1::boolean = true OR q.is_active = true)
+        AND ($2::text IS NULL OR q.subject = $2)
       GROUP BY q.id
       ORDER BY q.created_at DESC, q.id DESC
     `,
-    [includeInactive]
+    [includeInactive, subject ?? null]
   );
 
-  return result.rows.map((question) => ({
+  const questions = result.rows.map((question) => ({
     ...question,
     options: includeAnswers
       ? question.options
-      : question.options.map(({ isCorrect: _isCorrect, ...option }) => option)
+      : relabelOptions(shuffleArray(question.options)).map(({ isCorrect: _isCorrect, ...option }) => option)
   }));
+
+  return includeAnswers ? questions : shuffleArray(questions);
 }
 
 export async function createQuestion(input: QuestionInput, adminId: string) {
   return withTransaction(async (client) => {
     const inserted = await client.query<{ id: number }>(
       `
-        INSERT INTO questions (content, explanation, is_active, created_by)
-        VALUES ($1, $2, $3, $4)
+        INSERT INTO questions (subject, content, explanation, is_active, created_by)
+        VALUES ($1, $2, $3, $4, $5)
         RETURNING id
       `,
-      [input.content, normalizeExplanation(input.explanation), input.isActive ?? true, adminId]
+      [input.subject, input.content, normalizeExplanation(input.explanation), input.isActive ?? true, adminId]
     );
 
     await replaceOptions(client, inserted.rows[0].id, input.options);
@@ -88,13 +94,14 @@ export async function updateQuestion(id: number, input: QuestionInput) {
     await client.query(
       `
         UPDATE questions
-        SET content = $1,
-            explanation = $2,
-            is_active = $3,
+        SET subject = $1,
+            content = $2,
+            explanation = $3,
+            is_active = $4,
             updated_at = now()
-        WHERE id = $4
+        WHERE id = $5
       `,
-      [input.content, normalizeExplanation(input.explanation), input.isActive ?? true, id]
+      [input.subject, input.content, normalizeExplanation(input.explanation), input.isActive ?? true, id]
     );
 
     await client.query("DELETE FROM options WHERE question_id = $1", [id]);
@@ -103,12 +110,10 @@ export async function updateQuestion(id: number, input: QuestionInput) {
   });
 }
 
-export async function hideQuestion(id: number) {
+export async function deleteQuestion(id: number) {
   const result = await dbQuery(
     `
-      UPDATE questions
-      SET is_active = false,
-          updated_at = now()
+      DELETE FROM questions
       WHERE id = $1
     `,
     [id]
@@ -117,6 +122,24 @@ export async function hideQuestion(id: number) {
   if (result.rowCount === 0) {
     throw new ApiError(404, "QUESTION_NOT_FOUND", "Không tìm thấy câu hỏi");
   }
+}
+
+function shuffleArray<T>(items: T[]) {
+  const next = [...items];
+
+  for (let index = next.length - 1; index > 0; index -= 1) {
+    const swapIndex = Math.floor(Math.random() * (index + 1));
+    [next[index], next[swapIndex]] = [next[swapIndex], next[index]];
+  }
+
+  return next;
+}
+
+function relabelOptions(options: QuestionOptionRow[]) {
+  return options.map((option, index) => ({
+    ...option,
+    label: labels[index] ?? option.label
+  }));
 }
 
 async function replaceOptions(client: PoolClient, questionId: number, options: QuestionInput["options"]) {
@@ -136,6 +159,7 @@ async function getQuestionForAdmin(client: PoolClient, id: number) {
     `
       SELECT
         q.id,
+        q.subject,
         q.content,
         q.explanation,
         q.is_active AS "isActive",
@@ -169,4 +193,3 @@ function normalizeExplanation(explanation: string | null | undefined) {
   const value = explanation?.trim();
   return value ? value : null;
 }
-

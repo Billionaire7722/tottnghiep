@@ -1,7 +1,17 @@
 export type Screen = "start" | "quiz" | "result" | "history" | "admin";
 export type AdminTab = "questions" | "accounts";
 
+export const subjectOptions = [
+  { value: "dich_te", label: "Dịch tễ" },
+  { value: "suc_khoe_nghe_nghiep", label: "Sức khỏe nghề nghiệp" },
+  { value: "dinh_duong", label: "Dinh dưỡng" },
+  { value: "suc_khoe_moi_truong", label: "Sức khỏe môi trường" }
+] as const;
+
+export type SubjectCode = (typeof subjectOptions)[number]["value"];
+
 export type QuestionForm = {
+  subject: SubjectCode;
   content: string;
   explanation: string;
   isActive: boolean;
@@ -9,6 +19,10 @@ export type QuestionForm = {
     content: string;
     isCorrect: boolean;
   }>;
+};
+
+export type ImportedQuestionForm = QuestionForm & {
+  warnings?: string[];
 };
 
 export type AccountForm = {
@@ -20,6 +34,7 @@ export type AccountForm = {
 };
 
 export const emptyQuestionForm = (): QuestionForm => ({
+  subject: "dich_te",
   content: "",
   explanation: "",
   isActive: true,
@@ -39,6 +54,10 @@ export const emptyAccountForm = (): AccountForm => ({
   isActive: true
 });
 
+export function subjectLabel(value: SubjectCode | string | undefined) {
+  return subjectOptions.find((subject) => subject.value === value)?.label ?? "Chưa chọn môn";
+}
+
 export function formatDate(value: string) {
   return new Intl.DateTimeFormat("vi-VN", {
     hour: "2-digit",
@@ -48,4 +67,3 @@ export function formatDate(value: string) {
     year: "numeric"
   }).format(new Date(value));
 }
-
