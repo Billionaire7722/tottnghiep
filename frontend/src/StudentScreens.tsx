@@ -3,7 +3,7 @@ import cnxhMark from "./assets/cnxh-mark.svg";
 import type { Attempt, Question, QuizResult, User } from "./api";
 import { RichQuestionContent } from "./RichQuestionContent";
 import { SubjectPicker } from "./SubjectPicker";
-import { formatDate, type SubjectCode } from "./uiTypes";
+import { formatDate, roleLabel, type SubjectCode } from "./uiTypes";
 
 export function PhoneShell({ children }: { children: ReactNode }) {
   return (
@@ -70,7 +70,7 @@ export function TopBar({ user, action }: { user: User; action?: TopBarAction }) 
     <header className="top-bar">
       <div>
         <strong>{user.displayName}</strong>
-        <span>{user.role === "admin" ? "Quản trị" : "Người học"}</span>
+        <span>{roleLabel(user.role)}</span>
       </div>
       {action && (
         <button className={action.tone === "danger" ? "danger-text-button" : "ghost-button"} type="button" onClick={action.onClick}>
@@ -119,7 +119,7 @@ export function StartScreen({
         <button className="secondary-button" type="button" onClick={onHistory}>
           Lịch sử làm bài
         </button>
-        {user.role === "admin" && (
+        {(user.role === "admin" || user.role === "editor") && (
           <button className="secondary-button" type="button" onClick={onAdmin}>
             Quản trị
           </button>

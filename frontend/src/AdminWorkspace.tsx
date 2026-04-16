@@ -10,6 +10,7 @@ import {
   emptyAccountForm,
   emptyQuestionForm,
   formatDate,
+  roleLabel,
   subjectLabel,
   type SubjectCode
 } from "./uiTypes";
@@ -59,6 +60,8 @@ type AdminWorkspaceProps = {
 
 export function AdminWorkspace(props: AdminWorkspaceProps) {
   const { tab, setTab, user, busy, onBack, onLogout, onReload } = props;
+  const canManageAccounts = user.role === "admin";
+  const activeTab = canManageAccounts ? tab : "questions";
 
   return (
     <div className="admin-shell">
@@ -80,14 +83,16 @@ export function AdminWorkspace(props: AdminWorkspaceProps) {
         </div>
       </header>
       <nav className="admin-tabs" aria-label="Khu vực quản trị">
-        <button className={tab === "questions" ? "active" : ""} type="button" onClick={() => setTab("questions")}>
+        <button className={activeTab === "questions" ? "active" : ""} type="button" onClick={() => setTab("questions")}>
           Câu hỏi
         </button>
-        <button className={tab === "accounts" ? "active" : ""} type="button" onClick={() => setTab("accounts")}>
-          Tài khoản
-        </button>
+        {canManageAccounts && (
+          <button className={activeTab === "accounts" ? "active" : ""} type="button" onClick={() => setTab("accounts")}>
+            Tài khoản
+          </button>
+        )}
       </nav>
-      {tab === "questions" ? <QuestionAdmin {...props} /> : <AccountAdmin {...props} />}
+      {activeTab === "questions" ? <QuestionAdmin {...props} /> : <AccountAdmin {...props} />}
     </div>
   );
 }
@@ -571,10 +576,11 @@ function AccountAdmin({
           <select
             value={accountForm.role}
             onChange={(event) =>
-              setAccountForm((current) => ({ ...current, role: event.target.value as "admin" | "user" }))
+              setAccountForm((current) => ({ ...current, role: event.target.value as AccountForm["role"] }))
             }
           >
             <option value="user">Người học</option>
+            <option value="editor">Người chỉnh sửa</option>
             <option value="admin">Quản trị</option>
           </select>
         </label>
@@ -609,7 +615,7 @@ function AccountAdmin({
                 <strong>{account.displayName}</strong>
                 <small>{account.username}</small>
               </span>
-              <span data-label="Quyền">{account.role === "admin" ? "Quản trị" : "Người học"}</span>
+              <span data-label="Quyền">{roleLabel(account.role)}</span>
               <span data-label="Trạng thái">{account.isActive ? "Hoạt động" : "Đã khóa"}</span>
               <span data-label="Phiên">{account.activeSessions}</span>
               <span className="row-actions" data-label="Thao tác">
@@ -665,7 +671,7 @@ function AccountDetailView({
         <div className="detail-card">
           <span>Tên hiển thị</span>
           <strong>{account.displayName}</strong>
-          <small>{account.role === "admin" ? "Quản trị viên" : "Người học"}</small>
+          <small>{roleLabel(account.role)}</small>
         </div>
         <div className="detail-card">
           <span>Trạng thái hoạt động</span>

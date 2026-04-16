@@ -83,11 +83,37 @@ async function initializeDatabase() {
       username text UNIQUE NOT NULL,
       display_name text NOT NULL,
       password_hash text NOT NULL,
-      role text NOT NULL CHECK (role IN ('admin', 'user')) DEFAULT 'user',
+      role text NOT NULL CHECK (role IN ('admin', 'editor', 'user')) DEFAULT 'user',
       is_active boolean NOT NULL DEFAULT true,
       created_at timestamptz NOT NULL DEFAULT now(),
       updated_at timestamptz NOT NULL DEFAULT now()
     )
+  `);
+
+  await pool.query(`
+    DO $$
+    BEGIN
+      IF EXISTS (
+        SELECT 1
+        FROM pg_constraint
+        WHERE conrelid = 'users'::regclass
+          AND conname = 'users_role_check'
+          AND pg_get_constraintdef(oid) NOT LIKE '%editor%'
+      ) THEN
+        ALTER TABLE users DROP CONSTRAINT users_role_check;
+      END IF;
+
+      IF NOT EXISTS (
+        SELECT 1
+        FROM pg_constraint
+        WHERE conrelid = 'users'::regclass
+          AND conname = 'users_role_check'
+      ) THEN
+        ALTER TABLE users
+        ADD CONSTRAINT users_role_check
+        CHECK (role IN ('admin', 'editor', 'user'));
+      END IF;
+    END $$;
   `);
 
   await pool.query(`

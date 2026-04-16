@@ -1,6 +1,7 @@
-import { getAuthContext, requireAdmin } from "@/src/auth";
+import { getAuthContext, requireQuestionManager } from "@/src/auth";
 import { createQuestion, listQuestions } from "@/src/questions";
 import { errorResponse, jsonResponse, optionsResponse, readJson } from "@/src/http";
+import { canManageQuestions } from "@/src/roles";
 import { isSubjectCode } from "@/src/subjects";
 import { questionSchema } from "@/src/validation";
 
@@ -14,7 +15,7 @@ export async function GET(request: Request) {
   try {
     const context = await getAuthContext(request);
     const url = new URL(request.url);
-    const adminListMode = context.user.role === "admin" && url.searchParams.get("includeInactive") === "true";
+    const adminListMode = canManageQuestions(context.user.role) && url.searchParams.get("includeInactive") === "true";
     const requestedSubject = url.searchParams.get("subject");
     const subject = isSubjectCode(requestedSubject) ? requestedSubject : null;
 
@@ -36,7 +37,7 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   try {
-    const context = await requireAdmin(request);
+    const context = await requireQuestionManager(request);
     const body = questionSchema.parse(await readJson(request));
     const question = await createQuestion(body, context.user.id);
 

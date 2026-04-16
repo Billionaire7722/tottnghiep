@@ -2,13 +2,14 @@ import bcrypt from "bcryptjs";
 import type { PoolClient } from "pg";
 import { dbQuery, withTransaction } from "@/src/db";
 import { ApiError } from "@/src/http";
+import type { Role } from "@/src/roles";
 import type { AccountCreateInput, AccountUpdateInput } from "@/src/validation";
 
 type AccountRow = {
   id: string;
   username: string;
   displayName: string;
-  role: "admin" | "user";
+  role: Role;
   isActive: boolean;
   createdAt: Date | string;
   updatedAt: Date | string;
@@ -43,7 +44,7 @@ type AttemptHistoryRow = {
 
 type ExistingAccount = {
   id: string;
-  role: "admin" | "user";
+  role: Role;
   isActive: boolean;
 };
 
@@ -66,7 +67,11 @@ export async function listAccounts() {
     LEFT JOIN sessions s ON s.user_id = u.id
     GROUP BY u.id
     ORDER BY
-      CASE WHEN u.role = 'admin' THEN 0 ELSE 1 END,
+      CASE
+        WHEN u.role = 'admin' THEN 0
+        WHEN u.role = 'editor' THEN 1
+        ELSE 2
+      END,
       u.username ASC
   `);
 

@@ -174,7 +174,10 @@ function App() {
   }, [authedRequest, handleError]);
 
   const loadAdminData = useCallback(async () => {
-    if (auth?.user.role !== "admin") {
+    const canManageQuestions = auth?.user.role === "admin" || auth?.user.role === "editor";
+    const canManageAccounts = auth?.user.role === "admin";
+
+    if (!canManageQuestions) {
       return;
     }
 
@@ -184,9 +187,11 @@ function App() {
       if (adminTab === "questions") {
         const data = await authedRequest<{ questions: Question[] }>("/api/questions?includeInactive=true");
         setAdminQuestions(data.questions);
-      } else {
+      } else if (canManageAccounts) {
         const data = await authedRequest<{ accounts: Account[] }>("/api/accounts");
         setAccounts(data.accounts);
+      } else {
+        setAdminTab("questions");
       }
     } catch (error) {
       handleError(error);
@@ -629,7 +634,13 @@ function App() {
                     void loadAttempts();
                     setScreen("history");
                   }}
-                  onAdmin={() => setScreen("admin")}
+                  onAdmin={() => {
+                    if (auth.user.role === "editor") {
+                      setAdminTab("questions");
+                    }
+
+                    setScreen("admin");
+                  }}
                   onLogout={logout}
                 />
               )}

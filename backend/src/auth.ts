@@ -3,10 +3,9 @@ import jwt from "jsonwebtoken";
 import { randomUUID } from "node:crypto";
 import { dbQuery, ensureDatabase, withTransaction } from "@/src/db";
 import { ApiError } from "@/src/http";
+import { canManageAccounts, canManageQuestions, isRole, type Role } from "@/src/roles";
 import type { z } from "zod";
 import type { loginSchema } from "@/src/validation";
-
-export type Role = "admin" | "user";
 
 export type AuthUser = {
   id: string;
@@ -172,8 +171,18 @@ export async function getAuthContext(request: Request): Promise<AuthContext> {
 export async function requireAdmin(request: Request) {
   const context = await getAuthContext(request);
 
-  if (context.user.role !== "admin") {
+  if (!canManageAccounts(context.user.role)) {
     throw new ApiError(403, "ADMIN_ONLY", "Chỉ quản trị viên mới có quyền thực hiện thao tác này");
+  }
+
+  return context;
+}
+
+export async function requireQuestionManager(request: Request) {
+  const context = await getAuthContext(request);
+
+  if (!canManageQuestions(context.user.role)) {
+    throw new ApiError(403, "QUESTION_MANAGER_ONLY", "Chỉ quản trị viên hoặc người chỉnh sửa mới có quyền quản trị câu hỏi");
   }
 
   return context;
@@ -236,7 +245,7 @@ function isTokenPayload(decoded: string | jwt.JwtPayload): decoded is TokenPaylo
     typeof decoded !== "string" &&
     typeof decoded.sub === "string" &&
     typeof decoded.sid === "string" &&
-    (decoded.role === "admin" || decoded.role === "user") &&
+    isRole(decoded.role) &&
     typeof decoded.username === "string"
   );
 }
@@ -314,4 +323,3 @@ function getClientIp(request: Request) {
     "unknown"
   );
 }
-

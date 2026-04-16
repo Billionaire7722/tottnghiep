@@ -1,4 +1,4 @@
-import { requireAdmin } from "@/src/auth";
+import { requireQuestionManager } from "@/src/auth";
 import { deleteQuestion, updateQuestion } from "@/src/questions";
 import { emptyResponse, errorResponse, jsonResponse, optionsResponse, readJson, routeParamId } from "@/src/http";
 import { questionSchema } from "@/src/validation";
@@ -15,7 +15,7 @@ export async function OPTIONS(request: Request) {
 
 export async function PUT(request: Request, context: RouteContext) {
   try {
-    await requireAdmin(request);
+    await requireQuestionManager(request);
     const id = routeParamId(await context.params);
     const body = questionSchema.parse(await readJson(request));
     const question = await updateQuestion(id, body);
@@ -28,7 +28,7 @@ export async function PUT(request: Request, context: RouteContext) {
 
 export async function DELETE(request: Request, context: RouteContext) {
   try {
-    await requireAdmin(request);
+    await requireQuestionManager(request);
     const id = routeParamId(await context.params);
     await deleteQuestion(id);
 

@@ -1,6 +1,6 @@
-import type { SubjectCode } from "./uiTypes";
+import type { AccountRole, SubjectCode } from "./uiTypes";
 
-export type Role = "admin" | "user";
+export type Role = AccountRole;
 
 export type User = {
   id: string;

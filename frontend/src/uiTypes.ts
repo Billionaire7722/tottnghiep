@@ -1,5 +1,6 @@
 export type Screen = "start" | "quiz" | "result" | "history" | "admin";
 export type AdminTab = "questions" | "accounts";
+export type AccountRole = "admin" | "editor" | "user";
 
 export const subjectOptions = [
   { value: "dich_te", label: "Dịch tễ" },
@@ -29,7 +30,7 @@ export type AccountForm = {
   username: string;
   displayName: string;
   password: string;
-  role: "admin" | "user";
+  role: AccountRole;
   isActive: boolean;
 };
 
@@ -56,6 +57,18 @@ export const emptyAccountForm = (): AccountForm => ({
 
 export function subjectLabel(value: SubjectCode | string | undefined) {
   return subjectOptions.find((subject) => subject.value === value)?.label ?? "Chưa chọn môn";
+}
+
+export function roleLabel(value: AccountRole | string | undefined) {
+  if (value === "admin") {
+    return "Quản trị viên";
+  }
+
+  if (value === "editor") {
+    return "Người chỉnh sửa";
+  }
+
+  return "Người học";
 }
 
 export function formatDate(value: string) {

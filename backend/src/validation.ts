@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { roles } from "@/src/roles";
 import { subjects } from "@/src/subjects";
 
 const usernameSchema = z
@@ -44,7 +45,7 @@ export const accountCreateSchema = z.object({
   username: usernameSchema,
   displayName: z.string().trim().min(2, "Tên hiển thị cần ít nhất 2 ký tự").max(80),
   password: z.string().min(8, "Mật khẩu cần ít nhất 8 ký tự").max(120),
-  role: z.enum(["admin", "user"]).default("user"),
+  role: z.enum(roles).default("user"),
   isActive: z.boolean().default(true)
 });
 
@@ -52,7 +53,7 @@ export const accountUpdateSchema = z
   .object({
     displayName: z.string().trim().min(2).max(80).optional(),
     password: z.string().min(8).max(120).optional().or(z.literal("")),
-    role: z.enum(["admin", "user"]).optional(),
+    role: z.enum(roles).optional(),
     isActive: z.boolean().optional()
   })
   .refine((data) => Object.keys(data).length > 0, "Không có dữ liệu cần cập nhật");

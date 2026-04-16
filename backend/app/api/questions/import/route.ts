@@ -1,4 +1,4 @@
-import { requireAdmin } from "@/src/auth";
+import { requireQuestionManager } from "@/src/auth";
 import { errorResponse, jsonResponse, optionsResponse } from "@/src/http";
 import { extractTextFromQuestionFile } from "@/src/importQuestions";
 import { parseAndReviewQuestions } from "@/src/questionImportReview";
@@ -12,7 +12,7 @@ export async function OPTIONS(request: Request) {
 
 export async function POST(request: Request) {
   try {
-    await requireAdmin(request);
+    await requireQuestionManager(request);
     const formData = await request.formData();
     const file = formData.get("file");
     const rawSubject = formData.get("subject");
