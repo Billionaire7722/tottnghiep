@@ -1,19 +1,19 @@
 import mammoth from "mammoth";
 import { ApiError } from "@/src/http";
 
-type ParsedOption = {
+export type ParsedOption = {
   content: string;
   isCorrect: boolean;
 };
 
-type ParsedQuestion = {
+export type ParsedQuestion = {
   content: string;
   explanation: string;
   isActive: boolean;
   options: ParsedOption[];
 };
 
-type DraftQuestion = ParsedQuestion & {
+export type DraftQuestion = ParsedQuestion & {
   warnings: string[];
 };
 
@@ -52,16 +52,39 @@ export function parseQuestionText(text: string) {
     .filter(Boolean);
   const questions: DraftQuestion[] = [];
   let current: DraftQuestion | null = null;
+  let parentContent = "";
   let currentMode: "content" | "option" | "explanation" = "content";
   let currentOptionIndex = -1;
 
   for (let lineIndex = 0; lineIndex < lines.length; lineIndex += 1) {
     const line = lines[lineIndex];
     const nextLine = lines[lineIndex + 1];
+    const parentMatch = line.match(/^(?:câu\s*hỏi|cau\s*hoi|tình\s*huống|tinh\s*huong|dữ\s*liệu|du\s*lieu)\s*[:\-]\s*(.+)$/i);
+
+    if (parentMatch) {
+      pushCurrent(questions, current);
+      current = hasUpcomingSubQuestion(lines, lineIndex + 1) ? null : createDraft(parentMatch[1]);
+      parentContent = current ? "" : parentMatch[1].trim();
+      currentMode = "content";
+      currentOptionIndex = -1;
+      continue;
+    }
+
+    const subQuestionMatch = line.match(/^\+\s*(?:câu\s*hỏi\s*nhỏ|cau\s*hoi\s*nho|ý|y)\s*[:\-]\s*(.*)$/i);
+
+    if (subQuestionMatch) {
+      pushCurrent(questions, current);
+      current = createDraft(formatGroupedQuestion(parentContent, subQuestionMatch[1]));
+      currentMode = "content";
+      currentOptionIndex = -1;
+      continue;
+    }
+
     const questionMatch = line.match(/^(?:câu\s*)?(\d+)[\).:\-]\s*(.+)$/i);
 
     if (questionMatch) {
       pushCurrent(questions, current);
+      parentContent = "";
       current = createDraft(questionMatch[2]);
       currentMode = "content";
       currentOptionIndex = -1;
@@ -69,6 +92,11 @@ export function parseQuestionText(text: string) {
     }
 
     if (!current) {
+      if (parentContent) {
+        parentContent = appendBlock(parentContent, line);
+        continue;
+      }
+
       current = createDraft(line);
       continue;
     }
@@ -120,17 +148,32 @@ export function parseQuestionText(text: string) {
     }
 
     if (currentMode === "explanation") {
-      current.explanation = appendText(current.explanation, line);
+      current.explanation = appendBlock(current.explanation, line);
     } else if (currentMode === "option" && currentOptionIndex >= 0) {
       current.options[currentOptionIndex].content = appendText(current.options[currentOptionIndex].content, line);
     } else {
-      current.content = appendText(current.content, line);
+      current.content = appendBlock(current.content, line);
     }
   }
 
   pushCurrent(questions, current);
 
   return questions.map((question, index) => normalizeDraft(question, index));
+}
+
+function formatGroupedQuestion(parentContent: string, subQuestion: string) {
+  const parent = parentContent.trim();
+  const child = subQuestion.trim();
+
+  if (!parent) {
+    return child || "Câu hỏi nhỏ";
+  }
+
+  if (!child) {
+    return parent;
+  }
+
+  return `${parent}\n\n${child}`;
 }
 
 function createDraft(content: string): DraftQuestion {
@@ -194,6 +237,57 @@ function shouldStartUnnumberedQuestion(current: DraftQuestion, line: string, nex
   }
 
   return current.options.some((option) => option.isCorrect) || current.options.length >= 3 || hasTrueFalseOptions(current);
+}
+
+function hasUpcomingSubQuestion(lines: string[], startIndex: number) {
+  let insideChart = false;
+
+  for (let index = startIndex; index < lines.length; index += 1) {
+    const line = lines[index];
+
+    if (isChartStart(line)) {
+      insideChart = true;
+      continue;
+    }
+
+    if (insideChart) {
+      if (isChartEnd(line)) {
+        insideChart = false;
+      }
+
+      continue;
+    }
+
+    if (isSubQuestionLine(line)) {
+      return true;
+    }
+
+    if (isNumberedQuestionLine(line) || isParentLine(line) || isOptionLine(line) || isAnswerLine(line) || isExplanationLine(line)) {
+      return false;
+    }
+  }
+
+  return false;
+}
+
+function isParentLine(line: string) {
+  return /^(?:câu\s*hỏi|cau\s*hoi|tình\s*huống|tinh\s*huong|dữ\s*liệu|du\s*lieu)\s*[:\-]\s*(.+)$/i.test(line);
+}
+
+function isSubQuestionLine(line: string) {
+  return /^\+\s*(?:câu\s*hỏi\s*nhỏ|cau\s*hoi\s*nho|ý|y)\s*[:\-]\s*(.*)$/i.test(line);
+}
+
+function isNumberedQuestionLine(line: string) {
+  return /^(?:câu\s*)?(\d+)[\).:\-]\s*(.+)$/i.test(line);
+}
+
+function isChartStart(line: string) {
+  return /^\[(?:chart|biểu\s*đồ|bieu\s*do)\]$/i.test(line);
+}
+
+function isChartEnd(line: string) {
+  return /^\[\/(?:chart|biểu\s*đồ|bieu\s*do)\]$/i.test(line);
 }
 
 function markCorrectAnswer(question: DraftQuestion, value: string) {
@@ -269,6 +363,10 @@ function normalizeAnswerText(value: string) {
 
 function appendText(current: string, value: string) {
   return [current, value.trim()].filter(Boolean).join(" ");
+}
+
+function appendBlock(current: string, value: string) {
+  return [current, value.trim()].filter(Boolean).join("\n");
 }
 
 function normalizeText(text: string) {

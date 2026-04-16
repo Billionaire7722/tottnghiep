@@ -15,6 +15,32 @@ type AccountRow = {
   activeSessions: string;
 };
 
+type AccountDetailRow = Omit<AccountRow, "activeSessions"> & {
+  activeSessions: string;
+  lastSeenAt: Date | string | null;
+};
+
+type SessionHistoryRow = {
+  id: string;
+  deviceId: string;
+  userAgent: string | null;
+  ipAddress: string | null;
+  active: boolean;
+  createdAt: Date | string;
+  lastSeenAt: Date | string;
+  expiresAt: Date | string;
+  revokedAt: Date | string | null;
+  isOnline: boolean;
+};
+
+type AttemptHistoryRow = {
+  id: string;
+  score: number;
+  total: number;
+  percentage: string;
+  createdAt: Date | string;
+};
+
 type ExistingAccount = {
   id: string;
   role: "admin" | "user";
@@ -31,7 +57,11 @@ export async function listAccounts() {
       u.is_active AS "isActive",
       u.created_at AS "createdAt",
       u.updated_at AS "updatedAt",
-      COUNT(s.id) FILTER (WHERE s.active = true AND s.expires_at > now()) AS "activeSessions"
+      COUNT(s.id) FILTER (
+        WHERE s.active = true
+          AND s.expires_at > now()
+          AND s.last_seen_at > now() - interval '45 seconds'
+      ) AS "activeSessions"
     FROM users u
     LEFT JOIN sessions s ON s.user_id = u.id
     GROUP BY u.id
@@ -44,6 +74,92 @@ export async function listAccounts() {
     ...account,
     activeSessions: Number(account.activeSessions)
   }));
+}
+
+export async function getAccountDetail(id: string) {
+  const accountResult = await dbQuery<AccountDetailRow>(
+    `
+      SELECT
+        u.id,
+        u.username,
+        u.display_name AS "displayName",
+        u.role,
+        u.is_active AS "isActive",
+        u.created_at AS "createdAt",
+        u.updated_at AS "updatedAt",
+        COUNT(s.id) FILTER (
+          WHERE s.active = true
+            AND s.expires_at > now()
+            AND s.last_seen_at > now() - interval '45 seconds'
+        ) AS "activeSessions",
+        MAX(s.last_seen_at) AS "lastSeenAt"
+      FROM users u
+      LEFT JOIN sessions s ON s.user_id = u.id
+      WHERE u.id = $1
+      GROUP BY u.id
+      LIMIT 1
+    `,
+    [id]
+  );
+  const account = accountResult.rows[0];
+
+  if (!account) {
+    throw new ApiError(404, "ACCOUNT_NOT_FOUND", "Không tìm thấy tài khoản");
+  }
+
+  const sessions = await dbQuery<SessionHistoryRow>(
+    `
+      SELECT
+        id,
+        device_id AS "deviceId",
+        user_agent AS "userAgent",
+        ip_address AS "ipAddress",
+        active,
+        created_at AS "createdAt",
+        last_seen_at AS "lastSeenAt",
+        expires_at AS "expiresAt",
+        revoked_at AS "revokedAt",
+        (
+          active = true
+          AND expires_at > now()
+          AND last_seen_at > now() - interval '45 seconds'
+        ) AS "isOnline"
+      FROM sessions
+      WHERE user_id = $1
+      ORDER BY created_at DESC
+      LIMIT 30
+    `,
+    [id]
+  );
+
+  const attempts = await dbQuery<AttemptHistoryRow>(
+    `
+      SELECT
+        id,
+        score,
+        total,
+        percentage,
+        created_at AS "createdAt"
+      FROM attempts
+      WHERE user_id = $1
+      ORDER BY created_at DESC
+      LIMIT 20
+    `,
+    [id]
+  );
+
+  return {
+    account: {
+      ...account,
+      activeSessions: Number(account.activeSessions),
+      isOnline: Number(account.activeSessions) > 0
+    },
+    sessions: sessions.rows,
+    attempts: attempts.rows.map((attempt) => ({
+      ...attempt,
+      percentage: Number(attempt.percentage)
+    }))
+  };
 }
 
 export async function createAccount(input: AccountCreateInput) {
@@ -204,4 +320,3 @@ async function assertAnotherActiveAdmin(client: PoolClient, id: string) {
 function isUniqueViolation(error: unknown) {
   return typeof error === "object" && error !== null && "code" in error && error.code === "23505";
 }
-

@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState, type Dispatch, type FormEvent, type SetStateAction } from "react";
-import type { Account, Question, User } from "./api";
+import type { Account, AccountDetail, Question, User } from "./api";
+import { RichQuestionContent } from "./RichQuestionContent";
 import { SubjectPicker } from "./SubjectPicker";
 import {
   AccountForm,
@@ -8,6 +9,7 @@ import {
   QuestionForm,
   emptyAccountForm,
   emptyQuestionForm,
+  formatDate,
   subjectLabel,
   type SubjectCode
 } from "./uiTypes";
@@ -43,10 +45,16 @@ type AdminWorkspaceProps = {
   importSubject: SubjectCode;
   importBusy: boolean;
   onImportFile: (file: File) => void;
+  onImportText: (text: string) => void;
   onImportSubjectChange: (value: SubjectCode) => void;
   onChangeImportedQuestion: (index: number, question: ImportedQuestionForm) => void;
   onRemoveImportedQuestion: (index: number) => void;
   onSaveImportedQuestions: () => void;
+  accountDetail: AccountDetail | null;
+  accountDetailBusy: boolean;
+  onViewAccountDetail: (id: string) => void;
+  onBackToAccounts: () => void;
+  onReloadAccountDetail: () => void;
 };
 
 export function AdminWorkspace(props: AdminWorkspaceProps) {
@@ -99,11 +107,13 @@ function QuestionAdmin({
   importSubject,
   importBusy,
   onImportFile,
+  onImportText,
   onImportSubjectChange,
   onChangeImportedQuestion,
   onRemoveImportedQuestion,
   onSaveImportedQuestions
 }: AdminWorkspaceProps) {
+  const [textImport, setTextImport] = useState("");
   const [questionPage, setQuestionPage] = useState(1);
   const totalQuestionPages = Math.max(1, Math.ceil(questions.length / questionsPerPage));
   const paginatedQuestions = useMemo(() => {
@@ -142,7 +152,28 @@ function QuestionAdmin({
           </label>
           <p className="hint-text">
             Định dạng gợi ý: Câu 1: nội dung, A. đáp án, B. đáp án, Đáp án: A, Giải thích: ...
+            Câu hỏi lớn dùng "Câu hỏi:" rồi thêm từng "+ Câu hỏi nhỏ:". Có thể chèn bảng bằng cú pháp
+            Markdown và biểu đồ bằng [chart] Nhãn: số [/chart].
           </p>
+          <div className="text-import-area">
+            <label>
+              Hoặc dán văn bản câu hỏi
+              <textarea
+                value={textImport}
+                onChange={(event) => setTextImport(event.target.value)}
+                rows={8}
+                placeholder={`Câu hỏi: Đọc dữ liệu sau và trả lời\n| Nhóm | Số ca |\n| A | 12 |\n| B | 20 |\n[chart]\nNhóm A: 12\nNhóm B: 20\n[/chart]\n\n+ Câu hỏi nhỏ: Nhóm nào có số ca cao hơn?\nA: Nhóm A\nB: Nhóm B\nĐáp án: B`}
+              />
+            </label>
+            <button
+              className="secondary-button"
+              type="button"
+              disabled={importBusy || !textImport.trim()}
+              onClick={() => onImportText(textImport)}
+            >
+              {importBusy ? "Đang quét" : "Quét văn bản"}
+            </button>
+          </div>
           {importWarnings.length > 0 && (
             <div className="warning-list">
               {importWarnings.slice(0, 4).map((warning, index) => (
@@ -257,7 +288,7 @@ function QuestionAdmin({
         {importedQuestions.length > 0 && (
           <div className="import-preview">
             <div className="panel-title">
-              <span>Câu hỏi đọc từ file</span>
+              <span>Câu hỏi đã quét</span>
               <small>{importedQuestions.length} câu nháp</small>
             </div>
             <div className="import-preview-list">
@@ -293,7 +324,9 @@ function QuestionAdmin({
                     <span className={question.isActive ? "status active" : "status"}>{question.isActive ? "Hiện" : "Ẩn"}</span>
                     <span className="status subject-status">{subjectLabel(question.subject)}</span>
                   </div>
-                  <h3>{question.content}</h3>
+                  <div className="admin-question-content">
+                    <RichQuestionContent content={question.content} />
+                  </div>
                   <p>Đáp án đúng: {question.options.find((option) => option.isCorrect)?.content ?? "Chưa có"}</p>
                 </div>
                 <div className="row-actions">
@@ -473,8 +506,24 @@ function AccountAdmin({
   busy,
   onSaveAccount,
   onEditAccount,
-  onDeleteAccount
+  onDeleteAccount,
+  accountDetail,
+  accountDetailBusy,
+  onViewAccountDetail,
+  onBackToAccounts,
+  onReloadAccountDetail
 }: AdminWorkspaceProps) {
+  if (accountDetail) {
+    return (
+      <AccountDetailView
+        detail={accountDetail}
+        busy={accountDetailBusy}
+        onBack={onBackToAccounts}
+        onRefresh={onReloadAccountDetail}
+      />
+    );
+  }
+
   return (
     <div className="admin-grid">
       <form className="admin-panel form-panel" onSubmit={onSaveAccount}>
@@ -567,6 +616,9 @@ function AccountAdmin({
                 <button className="secondary-button" type="button" onClick={() => onEditAccount(account)}>
                   Sửa
                 </button>
+                <button className="secondary-button" type="button" onClick={() => onViewAccountDetail(account.id)}>
+                  Chi tiết
+                </button>
                 <button className="ghost-button" type="button" onClick={() => onDeleteAccount(account.id)}>
                   Xóa
                 </button>
@@ -576,6 +628,119 @@ function AccountAdmin({
         </div>
       </section>
     </div>
+  );
+}
+
+function AccountDetailView({
+  detail,
+  busy,
+  onBack,
+  onRefresh
+}: {
+  detail: AccountDetail;
+  busy: boolean;
+  onBack: () => void;
+  onRefresh: () => void;
+}) {
+  const { account, sessions, attempts } = detail;
+
+  return (
+    <section className="admin-panel account-detail-page">
+      <div className="panel-title detail-title">
+        <div>
+          <span>Chi tiết tài khoản</span>
+          <small>{account.username}</small>
+        </div>
+        <div className="row-actions">
+          <button className="ghost-button" type="button" onClick={onBack}>
+            Quay lại tài khoản
+          </button>
+          <button className="secondary-button" type="button" onClick={onRefresh} disabled={busy}>
+            {busy ? "Đang tải" : "Tải lại"}
+          </button>
+        </div>
+      </div>
+
+      <div className="detail-summary-grid">
+        <div className="detail-card">
+          <span>Tên hiển thị</span>
+          <strong>{account.displayName}</strong>
+          <small>{account.role === "admin" ? "Quản trị viên" : "Người học"}</small>
+        </div>
+        <div className="detail-card">
+          <span>Trạng thái hoạt động</span>
+          <strong className={account.isOnline ? "online-text" : "offline-text"}>
+            <i className={account.isOnline ? "online-dot" : "online-dot offline"} />
+            {account.isOnline ? "Online" : "Offline"}
+          </strong>
+          <small>{account.activeSessions} phiên đang hoạt động</small>
+        </div>
+        <div className="detail-card">
+          <span>Quyền đăng nhập</span>
+          <strong>{account.isActive ? "Đang cho phép" : "Đã khóa"}</strong>
+          <small>Cập nhật: {formatOptionalDate(account.updatedAt)}</small>
+        </div>
+        <div className="detail-card">
+          <span>Lần cuối hoạt động</span>
+          <strong>{formatOptionalDate(account.lastSeenAt)}</strong>
+          <small>Tạo lúc: {formatOptionalDate(account.createdAt)}</small>
+        </div>
+      </div>
+
+      <div className="detail-section">
+        <div className="panel-title">
+          <span>Lịch sử đăng nhập</span>
+          <small>{sessions.length} phiên gần nhất</small>
+        </div>
+        {sessions.length === 0 ? (
+          <p className="empty-text">Tài khoản này chưa có lịch sử đăng nhập.</p>
+        ) : (
+          <div className="session-list">
+            {sessions.map((session) => (
+              <article className="session-item" key={session.id}>
+                <div className="session-main">
+                  <strong className={session.isOnline ? "online-text" : "offline-text"}>
+                    <i className={session.isOnline ? "online-dot" : "online-dot offline"} />
+                    {session.isOnline ? "Online" : "Offline"}
+                  </strong>
+                  <span>{session.ipAddress ?? "Không ghi nhận IP"}</span>
+                </div>
+                <div className="session-meta">
+                  <span>Bắt đầu: {formatOptionalDate(session.createdAt)}</span>
+                  <span>Hoạt động cuối: {formatOptionalDate(session.lastSeenAt)}</span>
+                  <span>Hết hạn: {formatOptionalDate(session.expiresAt)}</span>
+                  <span>{session.active && !session.revokedAt ? "Phiên còn hiệu lực" : `Kết thúc: ${formatOptionalDate(session.revokedAt)}`}</span>
+                </div>
+                <p>{session.userAgent ?? "Không ghi nhận trình duyệt"}</p>
+                <small className="mono-text">Thiết bị: {session.deviceId}</small>
+              </article>
+            ))}
+          </div>
+        )}
+      </div>
+
+      <div className="detail-section">
+        <div className="panel-title">
+          <span>Lịch sử làm bài</span>
+          <small>{attempts.length} lần gần nhất</small>
+        </div>
+        {attempts.length === 0 ? (
+          <p className="empty-text">Chưa có lần làm bài nào.</p>
+        ) : (
+          <div className="attempt-history-list">
+            {attempts.map((attempt) => (
+              <article className="attempt-history-item" key={attempt.id}>
+                <strong>
+                  {attempt.score}/{attempt.total}
+                </strong>
+                <span>{attempt.percentage.toFixed(0)}%</span>
+                <small>{formatOptionalDate(attempt.createdAt)}</small>
+              </article>
+            ))}
+          </div>
+        )}
+      </div>
+    </section>
   );
 }
 
@@ -609,6 +774,10 @@ function getPaginationItems(currentPage: number, totalPages: number) {
   }
 
   return items;
+}
+
+function formatOptionalDate(value?: string | null) {
+  return value ? formatDate(value) : "Chưa ghi nhận";
 }
 
 function removeOption(index: number, setQuestionForm: Dispatch<SetStateAction<QuestionForm>>) {

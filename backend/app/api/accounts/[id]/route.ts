@@ -1,5 +1,5 @@
 import { requireAdmin } from "@/src/auth";
-import { deleteAccount, updateAccount } from "@/src/accounts";
+import { deleteAccount, getAccountDetail, updateAccount } from "@/src/accounts";
 import { accountUpdateSchema } from "@/src/validation";
 import { emptyResponse, errorResponse, jsonResponse, optionsResponse, readJson, routeParamUuid } from "@/src/http";
 
@@ -11,6 +11,18 @@ type RouteContext = {
 
 export async function OPTIONS(request: Request) {
   return optionsResponse(request);
+}
+
+export async function GET(request: Request, context: RouteContext) {
+  try {
+    await requireAdmin(request);
+    const id = routeParamUuid(await context.params);
+    const detail = await getAccountDetail(id);
+
+    return jsonResponse(detail, request);
+  } catch (error) {
+    return errorResponse(error, request);
+  }
 }
 
 export async function PUT(request: Request, context: RouteContext) {
@@ -37,4 +49,3 @@ export async function DELETE(request: Request, context: RouteContext) {
     return errorResponse(error, request);
   }
 }
-

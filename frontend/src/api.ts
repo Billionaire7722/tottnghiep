@@ -39,6 +39,36 @@ export type Account = {
   activeSessions: number;
 };
 
+export type AccountSession = {
+  id: string;
+  deviceId: string;
+  userAgent: string | null;
+  ipAddress: string | null;
+  active: boolean;
+  createdAt: string;
+  lastSeenAt: string;
+  expiresAt: string;
+  revokedAt: string | null;
+  isOnline: boolean;
+};
+
+export type AccountAttempt = {
+  id: string;
+  score: number;
+  total: number;
+  percentage: number;
+  createdAt: string;
+};
+
+export type AccountDetail = {
+  account: Account & {
+    lastSeenAt: string | null;
+    isOnline: boolean;
+  };
+  sessions: AccountSession[];
+  attempts: AccountAttempt[];
+};
+
 export type Attempt = {
   id: string;
   userDisplayName: string;

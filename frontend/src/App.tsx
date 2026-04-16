@@ -11,6 +11,7 @@ import {
 } from "./StudentScreens";
 import {
   Account,
+  AccountDetail,
   ApiClientError,
   Attempt,
   Question,
@@ -59,6 +60,8 @@ function App() {
   const [adminTab, setAdminTab] = useState<AdminTab>("questions");
   const [adminQuestions, setAdminQuestions] = useState<Question[]>([]);
   const [accounts, setAccounts] = useState<Account[]>([]);
+  const [accountDetail, setAccountDetail] = useState<AccountDetail | null>(null);
+  const [accountDetailBusy, setAccountDetailBusy] = useState(false);
   const [questionForm, setQuestionForm] = useState(emptyQuestionForm);
   const [editingQuestionId, setEditingQuestionId] = useState<number | null>(null);
   const [accountForm, setAccountForm] = useState<AccountForm>(emptyAccountForm);
@@ -398,6 +401,7 @@ function App() {
     try {
       const formData = new FormData();
       formData.append("file", file);
+      formData.append("subject", importSubject);
       const data = await authedRequest<{ questions: ImportedQuestionDraft[]; warnings: string[] }>("/api/questions/import", {
         method: "POST",
         body: formData
@@ -405,6 +409,27 @@ function App() {
       setImportedQuestions(data.questions.map((question) => ({ ...question, subject: importSubject })));
       setImportWarnings(data.warnings);
       setNotice(data.questions.length > 0 ? `Đã đọc ${data.questions.length} câu hỏi từ file` : "Không tìm thấy câu hỏi hợp lệ");
+    } catch (error) {
+      handleError(error);
+    } finally {
+      setImportBusy(false);
+    }
+  }
+
+  async function importQuestionText(text: string) {
+    setImportBusy(true);
+
+    try {
+      const data = await authedRequest<{ questions: ImportedQuestionDraft[]; warnings: string[] }>("/api/questions/parse", {
+        method: "POST",
+        body: {
+          subject: importSubject,
+          text
+        }
+      });
+      setImportedQuestions(data.questions.map((question) => ({ ...question, subject: importSubject })));
+      setImportWarnings(data.warnings);
+      setNotice(data.questions.length > 0 ? `Đã quét ${data.questions.length} câu hỏi từ văn bản` : "Không tìm thấy câu hỏi mới hợp lệ");
     } catch (error) {
       handleError(error);
     } finally {
@@ -441,26 +466,43 @@ function App() {
     setAdminBusy(true);
 
     try {
+      let savedCount = 0;
+      let skippedCount = 0;
+
       for (const question of importedQuestions) {
-        await authedRequest("/api/questions", {
-          method: "POST",
-          body: {
-            subject: question.subject,
-            content: question.content,
-            explanation: question.explanation,
-            isActive: question.isActive,
-            options: question.options.map((option) => ({
-              content: option.content,
-              isCorrect: option.isCorrect
-            }))
+        try {
+          await authedRequest("/api/questions", {
+            method: "POST",
+            body: {
+              subject: question.subject,
+              content: question.content,
+              explanation: question.explanation,
+              isActive: question.isActive,
+              options: question.options.map((option) => ({
+                content: option.content,
+                isCorrect: option.isCorrect
+              }))
+            }
+          });
+          savedCount += 1;
+        } catch (error) {
+          if (error instanceof ApiClientError && error.code === "DUPLICATE_QUESTION") {
+            skippedCount += 1;
+            continue;
           }
-        });
+
+          throw error;
+        }
       }
 
       setImportedQuestions([]);
       setImportWarnings([]);
       await loadAdminData();
-      setNotice("Đã thêm các câu hỏi từ file");
+      setNotice(
+        skippedCount > 0
+          ? `Đã thêm ${savedCount} câu hỏi, bỏ qua ${skippedCount} câu trùng`
+          : "Đã thêm các câu hỏi đã quét"
+      );
     } catch (error) {
       handleError(error);
     } finally {
@@ -524,6 +566,19 @@ function App() {
       handleError(error);
     } finally {
       setAdminBusy(false);
+    }
+  }
+
+  async function viewAccountDetail(id: string) {
+    setAccountDetailBusy(true);
+
+    try {
+      const data = await authedRequest<AccountDetail>(`/api/accounts/${id}`);
+      setAccountDetail(data);
+    } catch (error) {
+      handleError(error);
+    } finally {
+      setAccountDetailBusy(false);
     }
   }
 
@@ -648,10 +703,20 @@ function App() {
               importSubject={importSubject}
               importBusy={importBusy}
               onImportFile={importQuestionFile}
+              onImportText={importQuestionText}
               onImportSubjectChange={changeImportSubject}
               onChangeImportedQuestion={changeImportedQuestion}
               onRemoveImportedQuestion={removeImportedQuestion}
               onSaveImportedQuestions={saveImportedQuestions}
+              accountDetail={accountDetail}
+              accountDetailBusy={accountDetailBusy}
+              onViewAccountDetail={(id) => void viewAccountDetail(id)}
+              onBackToAccounts={() => setAccountDetail(null)}
+              onReloadAccountDetail={() => {
+                if (accountDetail?.account.id) {
+                  void viewAccountDetail(accountDetail.account.id);
+                }
+              }}
             />
           )}
         </section>

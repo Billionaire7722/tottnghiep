@@ -1,6 +1,8 @@
 import { requireAdmin } from "@/src/auth";
 import { errorResponse, jsonResponse, optionsResponse } from "@/src/http";
-import { extractTextFromQuestionFile, parseQuestionText } from "@/src/importQuestions";
+import { extractTextFromQuestionFile } from "@/src/importQuestions";
+import { parseAndReviewQuestions } from "@/src/questionImportReview";
+import { isSubjectCode } from "@/src/subjects";
 
 export const runtime = "nodejs";
 
@@ -13,6 +15,9 @@ export async function POST(request: Request) {
     await requireAdmin(request);
     const formData = await request.formData();
     const file = formData.get("file");
+    const rawSubject = formData.get("subject");
+    const subjectCandidate = typeof rawSubject === "string" ? rawSubject : null;
+    const subject = isSubjectCode(subjectCandidate) ? subjectCandidate : "dich_te";
 
     if (!(file instanceof File)) {
       return jsonResponse(
@@ -26,12 +31,10 @@ export async function POST(request: Request) {
     }
 
     const text = await extractTextFromQuestionFile(file);
-    const questions = parseQuestionText(text);
-    const warnings = questions.flatMap((question) => question.warnings);
+    const { questions, warnings } = await parseAndReviewQuestions(text, subject);
 
     return jsonResponse({ questions, warnings }, request);
   } catch (error) {
     return errorResponse(error, request);
   }
 }
-

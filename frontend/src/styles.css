@@ -357,6 +357,15 @@ p {
   color: #96394c;
 }
 
+.app-credit {
+  width: min(100%, 280px);
+  padding-top: 2px;
+  color: rgba(101, 65, 119, 0.74);
+  font-size: 0.78rem;
+  font-weight: 900;
+  text-align: center;
+}
+
 .quiz-screen {
   min-height: calc(100% - 52px);
   display: grid;
@@ -393,6 +402,109 @@ p {
 .question-bubble h2 {
   font-size: 1.2rem;
   line-height: 1.35;
+}
+
+.rich-question-content {
+  width: 100%;
+  display: grid;
+  gap: 10px;
+  line-height: 1.45;
+  white-space: pre-line;
+}
+
+.question-bubble .rich-question-content {
+  font-size: 1.08rem;
+  font-weight: 900;
+}
+
+.review-item .rich-question-content,
+.admin-question-content .rich-question-content {
+  font-size: 0.96rem;
+  font-weight: 800;
+}
+
+.question-table-wrap {
+  width: 100%;
+  overflow-x: auto;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 250, 253, 0.28);
+}
+
+.admin-question-content .question-table-wrap,
+.review-item .question-table-wrap {
+  border-color: rgba(36, 29, 44, 0.12);
+}
+
+.question-table {
+  width: 100%;
+  min-width: 260px;
+  border-collapse: collapse;
+  text-align: left;
+  white-space: normal;
+}
+
+.question-table th,
+.question-table td {
+  padding: 8px 10px;
+  border-bottom: 1px solid rgba(255, 250, 253, 0.24);
+}
+
+.admin-question-content .question-table th,
+.admin-question-content .question-table td,
+.review-item .question-table th,
+.review-item .question-table td {
+  border-bottom-color: rgba(36, 29, 44, 0.08);
+}
+
+.question-table tr:last-child td {
+  border-bottom: 0;
+}
+
+.question-chart {
+  display: grid;
+  gap: 8px;
+  width: 100%;
+  padding: 10px;
+  border-radius: 8px;
+  background: rgba(255, 250, 253, 0.18);
+}
+
+.admin-question-content .question-chart,
+.review-item .question-chart {
+  background: rgba(101, 65, 119, 0.08);
+}
+
+.question-chart-row {
+  display: grid;
+  grid-template-columns: minmax(70px, 0.8fr) minmax(90px, 1.4fr) auto;
+  align-items: center;
+  gap: 8px;
+}
+
+.question-chart-row span,
+.question-chart-row strong {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  font-size: 0.84rem;
+}
+
+.question-chart-row div {
+  height: 12px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: rgba(255, 250, 253, 0.34);
+}
+
+.admin-question-content .question-chart-row div,
+.review-item .question-chart-row div {
+  background: rgba(36, 29, 44, 0.1);
+}
+
+.question-chart-row i {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--mint);
 }
 
 .answer-list {
@@ -688,6 +800,18 @@ p {
   line-height: 1.45;
 }
 
+.text-import-area {
+  display: grid;
+  gap: 10px;
+  padding-top: 10px;
+  border-top: 1px solid var(--line);
+}
+
+.text-import-area textarea {
+  min-height: 190px;
+  line-height: 1.45;
+}
+
 .warning-list {
   display: grid;
   gap: 6px;
@@ -751,6 +875,11 @@ p {
 .admin-question-item h3 {
   margin-top: 6px;
   font-size: 1rem;
+}
+
+.admin-question-content {
+  margin-top: 6px;
+  color: var(--ink);
 }
 
 .admin-question-item p {
@@ -870,6 +999,157 @@ p {
   border: 0;
 }
 
+.account-detail-page {
+  gap: 18px;
+}
+
+.detail-title {
+  align-items: flex-start;
+}
+
+.detail-title > div:first-child {
+  display: grid;
+  gap: 3px;
+}
+
+.detail-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.detail-card,
+.session-item,
+.attempt-history-item {
+  border-radius: 8px;
+  background: rgba(255, 250, 253, 0.68);
+  border: 1px solid rgba(36, 29, 44, 0.08);
+}
+
+.detail-card {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+  padding: 14px;
+}
+
+.detail-card span,
+.session-meta span,
+.session-item p,
+.session-item small,
+.attempt-history-item small {
+  color: var(--muted);
+  font-size: 0.82rem;
+  font-weight: 800;
+}
+
+.detail-card strong {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  color: var(--ink);
+  overflow-wrap: anywhere;
+}
+
+.detail-card small {
+  color: var(--muted);
+}
+
+.online-text {
+  color: var(--success) !important;
+}
+
+.offline-text {
+  color: var(--danger) !important;
+}
+
+.online-dot {
+  width: 10px;
+  height: 10px;
+  flex: 0 0 10px;
+  border-radius: 50%;
+  background: var(--success);
+  box-shadow: 0 0 0 4px rgba(50, 120, 92, 0.12);
+}
+
+.online-dot.offline {
+  background: var(--danger);
+  box-shadow: 0 0 0 4px rgba(180, 75, 95, 0.12);
+}
+
+.detail-section {
+  display: grid;
+  gap: 12px;
+}
+
+.session-list {
+  display: grid;
+  gap: 10px;
+}
+
+.session-item {
+  display: grid;
+  gap: 10px;
+  padding: 14px;
+}
+
+.session-main {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.session-main strong {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.session-main span {
+  color: #654177;
+  font-weight: 900;
+}
+
+.session-meta {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.session-item p,
+.mono-text {
+  overflow-wrap: anywhere;
+}
+
+.mono-text {
+  font-family: ui-monospace, "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+}
+
+.attempt-history-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 10px;
+}
+
+.attempt-history-item {
+  display: grid;
+  gap: 4px;
+  padding: 12px;
+}
+
+.attempt-history-item strong {
+  color: #5f3b73;
+  font-size: 1.2rem;
+}
+
+.attempt-history-item span {
+  color: var(--success);
+  font-weight: 900;
+}
+
 @media (max-width: 940px) {
   .admin-grid {
     grid-template-columns: 1fr;
@@ -877,6 +1157,14 @@ p {
 
   .form-panel {
     position: static;
+  }
+
+  .detail-summary-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .session-meta {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 
@@ -926,6 +1214,18 @@ p {
   .account-row > span:first-child::before {
     margin-bottom: 4px;
   }
+
+  .detail-summary-grid,
+  .session-meta {
+    grid-template-columns: 1fr;
+  }
+
+  .detail-title,
+  .detail-title .row-actions,
+  .session-main {
+    align-items: flex-start;
+    flex-direction: column;
+  }
 }
 
 @media (max-width: 460px) {
@@ -958,6 +1258,15 @@ p {
 
   .option-row .compact {
     grid-column: 2;
+  }
+
+  .question-chart-row {
+    grid-template-columns: 1fr auto;
+  }
+
+  .question-chart-row div {
+    grid-column: 1 / -1;
+    grid-row: 2;
   }
 }
 

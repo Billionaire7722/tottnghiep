@@ -1,6 +1,7 @@
 import type { FormEvent, ReactNode } from "react";
 import cnxhMark from "./assets/cnxh-mark.svg";
 import type { Attempt, Question, QuizResult, User } from "./api";
+import { RichQuestionContent } from "./RichQuestionContent";
 import { SubjectPicker } from "./SubjectPicker";
 import { formatDate, type SubjectCode } from "./uiTypes";
 
@@ -135,6 +136,7 @@ export function StartScreen({
       <button className="home-logout-button" type="button" onClick={onLogout}>
         Đăng xuất
       </button>
+      <p className="app-credit">created by VTK</p>
     </div>
   );
 }
@@ -168,7 +170,7 @@ export function QuizScreen({
         </span>
       </div>
       <section className="question-bubble">
-        <h2>{question.content}</h2>
+        <RichQuestionContent content={question.content} />
       </section>
       <div className="answer-list">
         {question.options.map((option) => (
@@ -222,7 +224,7 @@ export function ResultScreen({
         {result.answers.map((answer, index) => (
           <article className={answer.isCorrect ? "review-item good" : "review-item bad"} key={answer.questionId}>
             <span>Câu {index + 1}</span>
-            <p>{answer.questionContent}</p>
+            <RichQuestionContent content={answer.questionContent} />
             <strong>{answer.isCorrect ? "Đúng" : `Đáp án đúng: ${answer.correctOptionContent}`}</strong>
           </article>
         ))}

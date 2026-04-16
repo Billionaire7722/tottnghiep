@@ -23,8 +23,8 @@ export const optionSchema = z.object({
 export const questionSchema = z
   .object({
     subject: z.enum(subjects).default("dich_te"),
-    content: z.string().trim().min(5, "Câu hỏi cần ít nhất 5 ký tự").max(1200),
-    explanation: z.string().trim().max(2000).optional().nullable(),
+    content: z.string().trim().min(5, "Câu hỏi cần ít nhất 5 ký tự").max(6000, "Câu hỏi tối đa 6.000 ký tự"),
+    explanation: z.string().trim().max(4000, "Giải thích tối đa 4.000 ký tự").optional().nullable(),
     isActive: z.boolean().optional(),
     options: z.array(optionSchema).min(2, "Cần ít nhất 2 đáp án").max(6, "Tối đa 6 đáp án")
   })
@@ -73,8 +73,14 @@ export const answerCheckSchema = z.object({
   optionId: z.coerce.number().int().positive()
 });
 
+export const questionTextImportSchema = z.object({
+  subject: z.enum(subjects).default("dich_te"),
+  text: z.string().trim().min(5, "Vui lòng nhập nội dung câu hỏi").max(100000, "Nội dung tối đa 100.000 ký tự")
+});
+
 export type QuestionInput = z.infer<typeof questionSchema>;
 export type AccountCreateInput = z.infer<typeof accountCreateSchema>;
 export type AccountUpdateInput = z.infer<typeof accountUpdateSchema>;
 export type AnswerSubmitInput = z.infer<typeof answerSubmitSchema>;
 export type AnswerCheckInput = z.infer<typeof answerCheckSchema>;
+export type QuestionTextImportInput = z.infer<typeof questionTextImportSchema>;

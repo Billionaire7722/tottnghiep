@@ -1,6 +1,7 @@
 import type { PoolClient } from "pg";
 import { dbQuery, withTransaction } from "@/src/db";
 import { ApiError } from "@/src/http";
+import { questionFingerprint } from "@/src/questionIdentity";
 import type { SubjectCode } from "@/src/subjects";
 import type { QuestionInput } from "@/src/validation";
 
@@ -20,6 +21,11 @@ type QuestionRow = {
   createdAt: Date | string;
   updatedAt: Date | string;
   options: QuestionOptionRow[];
+};
+
+type QuestionFingerprintRow = {
+  id: number;
+  content: string;
 };
 
 const labels = ["A", "B", "C", "D", "E", "F"];
@@ -69,6 +75,7 @@ export async function listQuestions(includeInactive: boolean, includeAnswers: bo
 
 export async function createQuestion(input: QuestionInput, adminId: string) {
   return withTransaction(async (client) => {
+    await assertQuestionNotDuplicate(client, input.subject, input.content);
     const inserted = await client.query<{ id: number }>(
       `
         INSERT INTO questions (subject, content, explanation, is_active, created_by)
@@ -90,6 +97,8 @@ export async function updateQuestion(id: number, input: QuestionInput) {
     if (!existing.rows[0]) {
       throw new ApiError(404, "QUESTION_NOT_FOUND", "Không tìm thấy câu hỏi");
     }
+
+    await assertQuestionNotDuplicate(client, input.subject, input.content, id);
 
     await client.query(
       `
@@ -124,6 +133,19 @@ export async function deleteQuestion(id: number) {
   }
 }
 
+export async function getExistingQuestionFingerprints(subject: SubjectCode) {
+  const result = await dbQuery<QuestionFingerprintRow>(
+    `
+      SELECT id, content
+      FROM questions
+      WHERE subject = $1
+    `,
+    [subject]
+  );
+
+  return new Map(result.rows.map((question) => [questionFingerprint(question.content), question.id]));
+}
+
 function shuffleArray<T>(items: T[]) {
   const next = [...items];
 
@@ -140,6 +162,29 @@ function relabelOptions(options: QuestionOptionRow[]) {
     ...option,
     label: labels[index] ?? option.label
   }));
+}
+
+async function assertQuestionNotDuplicate(
+  client: PoolClient,
+  subject: SubjectCode,
+  content: string,
+  excludeQuestionId?: number
+) {
+  const result = await client.query<QuestionFingerprintRow>(
+    `
+      SELECT id, content
+      FROM questions
+      WHERE subject = $1
+        AND ($2::int IS NULL OR id <> $2)
+    `,
+    [subject, excludeQuestionId ?? null]
+  );
+  const fingerprint = questionFingerprint(content);
+  const duplicate = result.rows.find((question) => questionFingerprint(question.content) === fingerprint);
+
+  if (duplicate) {
+    throw new ApiError(409, "DUPLICATE_QUESTION", "Câu hỏi này đã tồn tại trong môn đã chọn");
+  }
 }
 
 async function replaceOptions(client: PoolClient, questionId: number, options: QuestionInput["options"]) {
