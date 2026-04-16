@@ -36,10 +36,10 @@ export function LoginScreen({
         <img className="brand-mark" src={cnxhMark} alt="Biểu tượng CNXH" />
         <h1>CNXH</h1>
         <p>Ôn thi trắc nghiệm</p>
-        <form className="login-form" onSubmit={onSubmit}>
+        <form className="login-form" onSubmit={onSubmit} autoComplete="off">
           <label>
             Tên đăng nhập
-            <input value={username} onChange={(event) => onUsernameChange(event.target.value)} autoComplete="username" />
+            <input value={username} onChange={(event) => onUsernameChange(event.target.value)} autoComplete="off" />
           </label>
           <label>
             Mật khẩu
@@ -47,7 +47,7 @@ export function LoginScreen({
               value={password}
               onChange={(event) => onPasswordChange(event.target.value)}
               type="password"
-              autoComplete="current-password"
+              autoComplete="new-password"
             />
           </label>
           <button type="submit" disabled={busy}>

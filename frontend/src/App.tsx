@@ -44,8 +44,8 @@ function App() {
   const [booting, setBooting] = useState(true);
   const [screen, setScreen] = useState<Screen>("start");
   const [notice, setNotice] = useState("");
-  const [loginUsername, setLoginUsername] = useState("admin");
-  const [loginPassword, setLoginPassword] = useState("Admin@12345");
+  const [loginUsername, setLoginUsername] = useState("");
+  const [loginPassword, setLoginPassword] = useState("");
   const [loginBusy, setLoginBusy] = useState(false);
 
   const [questions, setQuestions] = useState<Question[]>([]);
@@ -89,6 +89,8 @@ function App() {
   const clearAuth = useCallback((message?: string) => {
     localStorage.removeItem(tokenKey);
     setAuth(null);
+    setLoginUsername("");
+    setLoginPassword("");
     setScreen("start");
     setResult(null);
     setQuestions([]);
@@ -215,6 +217,8 @@ function App() {
 
       localStorage.setItem(tokenKey, data.token);
       setAuth({ token: data.token, user: normalizeUser(data.user) });
+      setLoginUsername("");
+      setLoginPassword("");
       setScreen("start");
       setNotice("Đăng nhập thành công");
     } catch (error) {
