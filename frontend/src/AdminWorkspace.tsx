@@ -123,7 +123,7 @@ function QuestionAdmin({
           <div className="panel-title">
             <span>Nhập câu hỏi từ file</span>
           </div>
-          <SubjectPicker value={importSubject} onChange={onImportSubjectChange} label="Môn áp dụng cho file" compact />
+          <SubjectPicker value={importSubject} onChange={onImportSubjectChange} label="Môn áp dụng cho file" />
           <label>
             Chọn file .txt, .md, .csv hoặc .docx
             <input
@@ -172,7 +172,6 @@ function QuestionAdmin({
             value={questionForm.subject}
             onChange={(subject) => setQuestionForm((current) => ({ ...current, subject }))}
             label="Môn học"
-            compact
           />
           <label>
             Nội dung câu hỏi
@@ -394,7 +393,6 @@ function ImportedQuestionEditor({
         value={question.subject}
         onChange={(subject) => onChange({ ...question, subject })}
         label="Môn học"
-        compact
       />
       <label>
         Nội dung câu hỏi

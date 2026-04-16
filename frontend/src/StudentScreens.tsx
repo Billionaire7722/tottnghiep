@@ -111,7 +111,7 @@ export function StartScreen({
         <p>Sẵn sàng thi tốt nghiệp</p>
       </div>
       <div className="start-actions">
-        <SubjectPicker value={selectedSubject} onChange={onSubjectChange} label="Chọn môn thi" compact />
+        <SubjectPicker value={selectedSubject} onChange={onSubjectChange} label="Chọn môn thi" />
         <button type="button" onClick={onStart} disabled={busy}>
           {busy ? "Đang tải câu hỏi" : "Bắt đầu"}
         </button>

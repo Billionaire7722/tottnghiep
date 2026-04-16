@@ -282,82 +282,57 @@ p {
   display: grid;
   gap: 8px;
   min-width: 0;
-  margin: 0;
-  padding: 0;
-  border: 0;
   text-align: left;
-}
-
-.subject-choice legend {
-  padding: 0;
   color: var(--muted);
   font-size: 0.88rem;
   font-weight: 900;
 }
 
-.subject-choice-options {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 8px;
-}
-
-.subject-choice-card {
+.subject-select-wrap {
   position: relative;
-  min-height: 46px;
-  display: grid;
-  place-items: center;
-  padding: 9px 10px;
-  border: 1px solid rgba(101, 65, 119, 0.16);
-  border-radius: 8px;
-  background: rgba(255, 250, 253, 0.64);
-  color: #654177;
-  font-size: 0.84rem;
-  font-weight: 900;
-  line-height: 1.2;
-  text-align: center;
-  cursor: pointer;
-  transition:
-    transform 160ms ease,
-    background 160ms ease,
-    border-color 160ms ease,
-    color 160ms ease,
-    box-shadow 160ms ease;
 }
 
-.subject-choice-card:hover {
-  transform: translateY(-1px);
-  background: rgba(255, 250, 253, 0.9);
-  border-color: rgba(101, 65, 119, 0.32);
-}
-
-.subject-choice-card.active {
-  background: #5f3b73;
-  border-color: #5f3b73;
-  color: white;
-  box-shadow: 0 10px 20px rgba(95, 59, 115, 0.18);
-}
-
-.subject-choice-card input {
+.subject-select-wrap::after {
+  content: "";
   position: absolute;
-  inset: 0;
-  opacity: 0;
+  top: 50%;
+  right: 14px;
+  width: 9px;
+  height: 9px;
+  border-right: 2px solid #654177;
+  border-bottom: 2px solid #654177;
+  pointer-events: none;
+  transform: translateY(-65%) rotate(45deg);
+}
+
+.subject-select {
+  min-height: 48px;
+  padding: 12px 42px 12px 14px;
+  border: 1px solid rgba(101, 65, 119, 0.2);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.9), rgba(255, 250, 253, 0.72)),
+    #fffafd;
+  color: #4c345d;
+  font-weight: 900;
+  appearance: none;
   cursor: pointer;
+  box-shadow: 0 10px 22px rgba(101, 65, 119, 0.08);
+  transition:
+    border-color 160ms ease,
+    box-shadow 160ms ease,
+    background 160ms ease;
 }
 
-.subject-choice-card:focus-within {
-  outline: 3px solid rgba(79, 140, 114, 0.24);
-  outline-offset: 2px;
+.subject-select:hover {
+  border-color: rgba(101, 65, 119, 0.38);
+  background: #fffafd;
 }
 
-.subject-choice-card span {
-  position: relative;
-  z-index: 1;
-  overflow-wrap: anywhere;
-}
-
-.subject-choice-compact .subject-choice-options,
-.start-actions .subject-choice-options {
-  grid-template-columns: 1fr;
+.subject-select:focus {
+  border-color: #4f8c72;
+  box-shadow:
+    0 0 0 3px rgba(79, 140, 114, 0.18),
+    0 10px 22px rgba(101, 65, 119, 0.08);
 }
 
 .latest-score {
