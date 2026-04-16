@@ -1,0 +1,14 @@
+{
+  "name": "cnxh-quiz",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Ứng dụng ôn thi trắc nghiệm CNXH với Vite React, Next.js API và PostgreSQL.",
+  "scripts": {
+    "dev:frontend": "npm --prefix frontend run dev",
+    "dev:backend": "npm --prefix backend run dev",
+    "build": "npm --prefix backend run build && npm --prefix frontend run build",
+    "docker:up": "docker compose up --build",
+    "docker:down": "docker compose down"
+  }
+}
+
