@@ -70,5 +70,14 @@ jobs:
             chmod 600 .env
             COMPOSE_PARALLEL_LIMIT=1 docker-compose -f docker-compose.prod.yml up -d --build --remove-orphans
             APP_PORT="$(grep -E '^APP_PORT=' .env | tail -1 | cut -d= -f2-)"
-            curl -fsS "http://127.0.0.1:${APP_PORT:-8088}/api/health"
+            for attempt in $(seq 1 30); do
+              if curl -fsS "http://127.0.0.1:${APP_PORT:-8088}/api/health"; then
+                exit 0
+              fi
+
+              sleep 3
+            done
+
+            docker-compose -f docker-compose.prod.yml logs --tail=80
+            exit 1
           REMOTE_SCRIPT
