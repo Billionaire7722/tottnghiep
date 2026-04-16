@@ -55,7 +55,9 @@ export function parseQuestionText(text: string) {
   let currentMode: "content" | "option" | "explanation" = "content";
   let currentOptionIndex = -1;
 
-  for (const line of lines) {
+  for (let lineIndex = 0; lineIndex < lines.length; lineIndex += 1) {
+    const line = lines[lineIndex];
+    const nextLine = lines[lineIndex + 1];
     const questionMatch = line.match(/^(?:câu\s*)?(\d+)[\).:\-]\s*(.+)$/i);
 
     if (questionMatch) {
@@ -71,10 +73,18 @@ export function parseQuestionText(text: string) {
       continue;
     }
 
-    const answerMatch = line.match(/^(?:đáp\s*án|dap\s*an|answer|đáp án đúng)\s*[:\-]\s*([A-F])/i);
+    if (shouldStartUnnumberedQuestion(current, line, nextLine)) {
+      pushCurrent(questions, current);
+      current = createDraft(line);
+      currentMode = "content";
+      currentOptionIndex = -1;
+      continue;
+    }
+
+    const answerMatch = line.match(/^(?:đáp\s*án|dap\s*an|answer|đáp án đúng)\s*[:\-]\s*(.+)$/i);
 
     if (answerMatch) {
-      markCorrectByLabel(current, answerMatch[1]);
+      markCorrectAnswer(current, answerMatch[1]);
       currentMode = "explanation";
       currentOptionIndex = -1;
       continue;
@@ -174,6 +184,40 @@ function normalizeDraft(question: DraftQuestion, index: number) {
   return next;
 }
 
+function shouldStartUnnumberedQuestion(current: DraftQuestion, line: string, nextLine: string | undefined) {
+  if (current.options.length < 2 || !nextLine) {
+    return false;
+  }
+
+  if (!isFirstOptionLine(nextLine) || isAnswerLine(line) || isExplanationLine(line) || isOptionLine(line)) {
+    return false;
+  }
+
+  return current.options.some((option) => option.isCorrect) || current.options.length >= 3 || hasTrueFalseOptions(current);
+}
+
+function markCorrectAnswer(question: DraftQuestion, value: string) {
+  const labelMatch = value.trim().match(/^([A-F])(?:\b|[\).:\-])/i);
+
+  if (labelMatch) {
+    markCorrectByLabel(question, labelMatch[1]);
+    return;
+  }
+
+  const normalizedValue = normalizeAnswerText(value);
+  const optionIndex = question.options.findIndex((option) => normalizeAnswerText(option.content) === normalizedValue);
+
+  if (optionIndex >= 0) {
+    question.options = question.options.map((option, index) => ({
+      ...option,
+      isCorrect: index === optionIndex
+    }));
+    return;
+  }
+
+  question.warnings.push(`Không tìm thấy đáp án "${value.trim()}" trong câu "${question.content}"`);
+}
+
 function markCorrectByLabel(question: DraftQuestion, label: string) {
   const index = answerLabels.indexOf(label.toUpperCase());
 
@@ -185,6 +229,42 @@ function markCorrectByLabel(question: DraftQuestion, label: string) {
   if (index < 0 || index >= question.options.length) {
     question.warnings.push(`Không tìm thấy đáp án ${label.toUpperCase()} trong câu "${question.content}"`);
   }
+}
+
+function isAnswerLine(line: string) {
+  return /^(?:đáp\s*án|dap\s*an|answer|đáp án đúng)\s*[:\-]\s*(.+)$/i.test(line);
+}
+
+function isExplanationLine(line: string) {
+  return /^(?:giải\s*thích|giai\s*thich|ghi\s*chú|ghi chu)\s*[:\-]\s*(.+)$/i.test(line);
+}
+
+function isOptionLine(line: string) {
+  return /^\*?\s*([A-F])[\).:\-]\s*(.+)$/i.test(line);
+}
+
+function isFirstOptionLine(line: string) {
+  return /^\*?\s*A[\).:\-]\s*\S/i.test(line);
+}
+
+function hasTrueFalseOptions(question: DraftQuestion) {
+  if (question.options.length !== 2) {
+    return false;
+  }
+
+  const normalizedOptions = question.options.map((option) => normalizeAnswerText(option.content));
+  return normalizedOptions.includes("dung") && normalizedOptions.includes("sai");
+}
+
+function normalizeAnswerText(value: string) {
+  return value
+    .trim()
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/đ/g, "d")
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim();
 }
 
 function appendText(current: string, value: string) {
@@ -199,4 +279,3 @@ function normalizeText(text: string) {
     .replace(/[“”]/g, '"')
     .replace(/[‘’]/g, "'");
 }
-
