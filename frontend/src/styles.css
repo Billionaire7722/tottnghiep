@@ -253,6 +253,18 @@ p {
   background: rgba(255, 250, 253, 0.86);
 }
 
+.danger-text-button {
+  background: rgba(255, 250, 253, 0.52);
+  color: var(--danger);
+  border: 1px solid rgba(180, 75, 95, 0.2);
+  padding-inline: 14px;
+}
+
+.danger-text-button:hover:not(:disabled) {
+  background: rgba(180, 75, 95, 0.1);
+  color: #96394c;
+}
+
 .brand-block {
   display: grid;
   justify-items: center;
@@ -266,8 +278,86 @@ p {
   gap: 12px;
 }
 
-.subject-picker {
+.subject-choice {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
   text-align: left;
+}
+
+.subject-choice legend {
+  padding: 0;
+  color: var(--muted);
+  font-size: 0.88rem;
+  font-weight: 900;
+}
+
+.subject-choice-options {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.subject-choice-card {
+  position: relative;
+  min-height: 46px;
+  display: grid;
+  place-items: center;
+  padding: 9px 10px;
+  border: 1px solid rgba(101, 65, 119, 0.16);
+  border-radius: 8px;
+  background: rgba(255, 250, 253, 0.64);
+  color: #654177;
+  font-size: 0.84rem;
+  font-weight: 900;
+  line-height: 1.2;
+  text-align: center;
+  cursor: pointer;
+  transition:
+    transform 160ms ease,
+    background 160ms ease,
+    border-color 160ms ease,
+    color 160ms ease,
+    box-shadow 160ms ease;
+}
+
+.subject-choice-card:hover {
+  transform: translateY(-1px);
+  background: rgba(255, 250, 253, 0.9);
+  border-color: rgba(101, 65, 119, 0.32);
+}
+
+.subject-choice-card.active {
+  background: #5f3b73;
+  border-color: #5f3b73;
+  color: white;
+  box-shadow: 0 10px 20px rgba(95, 59, 115, 0.18);
+}
+
+.subject-choice-card input {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.subject-choice-card:focus-within {
+  outline: 3px solid rgba(79, 140, 114, 0.24);
+  outline-offset: 2px;
+}
+
+.subject-choice-card span {
+  position: relative;
+  z-index: 1;
+  overflow-wrap: anywhere;
+}
+
+.subject-choice-compact .subject-choice-options,
+.start-actions .subject-choice-options {
+  grid-template-columns: 1fr;
 }
 
 .latest-score {
@@ -280,11 +370,23 @@ p {
   border-bottom: 1px solid rgba(36, 29, 44, 0.12);
 }
 
+.home-logout-button {
+  width: min(100%, 280px);
+  background: transparent;
+  color: var(--danger);
+  border: 1px solid rgba(180, 75, 95, 0.22);
+}
+
+.home-logout-button:hover:not(:disabled) {
+  background: rgba(180, 75, 95, 0.08);
+  color: #96394c;
+}
+
 .quiz-screen {
   min-height: calc(100% - 52px);
   display: grid;
-  grid-template-rows: auto minmax(140px, auto) 1fr auto;
-  gap: 22px;
+  grid-template-rows: auto minmax(140px, auto) 1fr auto auto;
+  gap: 16px;
   padding-top: 8px;
 }
 
@@ -357,15 +459,45 @@ p {
   transform: translateY(-1px);
 }
 
-.quiz-footer,
-.result-actions {
+.answer-feedback {
+  min-height: 42px;
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  place-items: center;
+  border-radius: 8px;
+  background: rgba(255, 250, 253, 0.5);
+  color: transparent;
+  border: 1px solid transparent;
+  font-weight: 900;
+  visibility: hidden;
+}
+
+.answer-feedback.correct,
+.answer-feedback.wrong {
+  visibility: visible;
+  color: white;
+  animation: feedbackIn 180ms ease both;
+}
+
+.answer-feedback.correct {
+  background: var(--success);
+  border-color: rgba(50, 120, 92, 0.18);
+}
+
+.answer-feedback.wrong {
+  background: var(--danger);
+  border-color: rgba(180, 75, 95, 0.18);
+}
+
+.quiz-footer {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
   gap: 10px;
 }
 
 .result-actions {
+  display: grid;
   grid-template-columns: 1fr 1fr 1fr;
+  gap: 10px;
 }
 
 .result-screen,
@@ -690,6 +822,44 @@ p {
   padding-inline: 12px;
 }
 
+.pagination-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  padding-top: 4px;
+}
+
+.pagination-pages {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+
+.page-button {
+  min-width: 40px;
+  min-height: 40px;
+  padding-inline: 10px;
+  background: rgba(255, 250, 253, 0.62);
+  color: #654177;
+  border: 1px solid rgba(101, 65, 119, 0.18);
+}
+
+.page-button.active {
+  background: #5f3b73;
+  color: white;
+  border-color: #5f3b73;
+}
+
+.pagination-ellipsis {
+  min-width: 28px;
+  color: var(--muted);
+  font-weight: 900;
+  text-align: center;
+}
+
 .account-table {
   display: grid;
   gap: 8px;
@@ -851,6 +1021,17 @@ p {
   to {
     opacity: 1;
     transform: translate(-50%, 0);
+  }
+}
+
+@keyframes feedbackIn {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
 }
 

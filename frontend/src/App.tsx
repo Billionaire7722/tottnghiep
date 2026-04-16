@@ -1,4 +1,4 @@
-import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
+import { FormEvent, useCallback, useEffect, useState } from "react";
 import { AdminWorkspace } from "./AdminWorkspace";
 import {
   HistoryScreen,
@@ -50,6 +50,7 @@ function App() {
   const [questions, setQuestions] = useState<Question[]>([]);
   const [questionIndex, setQuestionIndex] = useState(0);
   const [answers, setAnswers] = useState<Record<number, number>>({});
+  const [answerFeedback, setAnswerFeedback] = useState<{ questionId: number; isCorrect: boolean } | null>(null);
   const [quizBusy, setQuizBusy] = useState(false);
   const [result, setResult] = useState<QuizResult | null>(null);
   const [attempts, setAttempts] = useState<Attempt[]>([]);
@@ -88,6 +89,7 @@ function App() {
     setScreen("start");
     setResult(null);
     setQuestions([]);
+    setAnswerFeedback(null);
 
     if (message) {
       setNotice(message);
@@ -148,6 +150,15 @@ function App() {
     return () => window.clearTimeout(timer);
   }, [notice]);
 
+  useEffect(() => {
+    if (!answerFeedback) {
+      return undefined;
+    }
+
+    const timer = window.setTimeout(() => setAnswerFeedback(null), 1400);
+    return () => window.clearTimeout(timer);
+  }, [answerFeedback]);
+
   const loadAttempts = useCallback(async () => {
     try {
       const data = await authedRequest<{ attempts: Attempt[] }>("/api/results");
@@ -185,8 +196,6 @@ function App() {
     }
   }, [screen, loadAdminData]);
 
-  const answeredCount = useMemo(() => Object.keys(answers).length, [answers]);
-
   async function handleLogin(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setLoginBusy(true);
@@ -213,6 +222,10 @@ function App() {
   }
 
   async function logout() {
+    if (!window.confirm("Bạn có chắc muốn đăng xuất?")) {
+      return;
+    }
+
     if (auth?.token) {
       await apiRequest("/api/auth/logout", {
         method: "POST",
@@ -221,6 +234,16 @@ function App() {
     }
 
     clearAuth("Đã đăng xuất");
+  }
+
+  function returnToStartWithConfirm() {
+    if (window.confirm("Bạn có chắc muốn quay lại trang chủ? Bài làm hiện tại sẽ không được lưu.")) {
+      setScreen("start");
+      setQuestions([]);
+      setAnswers({});
+      setAnswerFeedback(null);
+      setQuestionIndex(0);
+    }
   }
 
   async function startQuiz() {
@@ -233,6 +256,7 @@ function App() {
       const usableQuestions = data.questions.filter((question) => question.options.length >= 2);
       setQuestions(usableQuestions);
       setAnswers({});
+      setAnswerFeedback(null);
       setQuestionIndex(0);
       setResult(null);
 
@@ -277,6 +301,34 @@ function App() {
       handleError(error);
     } finally {
       setQuizBusy(false);
+    }
+  }
+
+  async function selectAnswer(optionId: number) {
+    const question = questions[questionIndex];
+
+    if (!question) {
+      return;
+    }
+
+    setAnswers((current) => ({
+      ...current,
+      [question.id]: optionId
+    }));
+    setAnswerFeedback(null);
+
+    try {
+      const data = await authedRequest<{ isCorrect: boolean }>("/api/questions/check", {
+        method: "POST",
+        body: {
+          questionId: question.id,
+          optionId
+        }
+      });
+
+      setAnswerFeedback({ questionId: question.id, isCorrect: data.isCorrect });
+    } catch (error) {
+      handleError(error);
     }
   }
 
@@ -494,7 +546,18 @@ function App() {
         <section className={screen === "admin" ? "workspace workspace-wide" : "workspace"}>
           {screen !== "admin" ? (
             <PhoneShell>
-              <TopBar user={auth.user} onLogout={logout} />
+              <TopBar
+                user={auth.user}
+                action={
+                  screen === "quiz"
+                    ? {
+                        label: "Quay lại",
+                        onClick: returnToStartWithConfirm,
+                        tone: "danger"
+                      }
+                    : undefined
+                }
+              />
               {screen === "start" && (
                 <StartScreen
                   user={auth.user}
@@ -508,6 +571,7 @@ function App() {
                     setScreen("history");
                   }}
                   onAdmin={() => setScreen("admin")}
+                  onLogout={logout}
                 />
               )}
               {screen === "quiz" && questions[questionIndex] && (
@@ -516,28 +580,25 @@ function App() {
                   index={questionIndex}
                   total={questions.length}
                   selectedOptionId={answers[questions[questionIndex].id]}
-                  answeredCount={answeredCount}
-                  busy={quizBusy}
-                  onSelect={(optionId) =>
-                    setAnswers((current) => ({
-                      ...current,
-                      [questions[questionIndex].id]: optionId
-                    }))
+                  feedback={
+                    answerFeedback?.questionId === questions[questionIndex].id
+                      ? answerFeedback.isCorrect
+                        ? "correct"
+                        : "wrong"
+                      : null
                   }
-                  onBack={() => setQuestionIndex((current) => Math.max(0, current - 1))}
+                  busy={quizBusy}
+                  onSelect={(optionId) => void selectAnswer(optionId)}
+                  onBack={() => {
+                    setAnswerFeedback(null);
+                    setQuestionIndex((current) => Math.max(0, current - 1));
+                  }}
                   onNext={() => {
+                    setAnswerFeedback(null);
                     if (questionIndex === questions.length - 1) {
                       void submitQuiz();
                     } else {
                       setQuestionIndex((current) => Math.min(questions.length - 1, current + 1));
-                    }
-                  }}
-                  onHome={() => {
-                    if (window.confirm("Bạn có chắc muốn quay lại trang chủ? Bài làm hiện tại sẽ không được lưu.")) {
-                      setScreen("start");
-                      setQuestions([]);
-                      setAnswers({});
-                      setQuestionIndex(0);
                     }
                   }}
                 />

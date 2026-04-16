@@ -68,7 +68,13 @@ export const answerSubmitSchema = z.object({
     .min(1, "Cần chọn ít nhất một đáp án")
 });
 
+export const answerCheckSchema = z.object({
+  questionId: z.coerce.number().int().positive(),
+  optionId: z.coerce.number().int().positive()
+});
+
 export type QuestionInput = z.infer<typeof questionSchema>;
 export type AccountCreateInput = z.infer<typeof accountCreateSchema>;
 export type AccountUpdateInput = z.infer<typeof accountUpdateSchema>;
 export type AnswerSubmitInput = z.infer<typeof answerSubmitSchema>;
+export type AnswerCheckInput = z.infer<typeof answerCheckSchema>;

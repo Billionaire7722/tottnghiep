@@ -1,5 +1,6 @@
-import type { Dispatch, FormEvent, SetStateAction } from "react";
+import { useEffect, useMemo, useState, type Dispatch, type FormEvent, type SetStateAction } from "react";
 import type { Account, Question, User } from "./api";
+import { SubjectPicker } from "./SubjectPicker";
 import {
   AccountForm,
   AdminTab,
@@ -8,9 +9,10 @@ import {
   emptyAccountForm,
   emptyQuestionForm,
   subjectLabel,
-  subjectOptions,
   type SubjectCode
 } from "./uiTypes";
+
+const questionsPerPage = 5;
 
 type AdminWorkspaceProps = {
   tab: AdminTab;
@@ -102,6 +104,18 @@ function QuestionAdmin({
   onRemoveImportedQuestion,
   onSaveImportedQuestions
 }: AdminWorkspaceProps) {
+  const [questionPage, setQuestionPage] = useState(1);
+  const totalQuestionPages = Math.max(1, Math.ceil(questions.length / questionsPerPage));
+  const paginatedQuestions = useMemo(() => {
+    const start = (questionPage - 1) * questionsPerPage;
+    return questions.slice(start, start + questionsPerPage);
+  }, [questionPage, questions]);
+  const paginationItems = useMemo(() => getPaginationItems(questionPage, totalQuestionPages), [questionPage, totalQuestionPages]);
+
+  useEffect(() => {
+    setQuestionPage((current) => Math.min(Math.max(1, current), totalQuestionPages));
+  }, [totalQuestionPages]);
+
   return (
     <div className="admin-grid">
       <div className="admin-left-column">
@@ -109,16 +123,7 @@ function QuestionAdmin({
           <div className="panel-title">
             <span>Nhập câu hỏi từ file</span>
           </div>
-          <label>
-            Môn áp dụng cho file
-            <select value={importSubject} onChange={(event) => onImportSubjectChange(event.target.value as SubjectCode)}>
-              {subjectOptions.map((subject) => (
-                <option key={subject.value} value={subject.value}>
-                  {subject.label}
-                </option>
-              ))}
-            </select>
-          </label>
+          <SubjectPicker value={importSubject} onChange={onImportSubjectChange} label="Môn áp dụng cho file" compact />
           <label>
             Chọn file .txt, .md, .csv hoặc .docx
             <input
@@ -163,21 +168,12 @@ function QuestionAdmin({
               </button>
             )}
           </div>
-          <label>
-            Môn học
-            <select
-              value={questionForm.subject}
-              onChange={(event) =>
-                setQuestionForm((current) => ({ ...current, subject: event.target.value as SubjectCode }))
-              }
-            >
-              {subjectOptions.map((subject) => (
-                <option key={subject.value} value={subject.value}>
-                  {subject.label}
-                </option>
-              ))}
-            </select>
-          </label>
+          <SubjectPicker
+            value={questionForm.subject}
+            onChange={(subject) => setQuestionForm((current) => ({ ...current, subject }))}
+            label="Môn học"
+            compact
+          />
           <label>
             Nội dung câu hỏi
             <textarea
@@ -283,30 +279,86 @@ function QuestionAdmin({
         )}
         <div className="panel-title">
           <span>Danh sách câu hỏi</span>
-          <small>{questions.length} câu</small>
+          <small>
+            {questions.length} câu · 5 câu/trang
+          </small>
         </div>
-        <div className="admin-list">
-          {questions.map((question) => (
-            <article className="admin-question-item" key={question.id}>
-              <div>
-                <div className="question-badges">
-                  <span className={question.isActive ? "status active" : "status"}>{question.isActive ? "Hiện" : "Ẩn"}</span>
-                  <span className="status subject-status">{subjectLabel(question.subject)}</span>
+        {questions.length === 0 ? (
+          <p className="empty-text">Chưa có câu hỏi nào.</p>
+        ) : (
+          <div className="admin-list">
+            {paginatedQuestions.map((question) => (
+              <article className="admin-question-item" key={question.id}>
+                <div>
+                  <div className="question-badges">
+                    <span className={question.isActive ? "status active" : "status"}>{question.isActive ? "Hiện" : "Ẩn"}</span>
+                    <span className="status subject-status">{subjectLabel(question.subject)}</span>
+                  </div>
+                  <h3>{question.content}</h3>
+                  <p>Đáp án đúng: {question.options.find((option) => option.isCorrect)?.content ?? "Chưa có"}</p>
                 </div>
-                <h3>{question.content}</h3>
-                <p>Đáp án đúng: {question.options.find((option) => option.isCorrect)?.content ?? "Chưa có"}</p>
-              </div>
-              <div className="row-actions">
-                <button className="secondary-button" type="button" onClick={() => onEditQuestion(question)}>
-                  Sửa
-                </button>
-                <button className="ghost-button" type="button" onClick={() => onDeleteQuestion(question.id)}>
-                  Xóa
-                </button>
-              </div>
-            </article>
-          ))}
-        </div>
+                <div className="row-actions">
+                  <button className="secondary-button" type="button" onClick={() => onEditQuestion(question)}>
+                    Sửa
+                  </button>
+                  <button className="ghost-button" type="button" onClick={() => onDeleteQuestion(question.id)}>
+                    Xóa
+                  </button>
+                </div>
+              </article>
+            ))}
+          </div>
+        )}
+        {questions.length > questionsPerPage && (
+          <nav className="pagination-bar" aria-label="Phân trang danh sách câu hỏi">
+            <button className="ghost-button compact" type="button" disabled={questionPage === 1} onClick={() => setQuestionPage(1)}>
+              Trang đầu
+            </button>
+            <button
+              className="ghost-button compact"
+              type="button"
+              disabled={questionPage === 1}
+              onClick={() => setQuestionPage((current) => Math.max(1, current - 1))}
+            >
+              Trước
+            </button>
+            <div className="pagination-pages">
+              {paginationItems.map((item, index) =>
+                item === "ellipsis" ? (
+                  <span className="pagination-ellipsis" key={`ellipsis-${index}`}>
+                    ...
+                  </span>
+                ) : (
+                  <button
+                    className={item === questionPage ? "page-button active" : "page-button"}
+                    type="button"
+                    key={item}
+                    aria-current={item === questionPage ? "page" : undefined}
+                    onClick={() => setQuestionPage(item)}
+                  >
+                    {item}
+                  </button>
+                )
+              )}
+            </div>
+            <button
+              className="ghost-button compact"
+              type="button"
+              disabled={questionPage === totalQuestionPages}
+              onClick={() => setQuestionPage((current) => Math.min(totalQuestionPages, current + 1))}
+            >
+              Sau
+            </button>
+            <button
+              className="ghost-button compact"
+              type="button"
+              disabled={questionPage === totalQuestionPages}
+              onClick={() => setQuestionPage(totalQuestionPages)}
+            >
+              Trang cuối
+            </button>
+          </nav>
+        )}
       </section>
     </div>
   );
@@ -338,16 +390,12 @@ function ImportedQuestionEditor({
           ))}
         </div>
       )}
-      <label>
-        Môn học
-        <select value={question.subject} onChange={(event) => onChange({ ...question, subject: event.target.value as SubjectCode })}>
-          {subjectOptions.map((subject) => (
-            <option key={subject.value} value={subject.value}>
-              {subject.label}
-            </option>
-          ))}
-        </select>
-      </label>
+      <SubjectPicker
+        value={question.subject}
+        onChange={(subject) => onChange({ ...question, subject })}
+        label="Môn học"
+        compact
+      />
       <label>
         Nội dung câu hỏi
         <textarea value={question.content} rows={3} onChange={(event) => onChange({ ...question, content: event.target.value })} />
@@ -539,6 +587,30 @@ function ensureOneCorrect(options: QuestionForm["options"]) {
   }
 
   return options.map((option, index) => ({ ...option, isCorrect: index === 0 }));
+}
+
+function getPaginationItems(currentPage: number, totalPages: number) {
+  if (totalPages <= 7) {
+    return Array.from({ length: totalPages }, (_, index) => index + 1);
+  }
+
+  const visiblePages = new Set([1, totalPages, currentPage, currentPage - 1, currentPage + 1]);
+  const pages = [...visiblePages]
+    .filter((page) => page >= 1 && page <= totalPages)
+    .sort((first, second) => first - second);
+  const items: Array<number | "ellipsis"> = [];
+
+  for (const page of pages) {
+    const previous = items[items.length - 1];
+
+    if (typeof previous === "number" && page - previous > 1) {
+      items.push("ellipsis");
+    }
+
+    items.push(page);
+  }
+
+  return items;
 }
 
 function removeOption(index: number, setQuestionForm: Dispatch<SetStateAction<QuestionForm>>) {

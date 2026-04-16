@@ -1,7 +1,8 @@
 import type { FormEvent, ReactNode } from "react";
 import cnxhMark from "./assets/cnxh-mark.svg";
 import type { Attempt, Question, QuizResult, User } from "./api";
-import { formatDate, subjectOptions, type SubjectCode } from "./uiTypes";
+import { SubjectPicker } from "./SubjectPicker";
+import { formatDate, type SubjectCode } from "./uiTypes";
 
 export function PhoneShell({ children }: { children: ReactNode }) {
   return (
@@ -57,16 +58,24 @@ export function LoginScreen({
   );
 }
 
-export function TopBar({ user, onLogout }: { user: User; onLogout: () => void }) {
+type TopBarAction = {
+  label: string;
+  onClick: () => void;
+  tone?: "danger" | "default";
+};
+
+export function TopBar({ user, action }: { user: User; action?: TopBarAction }) {
   return (
     <header className="top-bar">
       <div>
         <strong>{user.displayName}</strong>
         <span>{user.role === "admin" ? "Quản trị" : "Người học"}</span>
       </div>
-      <button className="ghost-button" type="button" onClick={onLogout}>
-        Đăng xuất
-      </button>
+      {action && (
+        <button className={action.tone === "danger" ? "danger-text-button" : "ghost-button"} type="button" onClick={action.onClick}>
+          {action.label}
+        </button>
+      )}
     </header>
   );
 }
@@ -79,7 +88,8 @@ export function StartScreen({
   onSubjectChange,
   onStart,
   onHistory,
-  onAdmin
+  onAdmin,
+  onLogout
 }: {
   user: User;
   attempts: Attempt[];
@@ -89,6 +99,7 @@ export function StartScreen({
   onStart: () => void;
   onHistory: () => void;
   onAdmin: () => void;
+  onLogout: () => void;
 }) {
   const latest = attempts[0];
 
@@ -100,16 +111,7 @@ export function StartScreen({
         <p>Sẵn sàng thi tốt nghiệp</p>
       </div>
       <div className="start-actions">
-        <label className="subject-picker">
-          Chọn môn thi
-          <select value={selectedSubject} onChange={(event) => onSubjectChange(event.target.value as SubjectCode)}>
-            {subjectOptions.map((subject) => (
-              <option key={subject.value} value={subject.value}>
-                {subject.label}
-              </option>
-            ))}
-          </select>
-        </label>
+        <SubjectPicker value={selectedSubject} onChange={onSubjectChange} label="Chọn môn thi" compact />
         <button type="button" onClick={onStart} disabled={busy}>
           {busy ? "Đang tải câu hỏi" : "Bắt đầu"}
         </button>
@@ -130,6 +132,9 @@ export function StartScreen({
           </strong>
         </div>
       )}
+      <button className="home-logout-button" type="button" onClick={onLogout}>
+        Đăng xuất
+      </button>
     </div>
   );
 }
@@ -139,31 +144,28 @@ export function QuizScreen({
   index,
   total,
   selectedOptionId,
-  answeredCount,
+  feedback,
   busy,
   onSelect,
   onBack,
-  onNext,
-  onHome
+  onNext
 }: {
   question: Question;
   index: number;
   total: number;
   selectedOptionId?: number;
-  answeredCount: number;
+  feedback: "correct" | "wrong" | null;
   busy: boolean;
   onSelect: (optionId: number) => void;
   onBack: () => void;
   onNext: () => void;
-  onHome: () => void;
 }) {
   return (
     <div className="quiz-screen">
       <div className="quiz-progress">
-        <span>{String(index + 1).padStart(2, "0")}</span>
-        <small>
-          {answeredCount}/{total} câu
-        </small>
+        <span>
+          Câu {index + 1}/{total}
+        </span>
       </div>
       <section className="question-bubble">
         <h2>{question.content}</h2>
@@ -181,10 +183,10 @@ export function QuizScreen({
           </button>
         ))}
       </div>
+      <div className={feedback ? `answer-feedback ${feedback}` : "answer-feedback"} role="status" aria-live="polite">
+        {feedback === "correct" ? "Chính xác" : feedback === "wrong" ? "Chưa đúng" : ""}
+      </div>
       <footer className="quiz-footer">
-        <button className="ghost-button" type="button" onClick={onHome} disabled={busy}>
-          Quay lại
-        </button>
         <button className="secondary-button" type="button" onClick={onBack} disabled={index === 0 || busy}>
           Trước
         </button>
