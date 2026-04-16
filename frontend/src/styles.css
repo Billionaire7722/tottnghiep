@@ -186,6 +186,14 @@ p {
   text-align: center;
 }
 
+.start-screen {
+  min-height: calc(100% - 58px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+}
+
 .login-screen h1,
 .brand-block h1 {
   color: #8c62a6;
@@ -359,7 +367,9 @@ p {
 
 .app-credit {
   width: min(100%, 280px);
+  margin-top: auto;
   padding-top: 2px;
+  padding-bottom: 2px;
   color: rgba(101, 65, 119, 0.74);
   font-size: 0.78rem;
   font-weight: 900;
