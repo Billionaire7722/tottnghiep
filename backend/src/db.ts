@@ -15,12 +15,30 @@ const fallbackDatabaseUrl = "postgres://cnxh:cnxh_password@localhost:5432/cnxh_d
 export const pool =
   globalThis.__cnxhPool ??
   new Pool({
-    connectionString: process.env.DATABASE_URL ?? fallbackDatabaseUrl,
+    ...databaseConfig(),
     max: 10
   });
 
 if (!globalThis.__cnxhPool) {
   globalThis.__cnxhPool = pool;
+}
+
+function databaseConfig() {
+  if (process.env.DATABASE_URL) {
+    return { connectionString: process.env.DATABASE_URL };
+  }
+
+  if (process.env.DB_HOST) {
+    return {
+      host: process.env.DB_HOST,
+      port: Number(process.env.DB_PORT ?? 5432),
+      user: process.env.DB_USER,
+      password: process.env.DB_PASSWORD,
+      database: process.env.DB_NAME
+    };
+  }
+
+  return { connectionString: fallbackDatabaseUrl };
 }
 
 export async function ensureDatabase() {
@@ -305,4 +323,3 @@ async function seedQuestions() {
     client.release();
   }
 }
-
