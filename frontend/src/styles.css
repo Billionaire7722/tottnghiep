@@ -552,8 +552,31 @@ p {
 }
 
 .answer-option.selected {
-  background: #4f8c72;
+  background: #8f62aa;
   transform: translateY(-1px);
+}
+
+.answer-option.correct {
+  background: var(--success);
+  transform: translateY(-1px);
+}
+
+.answer-option.wrong {
+  background: var(--danger);
+  transform: translateY(-1px);
+}
+
+.answer-option.correct span {
+  color: var(--success);
+}
+
+.answer-option.wrong span {
+  color: var(--danger);
+}
+
+.answer-option:disabled {
+  opacity: 1;
+  cursor: default;
 }
 
 .answer-feedback {

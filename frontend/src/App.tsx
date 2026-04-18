@@ -1,4 +1,4 @@
-import { FormEvent, useCallback, useEffect, useState } from "react";
+import { FormEvent, useCallback, useEffect, useRef, useState } from "react";
 import { AdminWorkspace } from "./AdminWorkspace";
 import {
   HistoryScreen,
@@ -35,6 +35,11 @@ type AuthState = {
 };
 
 type ImportedQuestionDraft = Omit<ImportedQuestionForm, "subject">;
+type CheckedAnswerState = {
+  selectedOptionId: number;
+  correctOptionId: number;
+  isCorrect: boolean;
+};
 
 const tokenKey = "cnxh_token";
 const deviceKey = "cnxh_device_id";
@@ -51,11 +56,14 @@ function App() {
   const [questions, setQuestions] = useState<Question[]>([]);
   const [questionIndex, setQuestionIndex] = useState(0);
   const [answers, setAnswers] = useState<Record<number, number>>({});
+  const [checkedAnswers, setCheckedAnswers] = useState<Record<number, CheckedAnswerState>>({});
   const [answerFeedback, setAnswerFeedback] = useState<{ questionId: number; isCorrect: boolean } | null>(null);
+  const [checkingQuestionId, setCheckingQuestionId] = useState<number | null>(null);
   const [quizBusy, setQuizBusy] = useState(false);
   const [result, setResult] = useState<QuizResult | null>(null);
   const [attempts, setAttempts] = useState<Attempt[]>([]);
   const [selectedSubject, setSelectedSubject] = useState<SubjectCode>("dich_te");
+  const questionLocksRef = useRef<Record<number, boolean>>({});
 
   const [adminTab, setAdminTab] = useState<AdminTab>("questions");
   const [adminQuestions, setAdminQuestions] = useState<Question[]>([]);
@@ -94,7 +102,11 @@ function App() {
     setScreen("start");
     setResult(null);
     setQuestions([]);
+    setAnswers({});
+    setCheckedAnswers({});
     setAnswerFeedback(null);
+    setCheckingQuestionId(null);
+    questionLocksRef.current = {};
 
     if (message) {
       setNotice(message);
@@ -253,8 +265,11 @@ function App() {
       setScreen("start");
       setQuestions([]);
       setAnswers({});
+      setCheckedAnswers({});
       setAnswerFeedback(null);
+      setCheckingQuestionId(null);
       setQuestionIndex(0);
+      questionLocksRef.current = {};
     }
   }
 
@@ -268,9 +283,12 @@ function App() {
       const usableQuestions = data.questions.filter((question) => question.options.length >= 2);
       setQuestions(usableQuestions);
       setAnswers({});
+      setCheckedAnswers({});
       setAnswerFeedback(null);
+      setCheckingQuestionId(null);
       setQuestionIndex(0);
       setResult(null);
+      questionLocksRef.current = {};
 
       if (usableQuestions.length === 0) {
         setNotice("Chưa có câu hỏi khả dụng cho môn đã chọn");
@@ -319,10 +337,12 @@ function App() {
   async function selectAnswer(optionId: number) {
     const question = questions[questionIndex];
 
-    if (!question) {
+    if (!question || checkedAnswers[question.id] || questionLocksRef.current[question.id]) {
       return;
     }
 
+    questionLocksRef.current[question.id] = true;
+    setCheckingQuestionId(question.id);
     setAnswers((current) => ({
       ...current,
       [question.id]: optionId
@@ -330,7 +350,7 @@ function App() {
     setAnswerFeedback(null);
 
     try {
-      const data = await authedRequest<{ isCorrect: boolean }>("/api/questions/check", {
+      const data = await authedRequest<{ isCorrect: boolean; correctOptionId: number }>("/api/questions/check", {
         method: "POST",
         body: {
           questionId: question.id,
@@ -338,9 +358,25 @@ function App() {
         }
       });
 
+      setCheckedAnswers((current) => ({
+        ...current,
+        [question.id]: {
+          selectedOptionId: optionId,
+          correctOptionId: data.correctOptionId,
+          isCorrect: data.isCorrect
+        }
+      }));
       setAnswerFeedback({ questionId: question.id, isCorrect: data.isCorrect });
     } catch (error) {
+      setAnswers((current) => {
+        const next = { ...current };
+        delete next[question.id];
+        return next;
+      });
       handleError(error);
+    } finally {
+      delete questionLocksRef.current[question.id];
+      setCheckingQuestionId((current) => (current === question.id ? null : current));
     }
   }
 
@@ -650,6 +686,7 @@ function App() {
                   index={questionIndex}
                   total={questions.length}
                   selectedOptionId={answers[questions[questionIndex].id]}
+                  checkedAnswer={checkedAnswers[questions[questionIndex].id]}
                   feedback={
                     answerFeedback?.questionId === questions[questionIndex].id
                       ? answerFeedback.isCorrect
@@ -657,7 +694,7 @@ function App() {
                         : "wrong"
                       : null
                   }
-                  busy={quizBusy}
+                  busy={quizBusy || checkingQuestionId === questions[questionIndex].id}
                   onSelect={(optionId) => void selectAnswer(optionId)}
                   onBack={() => {
                     setAnswerFeedback(null);

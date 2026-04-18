@@ -146,6 +146,7 @@ export function QuizScreen({
   index,
   total,
   selectedOptionId,
+  checkedAnswer,
   feedback,
   busy,
   onSelect,
@@ -156,12 +157,35 @@ export function QuizScreen({
   index: number;
   total: number;
   selectedOptionId?: number;
+  checkedAnswer?: {
+    selectedOptionId: number;
+    correctOptionId: number;
+    isCorrect: boolean;
+  };
   feedback: "correct" | "wrong" | null;
   busy: boolean;
   onSelect: (optionId: number) => void;
   onBack: () => void;
   onNext: () => void;
 }) {
+  const isAnswered = Boolean(checkedAnswer);
+
+  function getOptionState(optionId: number) {
+    if (checkedAnswer) {
+      if (optionId === checkedAnswer.correctOptionId) {
+        return "correct";
+      }
+
+      if (!checkedAnswer.isCorrect && optionId === checkedAnswer.selectedOptionId) {
+        return "wrong";
+      }
+
+      return "";
+    }
+
+    return selectedOptionId === optionId ? "selected" : "";
+  }
+
   return (
     <div className="quiz-screen">
       <div className="quiz-progress">
@@ -173,17 +197,23 @@ export function QuizScreen({
         <RichQuestionContent content={question.content} />
       </section>
       <div className="answer-list">
-        {question.options.map((option) => (
-          <button
-            className={selectedOptionId === option.id ? "answer-option selected" : "answer-option"}
-            key={option.id}
-            type="button"
-            onClick={() => onSelect(option.id)}
-          >
-            <span>{option.label}</span>
-            <strong>{option.content}</strong>
-          </button>
-        ))}
+        {question.options.map((option) => {
+          const optionState = getOptionState(option.id);
+
+          return (
+            <button
+              className={optionState ? `answer-option ${optionState}` : "answer-option"}
+              key={option.id}
+              type="button"
+              onClick={() => onSelect(option.id)}
+              disabled={busy || isAnswered}
+              aria-pressed={selectedOptionId === option.id}
+            >
+              <span>{option.label}</span>
+              <strong>{option.content}</strong>
+            </button>
+          );
+        })}
       </div>
       <div className={feedback ? `answer-feedback ${feedback}` : "answer-feedback"} role="status" aria-live="polite">
         {feedback === "correct" ? "Chính xác" : feedback === "wrong" ? "Chưa đúng" : ""}

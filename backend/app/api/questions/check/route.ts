@@ -7,6 +7,7 @@ export const runtime = "nodejs";
 
 type CheckedAnswerRow = {
   isCorrect: boolean;
+  correctOptionId: number;
 };
 
 export async function OPTIONS(request: Request) {
@@ -19,9 +20,12 @@ export async function POST(request: Request) {
     const body = answerCheckSchema.parse(await readJson(request));
     const result = await dbQuery<CheckedAnswerRow>(
       `
-        SELECT o.is_correct AS "isCorrect"
+        SELECT
+          o.is_correct AS "isCorrect",
+          correct.id AS "correctOptionId"
         FROM questions q
         JOIN options o ON o.question_id = q.id
+        JOIN options correct ON correct.question_id = q.id AND correct.is_correct = true
         WHERE q.id = $1
           AND o.id = $2
           AND q.is_active = true
@@ -35,7 +39,7 @@ export async function POST(request: Request) {
       throw new ApiError(400, "INVALID_ANSWER", "Đáp án gửi lên không hợp lệ");
     }
 
-    return jsonResponse({ isCorrect: answer.isCorrect }, request);
+    return jsonResponse({ isCorrect: answer.isCorrect, correctOptionId: answer.correctOptionId }, request);
   } catch (error) {
     return errorResponse(error, request);
   }
