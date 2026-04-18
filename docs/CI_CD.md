@@ -33,7 +33,7 @@ Tạo file `$DEPLOY_PATH/.env.production` trên VPS, không commit file này:
 
 ```dotenv
 APP_PORT=8088
-PUBLIC_ORIGIN=http://YOUR_VPS_IP:8088
+PUBLIC_ORIGIN=https://cnxh.space
 POSTGRES_USER=cnxh
 POSTGRES_PASSWORD=CHANGE_ME
 POSTGRES_DB=cnxh_db
@@ -45,3 +45,4 @@ ADMIN_DISPLAY_NAME=Quản trị viên
 
 `APP_PORT` nên chọn cổng chưa được 3 dự án khác dùng. PostgreSQL không publish ra ngoài, chỉ frontend public port được mở.
 
+Production hiện tại dùng nginx shared trên VPS để reverse proxy domain `cnxh.space` và `www.cnxh.space` về `127.0.0.1:8088`. Xem thêm ghi chú vận hành tại `docs/DEPLOYMENT.md`.
