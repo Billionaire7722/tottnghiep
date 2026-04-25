@@ -3,11 +3,12 @@ import { AdminWorkspace } from "./AdminWorkspace";
 import {
   HistoryScreen,
   LoginScreen,
+  ModeScreen,
   PhoneShell,
   QuizScreen,
   ResultScreen,
   StartScreen,
-  TopBar
+  StudyScreen
 } from "./StudentScreens";
 import {
   Account,
@@ -26,6 +27,7 @@ import {
   Screen,
   emptyAccountForm,
   emptyQuestionForm,
+  subjectOptions,
   type SubjectCode
 } from "./uiTypes";
 
@@ -40,9 +42,12 @@ type CheckedAnswerState = {
   correctOptionId: number;
   isCorrect: boolean;
 };
+type SubjectCountMap = Partial<Record<SubjectCode, number>>;
+type StudyProgressMap = Partial<Record<SubjectCode, number[]>>;
 
 const tokenKey = "cnxh_token";
 const deviceKey = "cnxh_device_id";
+const studyProgressKey = "cnxh_study_progress";
 
 function App() {
   const [auth, setAuth] = useState<AuthState | null>(null);
@@ -63,6 +68,10 @@ function App() {
   const [result, setResult] = useState<QuizResult | null>(null);
   const [attempts, setAttempts] = useState<Attempt[]>([]);
   const [selectedSubject, setSelectedSubject] = useState<SubjectCode>("dich_te");
+  const [subjectCounts, setSubjectCounts] = useState<SubjectCountMap>({});
+  const [studyQuestions, setStudyQuestions] = useState<Question[]>([]);
+  const [studyBusy, setStudyBusy] = useState(false);
+  const [studyProgress, setStudyProgress] = useState<StudyProgressMap>({});
   const questionLocksRef = useRef<Record<number, boolean>>({});
 
   const [adminTab, setAdminTab] = useState<AdminTab>("questions");
@@ -106,6 +115,9 @@ function App() {
     setCheckedAnswers({});
     setAnswerFeedback(null);
     setCheckingQuestionId(null);
+    setStudyQuestions([]);
+    setStudyProgress({});
+    setSubjectCounts({});
     questionLocksRef.current = {};
 
     if (message) {
@@ -176,6 +188,10 @@ function App() {
     return () => window.clearTimeout(timer);
   }, [answerFeedback]);
 
+  useEffect(() => {
+    document.querySelector(".phone-screen")?.scrollTo({ top: 0, left: 0 });
+  }, [screen, questionIndex]);
+
   const loadAttempts = useCallback(async () => {
     try {
       const data = await authedRequest<{ attempts: Attempt[] }>("/api/results");
@@ -184,6 +200,42 @@ function App() {
       handleError(error);
     }
   }, [authedRequest, handleError]);
+
+  const loadSubjectCounts = useCallback(async () => {
+    try {
+      const entries = await Promise.all(
+        subjectOptions.map(async (subject) => {
+          const data = await authedRequest<{ questions: Question[] }>(
+            `/api/questions?subject=${encodeURIComponent(subject.value)}`
+          );
+
+          return [subject.value, data.questions.filter((question) => question.options.length >= 2).length] as const;
+        })
+      );
+
+      setSubjectCounts(Object.fromEntries(entries) as SubjectCountMap);
+    } catch (error) {
+      handleError(error);
+    }
+  }, [authedRequest, handleError]);
+
+  useEffect(() => {
+    if (!auth?.token) {
+      return;
+    }
+
+    void loadAttempts();
+    void loadSubjectCounts();
+  }, [auth?.token, loadAttempts, loadSubjectCounts]);
+
+  useEffect(() => {
+    if (!auth?.user.id) {
+      setStudyProgress({});
+      return;
+    }
+
+    setStudyProgress(readStudyProgress(auth.user.id));
+  }, [auth?.user.id]);
 
   const loadAdminData = useCallback(async () => {
     const canManageQuestions = auth?.user.role === "admin" || auth?.user.role === "editor";
@@ -261,8 +313,8 @@ function App() {
   }
 
   function returnToStartWithConfirm() {
-    if (window.confirm("Bạn có chắc muốn quay lại trang chủ? Bài làm hiện tại sẽ không được lưu.")) {
-      setScreen("start");
+    if (window.confirm("Bạn có chắc muốn thoát bài kiểm tra? Bài làm hiện tại sẽ không được lưu.")) {
+      setScreen("mode");
       setQuestions([]);
       setAnswers({});
       setCheckedAnswers({});
@@ -289,6 +341,10 @@ function App() {
       setQuestionIndex(0);
       setResult(null);
       questionLocksRef.current = {};
+      setSubjectCounts((current) => ({
+        ...current,
+        [selectedSubject]: usableQuestions.length
+      }));
 
       if (usableQuestions.length === 0) {
         setNotice("Chưa có câu hỏi khả dụng cho môn đã chọn");
@@ -301,6 +357,69 @@ function App() {
     } finally {
       setQuizBusy(false);
     }
+  }
+
+  async function startStudy() {
+    setStudyBusy(true);
+
+    try {
+      const data = await authedRequest<{ questions: Question[] }>(
+        `/api/questions?subject=${encodeURIComponent(selectedSubject)}&mode=study`
+      );
+      const usableQuestions = data.questions.filter((question) => question.options.length >= 2);
+      setStudyQuestions(usableQuestions);
+
+      if (usableQuestions.length === 0) {
+        setNotice("Chưa có câu hỏi khả dụng cho môn đã chọn");
+        return;
+      }
+
+      setSubjectCounts((current) => ({
+        ...current,
+        [selectedSubject]: usableQuestions.length
+      }));
+      setScreen("study");
+    } catch (error) {
+      handleError(error);
+    } finally {
+      setStudyBusy(false);
+    }
+  }
+
+  function openSubject(subject: SubjectCode) {
+    setSelectedSubject(subject);
+    setScreen("mode");
+  }
+
+  function goHome() {
+    setScreen("start");
+    setAnswerFeedback(null);
+  }
+
+  function openHistory() {
+    void loadAttempts();
+    setScreen("history");
+  }
+
+  function markQuestionStudied(questionId: number) {
+    if (!auth?.user.id) {
+      return;
+    }
+
+    setStudyProgress((current) => {
+      const existing = current[selectedSubject] ?? [];
+
+      if (existing.includes(questionId)) {
+        return current;
+      }
+
+      const next = {
+        ...current,
+        [selectedSubject]: [...existing, questionId]
+      };
+      localStorage.setItem(`${studyProgressKey}:${auth.user.id}`, JSON.stringify(next));
+      return next;
+    });
   }
 
   async function submitQuiz() {
@@ -646,30 +765,16 @@ function App() {
         <section className={screen === "admin" ? "workspace workspace-wide" : "workspace"}>
           {screen !== "admin" ? (
             <PhoneShell>
-              <TopBar
-                user={auth.user}
-                action={
-                  screen === "quiz"
-                    ? {
-                        label: "Quay lại",
-                        onClick: returnToStartWithConfirm,
-                        tone: "danger"
-                      }
-                    : undefined
-                }
-              />
               {screen === "start" && (
                 <StartScreen
                   user={auth.user}
                   attempts={attempts}
-                  selectedSubject={selectedSubject}
-                  busy={quizBusy}
-                  onSubjectChange={setSelectedSubject}
-                  onStart={startQuiz}
-                  onHistory={() => {
-                    void loadAttempts();
-                    setScreen("history");
-                  }}
+                  subjectCounts={subjectCounts}
+                  studiedCounts={getStudiedCounts(studyProgress)}
+                  onSubjectSelect={openSubject}
+                  onStudyTab={() => setScreen("mode")}
+                  onTestTab={() => setScreen("mode")}
+                  onHistory={openHistory}
                   onAdmin={() => {
                     if (auth.user.role === "editor") {
                       setAdminTab("questions");
@@ -678,6 +783,33 @@ function App() {
                     setScreen("admin");
                   }}
                   onLogout={logout}
+                />
+              )}
+              {screen === "mode" && (
+                <ModeScreen
+                  subject={selectedSubject}
+                  totalQuestions={subjectCounts[selectedSubject] ?? 0}
+                  studiedQuestions={studyProgress[selectedSubject]?.length ?? 0}
+                  studyBusy={studyBusy}
+                  quizBusy={quizBusy}
+                  onBack={goHome}
+                  onStudy={() => void startStudy()}
+                  onStartQuiz={() => void startQuiz()}
+                  onSubjectSelect={openSubject}
+                  onHistory={openHistory}
+                  onHome={goHome}
+                />
+              )}
+              {screen === "study" && (
+                <StudyScreen
+                  subject={selectedSubject}
+                  questions={studyQuestions}
+                  studiedQuestionIds={new Set(studyProgress[selectedSubject] ?? [])}
+                  onMarkStudied={markQuestionStudied}
+                  onBack={() => setScreen("mode")}
+                  onStartQuiz={() => void startQuiz()}
+                  onHome={goHome}
+                  onHistory={openHistory}
                 />
               )}
               {screen === "quiz" && questions[questionIndex] && (
@@ -700,6 +832,7 @@ function App() {
                     setAnswerFeedback(null);
                     setQuestionIndex((current) => Math.max(0, current - 1));
                   }}
+                  onExit={returnToStartWithConfirm}
                   onNext={() => {
                     setAnswerFeedback(null);
                     if (questionIndex === questions.length - 1) {
@@ -714,15 +847,18 @@ function App() {
                 <ResultScreen
                   result={result}
                   onRetry={startQuiz}
-                  onHome={() => setScreen("start")}
-                  onHistory={() => {
-                    void loadAttempts();
-                    setScreen("history");
-                  }}
+                  onHome={goHome}
+                  onHistory={openHistory}
                 />
               )}
               {screen === "history" && (
-                <HistoryScreen attempts={attempts} onHome={() => setScreen("start")} onRefresh={loadAttempts} />
+                <HistoryScreen
+                  attempts={attempts}
+                  onHome={goHome}
+                  onStudy={() => setScreen("mode")}
+                  onTest={() => setScreen("mode")}
+                  onRefresh={loadAttempts}
+                />
               )}
             </PhoneShell>
           ) : (
@@ -814,6 +950,37 @@ function normalizeUser(user: User) {
   }
 
   return user;
+}
+
+function readStudyProgress(userId: string): StudyProgressMap {
+  const raw = localStorage.getItem(`${studyProgressKey}:${userId}`);
+
+  if (!raw) {
+    return {};
+  }
+
+  try {
+    const parsed = JSON.parse(raw) as StudyProgressMap;
+
+    return subjectOptions.reduce<StudyProgressMap>((progress, subject) => {
+      const ids = parsed[subject.value];
+
+      if (Array.isArray(ids)) {
+        progress[subject.value] = [...new Set(ids.filter((id) => Number.isInteger(id) && id > 0))];
+      }
+
+      return progress;
+    }, {});
+  } catch {
+    return {};
+  }
+}
+
+function getStudiedCounts(progress: StudyProgressMap): SubjectCountMap {
+  return subjectOptions.reduce<SubjectCountMap>((counts, subject) => {
+    counts[subject.value] = progress[subject.value]?.length ?? 0;
+    return counts;
+  }, {});
 }
 
 export default App;

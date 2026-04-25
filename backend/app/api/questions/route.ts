@@ -16,6 +16,7 @@ export async function GET(request: Request) {
     const context = await getAuthContext(request);
     const url = new URL(request.url);
     const adminListMode = canManageQuestions(context.user.role) && url.searchParams.get("includeInactive") === "true";
+    const studyMode = url.searchParams.get("mode") === "study";
     const requestedSubject = url.searchParams.get("subject");
     const subject = isSubjectCode(requestedSubject) ? requestedSubject : null;
 
@@ -27,7 +28,7 @@ export async function GET(request: Request) {
       );
     }
 
-    const questions = await listQuestions(adminListMode, adminListMode, subject);
+    const questions = await listQuestions(adminListMode, adminListMode || studyMode, subject);
 
     return jsonResponse({ questions }, request);
   } catch (error) {
