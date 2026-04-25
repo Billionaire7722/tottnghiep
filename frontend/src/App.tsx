@@ -17,6 +17,7 @@ import {
   Attempt,
   Question,
   QuizResult,
+  StudyLesson,
   User,
   apiRequest
 } from "./api";
@@ -27,7 +28,9 @@ import {
   Screen,
   emptyAccountForm,
   emptyQuestionForm,
+  emptyStudyLessonForm,
   subjectOptions,
+  type StudyLessonForm,
   type SubjectCode
 } from "./uiTypes";
 
@@ -70,17 +73,21 @@ function App() {
   const [selectedSubject, setSelectedSubject] = useState<SubjectCode>("dich_te");
   const [subjectCounts, setSubjectCounts] = useState<SubjectCountMap>({});
   const [studyQuestions, setStudyQuestions] = useState<Question[]>([]);
+  const [studentStudyLessons, setStudentStudyLessons] = useState<StudyLesson[]>([]);
   const [studyBusy, setStudyBusy] = useState(false);
   const [studyProgress, setStudyProgress] = useState<StudyProgressMap>({});
   const questionLocksRef = useRef<Record<number, boolean>>({});
 
   const [adminTab, setAdminTab] = useState<AdminTab>("questions");
   const [adminQuestions, setAdminQuestions] = useState<Question[]>([]);
+  const [adminStudyLessons, setAdminStudyLessons] = useState<StudyLesson[]>([]);
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [accountDetail, setAccountDetail] = useState<AccountDetail | null>(null);
   const [accountDetailBusy, setAccountDetailBusy] = useState(false);
   const [questionForm, setQuestionForm] = useState(emptyQuestionForm);
   const [editingQuestionId, setEditingQuestionId] = useState<number | null>(null);
+  const [studyLessonForm, setStudyLessonForm] = useState<StudyLessonForm>(emptyStudyLessonForm);
+  const [editingStudyLessonId, setEditingStudyLessonId] = useState<number | null>(null);
   const [accountForm, setAccountForm] = useState<AccountForm>(emptyAccountForm);
   const [editingAccountId, setEditingAccountId] = useState<string | null>(null);
   const [adminBusy, setAdminBusy] = useState(false);
@@ -116,6 +123,7 @@ function App() {
     setAnswerFeedback(null);
     setCheckingQuestionId(null);
     setStudyQuestions([]);
+    setStudentStudyLessons([]);
     setStudyProgress({});
     setSubjectCounts({});
     questionLocksRef.current = {};
@@ -189,6 +197,7 @@ function App() {
   }, [answerFeedback]);
 
   useEffect(() => {
+    window.scrollTo({ top: 0, left: 0 });
     document.querySelector(".phone-screen")?.scrollTo({ top: 0, left: 0 });
   }, [screen, questionIndex]);
 
@@ -251,6 +260,9 @@ function App() {
       if (adminTab === "questions") {
         const data = await authedRequest<{ questions: Question[] }>("/api/questions?includeInactive=true");
         setAdminQuestions(data.questions);
+      } else if (adminTab === "study") {
+        const data = await authedRequest<{ lessons: StudyLesson[] }>("/api/study-lessons?includeInactive=true");
+        setAdminStudyLessons(data.lessons);
       } else if (canManageAccounts) {
         const data = await authedRequest<{ accounts: Account[] }>("/api/accounts");
         setAccounts(data.accounts);
@@ -363,14 +375,16 @@ function App() {
     setStudyBusy(true);
 
     try {
-      const data = await authedRequest<{ questions: Question[] }>(
-        `/api/questions?subject=${encodeURIComponent(selectedSubject)}&mode=study`
-      );
-      const usableQuestions = data.questions.filter((question) => question.options.length >= 2);
+      const [questionData, lessonData] = await Promise.all([
+        authedRequest<{ questions: Question[] }>(`/api/questions?subject=${encodeURIComponent(selectedSubject)}&mode=study`),
+        authedRequest<{ lessons: StudyLesson[] }>(`/api/study-lessons?subject=${encodeURIComponent(selectedSubject)}`)
+      ]);
+      const usableQuestions = questionData.questions.filter((question) => question.options.length >= 2);
       setStudyQuestions(usableQuestions);
+      setStudentStudyLessons(lessonData.lessons);
 
-      if (usableQuestions.length === 0) {
-        setNotice("Chưa có câu hỏi khả dụng cho môn đã chọn");
+      if (usableQuestions.length === 0 && lessonData.lessons.length === 0) {
+        setNotice("Chưa có nội dung ôn tập khả dụng cho môn đã chọn");
         return;
       }
 
@@ -399,6 +413,11 @@ function App() {
   function openHistory() {
     void loadAttempts();
     setScreen("history");
+  }
+
+  function openAdminTab(tab: AdminTab) {
+    setAdminTab(tab);
+    setScreen("admin");
   }
 
   function markQuestionStudied(questionId: number) {
@@ -552,6 +571,63 @@ function App() {
       await authedRequest(`/api/questions/${id}`, { method: "DELETE" });
       await loadAdminData();
       setNotice("Đã xóa câu hỏi");
+    } catch (error) {
+      handleError(error);
+    } finally {
+      setAdminBusy(false);
+    }
+  }
+
+  function editStudyLesson(lesson: StudyLesson) {
+    setEditingStudyLessonId(lesson.id);
+    setStudyLessonForm({
+      subject: lesson.subject,
+      title: lesson.title,
+      summary: lesson.summary ?? "",
+      content: lesson.content,
+      isActive: lesson.isActive ?? true
+    });
+  }
+
+  async function saveStudyLesson(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setAdminBusy(true);
+
+    try {
+      const path = editingStudyLessonId ? `/api/study-lessons/${editingStudyLessonId}` : "/api/study-lessons";
+      const data = await authedRequest<{ lesson: StudyLesson }>(path, {
+        method: editingStudyLessonId ? "PUT" : "POST",
+        body: studyLessonForm
+      });
+
+      setAdminStudyLessons((current) => {
+        if (!editingStudyLessonId) {
+          return [data.lesson, ...current];
+        }
+
+        return current.map((lesson) => (lesson.id === editingStudyLessonId ? data.lesson : lesson));
+      });
+      setStudyLessonForm(emptyStudyLessonForm());
+      setEditingStudyLessonId(null);
+      setNotice(editingStudyLessonId ? "Đã cập nhật bài ôn tập" : "Đã thêm bài ôn tập");
+    } catch (error) {
+      handleError(error);
+    } finally {
+      setAdminBusy(false);
+    }
+  }
+
+  async function deleteStudyLessonById(id: number) {
+    if (!window.confirm("Xóa vĩnh viễn bài ôn tập này?")) {
+      return;
+    }
+
+    setAdminBusy(true);
+
+    try {
+      await authedRequest(`/api/study-lessons/${id}`, { method: "DELETE" });
+      setAdminStudyLessons((current) => current.filter((lesson) => lesson.id !== id));
+      setNotice("Đã xóa bài ôn tập");
     } catch (error) {
       handleError(error);
     } finally {
@@ -803,6 +879,7 @@ function App() {
               {screen === "study" && (
                 <StudyScreen
                   subject={selectedSubject}
+                  lessons={studentStudyLessons}
                   questions={studyQuestions}
                   studiedQuestionIds={new Set(studyProgress[selectedSubject] ?? [])}
                   onMarkStudied={markQuestionStudied}
@@ -853,10 +930,14 @@ function App() {
               )}
               {screen === "history" && (
                 <HistoryScreen
+                  user={auth.user}
                   attempts={attempts}
                   onHome={goHome}
                   onStudy={() => setScreen("mode")}
                   onTest={() => setScreen("mode")}
+                  onManageQuestions={() => openAdminTab("questions")}
+                  onManageStudy={() => openAdminTab("study")}
+                  onManageAccounts={() => openAdminTab("accounts")}
                   onRefresh={loadAttempts}
                 />
               )}
@@ -867,11 +948,16 @@ function App() {
               setTab={setAdminTab}
               user={auth.user}
               questions={adminQuestions}
+              studyLessons={adminStudyLessons}
               accounts={accounts}
               questionForm={questionForm}
               setQuestionForm={setQuestionForm}
               editingQuestionId={editingQuestionId}
               setEditingQuestionId={setEditingQuestionId}
+              studyLessonForm={studyLessonForm}
+              setStudyLessonForm={setStudyLessonForm}
+              editingStudyLessonId={editingStudyLessonId}
+              setEditingStudyLessonId={setEditingStudyLessonId}
               accountForm={accountForm}
               setAccountForm={setAccountForm}
               editingAccountId={editingAccountId}
@@ -883,6 +969,9 @@ function App() {
               onSaveQuestion={saveQuestion}
               onEditQuestion={editQuestion}
               onDeleteQuestion={deleteQuestionById}
+              onSaveStudyLesson={saveStudyLesson}
+              onEditStudyLesson={editStudyLesson}
+              onDeleteStudyLesson={deleteStudyLessonById}
               onSaveAccount={saveAccount}
               onEditAccount={editAccount}
               onDeleteAccount={deleteAccountById}

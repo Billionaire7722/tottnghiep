@@ -171,6 +171,39 @@ async function initializeDatabase() {
   `);
 
   await pool.query(`
+    CREATE TABLE IF NOT EXISTS study_lessons (
+      id serial PRIMARY KEY,
+      subject text NOT NULL,
+      title text NOT NULL,
+      summary text NOT NULL DEFAULT '',
+      content text NOT NULL,
+      is_active boolean NOT NULL DEFAULT true,
+      created_by uuid REFERENCES users(id) ON DELETE SET NULL,
+      created_at timestamptz NOT NULL DEFAULT now(),
+      updated_at timestamptz NOT NULL DEFAULT now()
+    )
+  `);
+  await pool.query("ALTER TABLE study_lessons ADD COLUMN IF NOT EXISTS summary text NOT NULL DEFAULT ''");
+  await pool.query(`
+    DO $$
+    BEGIN
+      IF NOT EXISTS (
+        SELECT 1
+        FROM pg_constraint
+        WHERE conname = 'study_lessons_subject_check'
+      ) THEN
+        ALTER TABLE study_lessons
+        ADD CONSTRAINT study_lessons_subject_check
+        CHECK (subject IN ('dich_te', 'suc_khoe_nghe_nghiep', 'dinh_duong', 'suc_khoe_moi_truong'));
+      END IF;
+    END $$;
+  `);
+  await pool.query(`
+    CREATE INDEX IF NOT EXISTS study_lessons_subject_active_idx
+    ON study_lessons (subject, is_active, created_at)
+  `);
+
+  await pool.query(`
     CREATE TABLE IF NOT EXISTS options (
       id serial PRIMARY KEY,
       question_id integer NOT NULL REFERENCES questions(id) ON DELETE CASCADE,

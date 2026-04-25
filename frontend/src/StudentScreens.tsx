@@ -1,6 +1,6 @@
 import { useMemo, useState, type CSSProperties, type FormEvent, type ReactNode } from "react";
 import cnxhMark from "./assets/cnxh-mark.svg";
-import type { Attempt, Question, QuizResult, User } from "./api";
+import type { Attempt, Question, QuizResult, StudyLesson, User } from "./api";
 import { RichQuestionContent } from "./RichQuestionContent";
 import {
   formatDate,
@@ -257,6 +257,7 @@ export function ModeScreen({
 
 export function StudyScreen({
   subject,
+  lessons,
   questions,
   studiedQuestionIds,
   onMarkStudied,
@@ -266,6 +267,7 @@ export function StudyScreen({
   onHistory
 }: {
   subject: SubjectCode;
+  lessons: StudyLesson[];
   questions: Question[];
   studiedQuestionIds: Set<number>;
   onMarkStudied: (questionId: number) => void;
@@ -309,6 +311,22 @@ export function StudyScreen({
           </article>
         ))}
       </section>
+
+      {lessons.length > 0 && (
+        <section className="managed-study-section">
+          <h2>Bài ôn theo môn</h2>
+          <div className="managed-study-list">
+            {lessons.map((lesson) => (
+              <article className="managed-study-card" key={lesson.id}>
+                <span>{currentSubject.label}</span>
+                <h3>{lesson.title}</h3>
+                {lesson.summary && <p>{lesson.summary}</p>}
+                <RichQuestionContent content={lesson.content} />
+              </article>
+            ))}
+          </div>
+        </section>
+      )}
 
       <div className="lesson-list">
         {filteredQuestions.length === 0 ? (
@@ -540,18 +558,29 @@ export function ResultScreen({
 }
 
 export function HistoryScreen({
+  user,
   attempts,
   onHome,
   onStudy,
   onTest,
+  onManageQuestions,
+  onManageStudy,
+  onManageAccounts,
   onRefresh
 }: {
+  user: User;
   attempts: Attempt[];
   onHome: () => void;
   onStudy: () => void;
   onTest: () => void;
+  onManageQuestions: () => void;
+  onManageStudy: () => void;
+  onManageAccounts: () => void;
   onRefresh: () => void;
 }) {
+  const canManageContent = user.role === "admin" || user.role === "editor";
+  const canManageAccounts = user.role === "admin";
+
   return (
     <div className="student-screen history-screen">
       <header className="section-title">
@@ -563,6 +592,27 @@ export function HistoryScreen({
           Tải lại
         </button>
       </header>
+      {canManageContent && (
+        <section className="profile-admin-panel">
+          <div>
+            <span>Khu vực quản trị</span>
+            <h3>{canManageAccounts ? "Quản lý nội dung và tài khoản" : "Quản lý nội dung học tập"}</h3>
+          </div>
+          <div className="profile-admin-actions">
+            <button type="button" onClick={onManageQuestions}>
+              Quản lý câu hỏi
+            </button>
+            <button className="secondary-button" type="button" onClick={onManageStudy}>
+              Quản lý ôn tập
+            </button>
+            {canManageAccounts && (
+              <button className="ghost-button" type="button" onClick={onManageAccounts}>
+                Quản lý tài khoản
+              </button>
+            )}
+          </div>
+        </section>
+      )}
       <div className="history-list">
         {attempts.length === 0 ? (
           <p className="empty-text">Chưa có lần làm bài nào.</p>

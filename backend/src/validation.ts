@@ -41,6 +41,14 @@ export const questionSchema = z
     }
   });
 
+export const studyLessonSchema = z.object({
+  subject: z.enum(subjects).default("dich_te"),
+  title: z.string().trim().min(3, "Tiêu đề bài ôn cần ít nhất 3 ký tự").max(160, "Tiêu đề quá dài"),
+  summary: z.string().trim().max(500, "Tóm tắt tối đa 500 ký tự").optional().default(""),
+  content: z.string().trim().min(5, "Nội dung bài ôn cần ít nhất 5 ký tự").max(12000, "Nội dung bài ôn tối đa 12.000 ký tự"),
+  isActive: z.boolean().optional()
+});
+
 export const accountCreateSchema = z.object({
   username: usernameSchema,
   displayName: z.string().trim().min(2, "Tên hiển thị cần ít nhất 2 ký tự").max(80),
@@ -80,6 +88,7 @@ export const questionTextImportSchema = z.object({
 });
 
 export type QuestionInput = z.infer<typeof questionSchema>;
+export type StudyLessonInput = z.infer<typeof studyLessonSchema>;
 export type AccountCreateInput = z.infer<typeof accountCreateSchema>;
 export type AccountUpdateInput = z.infer<typeof accountUpdateSchema>;
 export type AnswerSubmitInput = z.infer<typeof answerSubmitSchema>;

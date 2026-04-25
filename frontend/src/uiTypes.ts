@@ -1,5 +1,5 @@
 export type Screen = "start" | "mode" | "study" | "quiz" | "result" | "history" | "admin";
-export type AdminTab = "questions" | "accounts";
+export type AdminTab = "questions" | "study" | "accounts";
 export type AccountRole = "admin" | "editor" | "user";
 
 export const subjectOptions = [
@@ -118,6 +118,14 @@ export type ImportedQuestionForm = QuestionForm & {
   warnings?: string[];
 };
 
+export type StudyLessonForm = {
+  subject: SubjectCode;
+  title: string;
+  summary: string;
+  content: string;
+  isActive: boolean;
+};
+
 export type AccountForm = {
   username: string;
   displayName: string;
@@ -144,6 +152,14 @@ export const emptyAccountForm = (): AccountForm => ({
   displayName: "",
   password: "",
   role: "user",
+  isActive: true
+});
+
+export const emptyStudyLessonForm = (): StudyLessonForm => ({
+  subject: "dich_te",
+  title: "",
+  summary: "",
+  content: "",
   isActive: true
 });
 

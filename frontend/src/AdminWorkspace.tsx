@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState, type Dispatch, type FormEvent, type SetStateAction } from "react";
-import type { Account, AccountDetail, Question, User } from "./api";
+import type { Account, AccountDetail, Question, StudyLesson, User } from "./api";
 import { RichQuestionContent } from "./RichQuestionContent";
 import { SubjectPicker } from "./SubjectPicker";
 import {
@@ -7,8 +7,10 @@ import {
   AdminTab,
   ImportedQuestionForm,
   QuestionForm,
+  StudyLessonForm,
   emptyAccountForm,
   emptyQuestionForm,
+  emptyStudyLessonForm,
   formatDate,
   roleLabel,
   subjectLabel,
@@ -22,11 +24,16 @@ type AdminWorkspaceProps = {
   setTab: (tab: AdminTab) => void;
   user: User;
   questions: Question[];
+  studyLessons: StudyLesson[];
   accounts: Account[];
   questionForm: QuestionForm;
   setQuestionForm: Dispatch<SetStateAction<QuestionForm>>;
   editingQuestionId: number | null;
   setEditingQuestionId: (id: number | null) => void;
+  studyLessonForm: StudyLessonForm;
+  setStudyLessonForm: Dispatch<SetStateAction<StudyLessonForm>>;
+  editingStudyLessonId: number | null;
+  setEditingStudyLessonId: (id: number | null) => void;
   accountForm: AccountForm;
   setAccountForm: Dispatch<SetStateAction<AccountForm>>;
   editingAccountId: string | null;
@@ -38,6 +45,9 @@ type AdminWorkspaceProps = {
   onSaveQuestion: (event: FormEvent<HTMLFormElement>) => void;
   onEditQuestion: (question: Question) => void;
   onDeleteQuestion: (id: number) => void;
+  onSaveStudyLesson: (event: FormEvent<HTMLFormElement>) => void;
+  onEditStudyLesson: (lesson: StudyLesson) => void;
+  onDeleteStudyLesson: (id: number) => void;
   onSaveAccount: (event: FormEvent<HTMLFormElement>) => void;
   onEditAccount: (account: Account) => void;
   onDeleteAccount: (id: string) => void;
@@ -61,7 +71,7 @@ type AdminWorkspaceProps = {
 export function AdminWorkspace(props: AdminWorkspaceProps) {
   const { tab, setTab, user, busy, onBack, onLogout, onReload } = props;
   const canManageAccounts = user.role === "admin";
-  const activeTab = canManageAccounts ? tab : "questions";
+  const activeTab = !canManageAccounts && tab === "accounts" ? "questions" : tab;
 
   return (
     <div className="admin-shell">
@@ -86,13 +96,18 @@ export function AdminWorkspace(props: AdminWorkspaceProps) {
         <button className={activeTab === "questions" ? "active" : ""} type="button" onClick={() => setTab("questions")}>
           Câu hỏi
         </button>
+        <button className={activeTab === "study" ? "active" : ""} type="button" onClick={() => setTab("study")}>
+          Ôn tập
+        </button>
         {canManageAccounts && (
           <button className={activeTab === "accounts" ? "active" : ""} type="button" onClick={() => setTab("accounts")}>
             Tài khoản
           </button>
         )}
       </nav>
-      {activeTab === "questions" ? <QuestionAdmin {...props} /> : <AccountAdmin {...props} />}
+      {activeTab === "questions" && <QuestionAdmin {...props} />}
+      {activeTab === "study" && <StudyLessonAdmin {...props} />}
+      {activeTab === "accounts" && <AccountAdmin {...props} />}
     </div>
   );
 }
@@ -499,6 +514,124 @@ function ImportedQuestionEditor({
         </button>
       </div>
     </article>
+  );
+}
+
+function StudyLessonAdmin({
+  studyLessons,
+  studyLessonForm,
+  setStudyLessonForm,
+  editingStudyLessonId,
+  setEditingStudyLessonId,
+  busy,
+  onSaveStudyLesson,
+  onEditStudyLesson,
+  onDeleteStudyLesson
+}: AdminWorkspaceProps) {
+  const [filterSubject, setFilterSubject] = useState<SubjectCode>("dich_te");
+  const filteredLessons = useMemo(
+    () => studyLessons.filter((lesson) => lesson.subject === filterSubject),
+    [filterSubject, studyLessons]
+  );
+
+  return (
+    <div className="admin-grid">
+      <form className="admin-panel form-panel" onSubmit={onSaveStudyLesson}>
+        <div className="panel-title">
+          <span>{editingStudyLessonId ? "Sửa bài ôn tập" : "Thêm bài ôn tập"}</span>
+          {editingStudyLessonId && (
+            <button
+              className="ghost-button"
+              type="button"
+              onClick={() => {
+                setEditingStudyLessonId(null);
+                setStudyLessonForm(emptyStudyLessonForm());
+              }}
+            >
+              Hủy sửa
+            </button>
+          )}
+        </div>
+        <SubjectPicker
+          value={studyLessonForm.subject}
+          onChange={(subject) => setStudyLessonForm((current) => ({ ...current, subject }))}
+          label="Môn học"
+        />
+        <label>
+          Tiêu đề bài ôn
+          <input
+            value={studyLessonForm.title}
+            onChange={(event) => setStudyLessonForm((current) => ({ ...current, title: event.target.value }))}
+            placeholder="Ví dụ: Khái niệm dịch tễ học"
+          />
+        </label>
+        <label>
+          Tóm tắt ngắn
+          <textarea
+            value={studyLessonForm.summary}
+            onChange={(event) => setStudyLessonForm((current) => ({ ...current, summary: event.target.value }))}
+            rows={3}
+            placeholder="Nội dung ngắn hiển thị trong thẻ bài học"
+          />
+        </label>
+        <label>
+          Nội dung ôn tập
+          <textarea
+            value={studyLessonForm.content}
+            onChange={(event) => setStudyLessonForm((current) => ({ ...current, content: event.target.value }))}
+            rows={10}
+            placeholder="Ghi chú, ý chính, công thức, ví dụ hoặc bảng Markdown..."
+          />
+        </label>
+        <label className="inline-check">
+          <input
+            checked={studyLessonForm.isActive}
+            onChange={(event) => setStudyLessonForm((current) => ({ ...current, isActive: event.target.checked }))}
+            type="checkbox"
+          />
+          Hiển thị cho người học
+        </label>
+        <button type="submit" disabled={busy}>
+          {busy ? "Đang lưu" : editingStudyLessonId ? "Lưu bài ôn" : "Thêm bài ôn"}
+        </button>
+      </form>
+      <section className="admin-panel list-panel">
+        <div className="panel-title">
+          <span>Quản lý ôn tập</span>
+          <small>{studyLessons.length} bài ôn</small>
+        </div>
+        <SubjectPicker value={filterSubject} onChange={setFilterSubject} label="Lọc theo môn học" />
+        {filteredLessons.length === 0 ? (
+          <p className="empty-text">Chưa có bài ôn tập nào cho môn này.</p>
+        ) : (
+          <div className="admin-list">
+            {filteredLessons.map((lesson) => (
+              <article className="admin-question-item study-lesson-admin-item" key={lesson.id}>
+                <div>
+                  <div className="question-badges">
+                    <span className={lesson.isActive ? "status active" : "status"}>{lesson.isActive ? "Hiện" : "Ẩn"}</span>
+                    <span className="status subject-status">{subjectLabel(lesson.subject)}</span>
+                  </div>
+                  <h3>{lesson.title}</h3>
+                  {lesson.summary && <p>{lesson.summary}</p>}
+                  <div className="admin-question-content">
+                    <RichQuestionContent content={lesson.content} />
+                  </div>
+                </div>
+                <div className="row-actions">
+                  <button className="secondary-button" type="button" onClick={() => onEditStudyLesson(lesson)}>
+                    Sửa
+                  </button>
+                  <button className="ghost-button" type="button" onClick={() => onDeleteStudyLesson(lesson.id)}>
+                    Xóa
+                  </button>
+                </div>
+              </article>
+            ))}
+          </div>
+        )}
+      </section>
+    </div>
   );
 }
 

@@ -28,6 +28,17 @@ export type Question = {
   options: PublicOption[];
 };
 
+export type StudyLesson = {
+  id: number;
+  subject: SubjectCode;
+  title: string;
+  summary: string;
+  content: string;
+  isActive?: boolean;
+  createdAt?: string;
+  updatedAt?: string;
+};
+
 export type Account = {
   id: string;
   username: string;
