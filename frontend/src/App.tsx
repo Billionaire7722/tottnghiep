@@ -25,6 +25,7 @@ import {
   AccountForm,
   AdminTab,
   ImportedQuestionForm,
+  ImportedStudyLessonForm,
   Screen,
   emptyAccountForm,
   emptyQuestionForm,
@@ -40,6 +41,7 @@ type AuthState = {
 };
 
 type ImportedQuestionDraft = Omit<ImportedQuestionForm, "subject">;
+type ImportedStudyLessonDraft = Omit<ImportedStudyLessonForm, "subject">;
 type CheckedAnswerState = {
   selectedOptionId: number;
   correctOptionId: number;
@@ -92,6 +94,7 @@ function App() {
   const [editingAccountId, setEditingAccountId] = useState<string | null>(null);
   const [adminBusy, setAdminBusy] = useState(false);
   const [importedQuestions, setImportedQuestions] = useState<ImportedQuestionForm[]>([]);
+  const [importedStudyLessons, setImportedStudyLessons] = useState<ImportedStudyLessonForm[]>([]);
   const [importWarnings, setImportWarnings] = useState<string[]>([]);
   const [importSubject, setImportSubject] = useState<SubjectCode>("dich_te");
   const [importBusy, setImportBusy] = useState(false);
@@ -642,13 +645,22 @@ function App() {
       const formData = new FormData();
       formData.append("file", file);
       formData.append("subject", importSubject);
-      const data = await authedRequest<{ questions: ImportedQuestionDraft[]; warnings: string[] }>("/api/questions/import", {
+      const data = await authedRequest<{
+        questions: ImportedQuestionDraft[];
+        lessons: ImportedStudyLessonDraft[];
+        warnings: string[];
+      }>("/api/content/import", {
         method: "POST",
         body: formData
       });
       setImportedQuestions(data.questions.map((question) => ({ ...question, subject: importSubject })));
+      setImportedStudyLessons(data.lessons.map((lesson) => ({ ...lesson, subject: importSubject })));
       setImportWarnings(data.warnings);
-      setNotice(data.questions.length > 0 ? `Đã đọc ${data.questions.length} câu hỏi từ file` : "Không tìm thấy câu hỏi hợp lệ");
+      setNotice(
+        data.questions.length > 0 || data.lessons.length > 0
+          ? `Đã đọc ${data.questions.length} câu hỏi và ${data.lessons.length} bài ôn từ file`
+          : "Không tìm thấy nội dung mới hợp lệ"
+      );
     } catch (error) {
       handleError(error);
     } finally {
@@ -668,6 +680,7 @@ function App() {
         }
       });
       setImportedQuestions(data.questions.map((question) => ({ ...question, subject: importSubject })));
+      setImportedStudyLessons([]);
       setImportWarnings(data.warnings);
       setNotice(data.questions.length > 0 ? `Đã quét ${data.questions.length} câu hỏi từ văn bản` : "Không tìm thấy câu hỏi mới hợp lệ");
     } catch (error) {
@@ -681,35 +694,56 @@ function App() {
     setImportedQuestions((current) => current.map((item, itemIndex) => (itemIndex === index ? question : item)));
   }
 
+  function changeImportedStudyLesson(index: number, lesson: ImportedStudyLessonForm) {
+    setImportedStudyLessons((current) => current.map((item, itemIndex) => (itemIndex === index ? lesson : item)));
+  }
+
   function removeImportedQuestion(index: number) {
     setImportedQuestions((current) => current.filter((_, itemIndex) => itemIndex !== index));
+  }
+
+  function removeImportedStudyLesson(index: number) {
+    setImportedStudyLessons((current) => current.filter((_, itemIndex) => itemIndex !== index));
   }
 
   function changeImportSubject(value: SubjectCode) {
     setImportSubject(value);
     setImportedQuestions((current) => current.map((question) => ({ ...question, subject: value })));
+    setImportedStudyLessons((current) => current.map((lesson) => ({ ...lesson, subject: value })));
   }
 
   async function saveImportedQuestions() {
-    const invalidIndex = importedQuestions.findIndex(
-      (question) =>
-        !question.content.trim() ||
-        question.options.filter((option) => option.content.trim()).length < 2 ||
-        question.options.filter((option) => option.isCorrect).length !== 1
-    );
+    const invalidIndex = importedQuestions.findIndex((question) => !question.content.trim());
 
     if (invalidIndex >= 0) {
-      setNotice(`Câu nháp ${invalidIndex + 1} chưa hợp lệ`);
+      setNotice(`Câu nháp ${invalidIndex + 1} chưa có nội dung câu hỏi`);
+      return;
+    }
+
+    const invalidLessonIndex = importedStudyLessons.findIndex((lesson) => !lesson.title.trim() || !lesson.content.trim());
+
+    if (invalidLessonIndex >= 0) {
+      setNotice(`Bài ôn nháp ${invalidLessonIndex + 1} chưa có tiêu đề hoặc nội dung`);
       return;
     }
 
     setAdminBusy(true);
 
     try {
-      let savedCount = 0;
+      let savedQuestionCount = 0;
+      let savedLessonCount = 0;
       let skippedCount = 0;
+      let reviewCount = 0;
 
       for (const question of importedQuestions) {
+        const options = question.options
+          .filter((option) => option.content.trim())
+          .map((option) => ({
+            content: option.content,
+            isCorrect: option.isCorrect
+          }));
+        const canPublish = isQuestionPublishable(options);
+
         try {
           await authedRequest("/api/questions", {
             method: "POST",
@@ -717,14 +751,15 @@ function App() {
               subject: question.subject,
               content: question.content,
               explanation: question.explanation,
-              isActive: question.isActive,
-              options: question.options.map((option) => ({
-                content: option.content,
-                isCorrect: option.isCorrect
-              }))
+              isActive: Boolean(question.isActive && canPublish),
+              options
             }
           });
-          savedCount += 1;
+          savedQuestionCount += 1;
+
+          if (!canPublish) {
+            reviewCount += 1;
+          }
         } catch (error) {
           if (error instanceof ApiClientError && error.code === "DUPLICATE_QUESTION") {
             skippedCount += 1;
@@ -735,13 +770,28 @@ function App() {
         }
       }
 
+      for (const lesson of importedStudyLessons) {
+        await authedRequest("/api/study-lessons", {
+          method: "POST",
+          body: {
+            subject: lesson.subject,
+            title: lesson.title,
+            summary: lesson.summary,
+            content: lesson.content,
+            isActive: lesson.isActive
+          }
+        });
+        savedLessonCount += 1;
+      }
+
       setImportedQuestions([]);
+      setImportedStudyLessons([]);
       setImportWarnings([]);
       await loadAdminData();
       setNotice(
-        skippedCount > 0
-          ? `Đã thêm ${savedCount} câu hỏi, bỏ qua ${skippedCount} câu trùng`
-          : "Đã thêm các câu hỏi đã quét"
+        `Đã lưu ${savedQuestionCount} câu hỏi, ${savedLessonCount} bài ôn. ${reviewCount} câu vào mục cần đáp án${
+          skippedCount > 0 ? `, bỏ qua ${skippedCount} câu trùng` : ""
+        }`
       );
     } catch (error) {
       handleError(error);
@@ -976,6 +1026,7 @@ function App() {
               onEditAccount={editAccount}
               onDeleteAccount={deleteAccountById}
               importedQuestions={importedQuestions}
+              importedStudyLessons={importedStudyLessons}
               importWarnings={importWarnings}
               importSubject={importSubject}
               importBusy={importBusy}
@@ -984,6 +1035,8 @@ function App() {
               onImportSubjectChange={changeImportSubject}
               onChangeImportedQuestion={changeImportedQuestion}
               onRemoveImportedQuestion={removeImportedQuestion}
+              onChangeImportedStudyLesson={changeImportedStudyLesson}
+              onRemoveImportedStudyLesson={removeImportedStudyLesson}
               onSaveImportedQuestions={saveImportedQuestions}
               accountDetail={accountDetail}
               accountDetailBusy={accountDetailBusy}
@@ -1070,6 +1123,10 @@ function getStudiedCounts(progress: StudyProgressMap): SubjectCountMap {
     counts[subject.value] = progress[subject.value]?.length ?? 0;
     return counts;
   }, {});
+}
+
+function isQuestionPublishable(options: Array<{ content: string; isCorrect: boolean }>) {
+  return options.filter((option) => option.content.trim()).length >= 2 && options.filter((option) => option.isCorrect).length === 1;
 }
 
 export default App;

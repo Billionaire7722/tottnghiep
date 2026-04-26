@@ -6,6 +6,7 @@ import {
   AccountForm,
   AdminTab,
   ImportedQuestionForm,
+  ImportedStudyLessonForm,
   QuestionForm,
   StudyLessonForm,
   emptyAccountForm,
@@ -52,6 +53,7 @@ type AdminWorkspaceProps = {
   onEditAccount: (account: Account) => void;
   onDeleteAccount: (id: string) => void;
   importedQuestions: ImportedQuestionForm[];
+  importedStudyLessons: ImportedStudyLessonForm[];
   importWarnings: string[];
   importSubject: SubjectCode;
   importBusy: boolean;
@@ -60,6 +62,8 @@ type AdminWorkspaceProps = {
   onImportSubjectChange: (value: SubjectCode) => void;
   onChangeImportedQuestion: (index: number, question: ImportedQuestionForm) => void;
   onRemoveImportedQuestion: (index: number) => void;
+  onChangeImportedStudyLesson: (index: number, lesson: ImportedStudyLessonForm) => void;
+  onRemoveImportedStudyLesson: (index: number) => void;
   onSaveImportedQuestions: () => void;
   accountDetail: AccountDetail | null;
   accountDetailBusy: boolean;
@@ -123,6 +127,7 @@ function QuestionAdmin({
   onEditQuestion,
   onDeleteQuestion,
   importedQuestions,
+  importedStudyLessons,
   importWarnings,
   importSubject,
   importBusy,
@@ -131,15 +136,19 @@ function QuestionAdmin({
   onImportSubjectChange,
   onChangeImportedQuestion,
   onRemoveImportedQuestion,
+  onChangeImportedStudyLesson,
+  onRemoveImportedStudyLesson,
   onSaveImportedQuestions
 }: AdminWorkspaceProps) {
   const [textImport, setTextImport] = useState("");
   const [questionPage, setQuestionPage] = useState(1);
-  const totalQuestionPages = Math.max(1, Math.ceil(questions.length / questionsPerPage));
+  const answerReviewQuestions = useMemo(() => questions.filter(needsAnswerReview), [questions]);
+  const publishedQuestions = useMemo(() => questions.filter((question) => !needsAnswerReview(question)), [questions]);
+  const totalQuestionPages = Math.max(1, Math.ceil(publishedQuestions.length / questionsPerPage));
   const paginatedQuestions = useMemo(() => {
     const start = (questionPage - 1) * questionsPerPage;
-    return questions.slice(start, start + questionsPerPage);
-  }, [questionPage, questions]);
+    return publishedQuestions.slice(start, start + questionsPerPage);
+  }, [questionPage, publishedQuestions]);
   const paginationItems = useMemo(() => getPaginationItems(questionPage, totalQuestionPages), [questionPage, totalQuestionPages]);
 
   useEffect(() => {
@@ -155,10 +164,10 @@ function QuestionAdmin({
           </div>
           <SubjectPicker value={importSubject} onChange={onImportSubjectChange} label="Môn áp dụng cho file" />
           <label>
-            Chọn file .txt, .md, .csv hoặc .docx
+            Chọn file .pdf, .txt, .md, .csv hoặc .docx
             <input
               type="file"
-              accept=".txt,.md,.csv,.docx,text/plain,text/markdown"
+              accept=".pdf,.txt,.md,.csv,.docx,application/pdf,text/plain,text/markdown"
               disabled={importBusy}
               onChange={(event) => {
                 const file = event.target.files?.[0];
@@ -305,63 +314,94 @@ function QuestionAdmin({
         </form>
       </div>
       <section className="admin-panel list-panel">
-        {importedQuestions.length > 0 && (
+        {(importedQuestions.length > 0 || importedStudyLessons.length > 0) && (
           <div className="import-preview">
+            {importedQuestions.length > 0 && (
+              <>
+                <div className="panel-title">
+                  <span>Câu hỏi đã quét</span>
+                  <small>{importedQuestions.length} câu nháp</small>
+                </div>
+                <div className="import-preview-list">
+                  {importedQuestions.map((question, index) => (
+                    <ImportedQuestionEditor
+                      key={index}
+                      index={index}
+                      question={question}
+                      onChange={(nextQuestion) => onChangeImportedQuestion(index, nextQuestion)}
+                      onRemove={() => onRemoveImportedQuestion(index)}
+                    />
+                  ))}
+                </div>
+              </>
+            )}
+            {importedStudyLessons.length > 0 && (
+              <>
+                <div className="panel-title">
+                  <span>Bài ôn tập đã quét</span>
+                  <small>{importedStudyLessons.length} bài nháp</small>
+                </div>
+                <div className="import-preview-list">
+                  {importedStudyLessons.map((lesson, index) => (
+                    <ImportedStudyLessonEditor
+                      key={index}
+                      index={index}
+                      lesson={lesson}
+                      onChange={(nextLesson) => onChangeImportedStudyLesson(index, nextLesson)}
+                      onRemove={() => onRemoveImportedStudyLesson(index)}
+                    />
+                  ))}
+                </div>
+              </>
+            )}
+            <button
+              type="button"
+              disabled={busy || (importedQuestions.length === 0 && importedStudyLessons.length === 0)}
+              onClick={onSaveImportedQuestions}
+            >
+              Lưu nội dung đã quét
+            </button>
+          </div>
+        )}
+        {answerReviewQuestions.length > 0 && (
+          <div className="answer-review-section">
             <div className="panel-title">
-              <span>Câu hỏi đã quét</span>
-              <small>{importedQuestions.length} câu nháp</small>
+              <span>Câu hỏi chưa có đáp án / chưa đủ đáp án</span>
+              <small>{answerReviewQuestions.length} câu cần admin duyệt</small>
             </div>
-            <div className="import-preview-list">
-              {importedQuestions.map((question, index) => (
-                <ImportedQuestionEditor
-                  key={index}
-                  index={index}
+            <div className="admin-list">
+              {answerReviewQuestions.map((question) => (
+                <QuestionListItem
+                  key={question.id}
                   question={question}
-                  onChange={(nextQuestion) => onChangeImportedQuestion(index, nextQuestion)}
-                  onRemove={() => onRemoveImportedQuestion(index)}
+                  onEditQuestion={onEditQuestion}
+                  onDeleteQuestion={onDeleteQuestion}
                 />
               ))}
             </div>
-            <button type="button" disabled={busy || importedQuestions.length === 0} onClick={onSaveImportedQuestions}>
-              Thêm tất cả câu hợp lệ
-            </button>
           </div>
         )}
         <div className="panel-title">
           <span>Danh sách câu hỏi</span>
           <small>
-            {questions.length} câu · 5 câu/trang
+            {publishedQuestions.length} câu đủ điều kiện · 5 câu/trang
           </small>
         </div>
-        {questions.length === 0 ? (
+        {publishedQuestions.length === 0 ? (
           <p className="empty-text">Chưa có câu hỏi nào.</p>
         ) : (
           <div className="admin-list">
             {paginatedQuestions.map((question) => (
-              <article className="admin-question-item" key={question.id}>
-                <div>
-                  <div className="question-badges">
-                    <span className={question.isActive ? "status active" : "status"}>{question.isActive ? "Hiện" : "Ẩn"}</span>
-                    <span className="status subject-status">{subjectLabel(question.subject)}</span>
-                  </div>
-                  <div className="admin-question-content">
-                    <RichQuestionContent content={question.content} />
-                  </div>
-                  <p>Đáp án đúng: {question.options.find((option) => option.isCorrect)?.content ?? "Chưa có"}</p>
-                </div>
-                <div className="row-actions">
-                  <button className="secondary-button" type="button" onClick={() => onEditQuestion(question)}>
-                    Sửa
-                  </button>
-                  <button className="ghost-button" type="button" onClick={() => onDeleteQuestion(question.id)}>
-                    Xóa
-                  </button>
-                </div>
-              </article>
+              <QuestionListItem
+                key={question.id}
+                question={question}
+                onEditQuestion={onEditQuestion}
+                onDeleteQuestion={onDeleteQuestion}
+              />
             ))}
           </div>
         )}
-        {questions.length > questionsPerPage && (
+        {publishedQuestions.length > questionsPerPage && (
           <nav className="pagination-bar" aria-label="Phân trang danh sách câu hỏi">
             <button className="ghost-button compact" type="button" disabled={questionPage === 1} onClick={() => setQuestionPage(1)}>
               Trang đầu
@@ -416,6 +456,42 @@ function QuestionAdmin({
   );
 }
 
+function QuestionListItem({
+  question,
+  onEditQuestion,
+  onDeleteQuestion
+}: {
+  question: Question;
+  onEditQuestion: (question: Question) => void;
+  onDeleteQuestion: (id: number) => void;
+}) {
+  const needsReview = needsAnswerReview(question);
+
+  return (
+    <article className={needsReview ? "admin-question-item needs-answer-review" : "admin-question-item"}>
+      <div>
+        <div className="question-badges">
+          <span className={question.isActive ? "status active" : "status"}>{question.isActive ? "Hiện" : "Ẩn"}</span>
+          <span className="status subject-status">{subjectLabel(question.subject)}</span>
+          {needsReview && <span className="status warning-status">Cần đáp án</span>}
+        </div>
+        <div className="admin-question-content">
+          <RichQuestionContent content={question.content} />
+        </div>
+        <p>Đáp án đúng: {question.options.find((option) => option.isCorrect)?.content ?? "Chưa có"}</p>
+      </div>
+      <div className="row-actions">
+        <button className="secondary-button" type="button" onClick={() => onEditQuestion(question)}>
+          Sửa
+        </button>
+        <button className="ghost-button" type="button" onClick={() => onDeleteQuestion(question.id)}>
+          Xóa
+        </button>
+      </div>
+    </article>
+  );
+}
+
 function ImportedQuestionEditor({
   index,
   question,
@@ -458,6 +534,14 @@ function ImportedQuestionEditor({
           rows={2}
           onChange={(event) => onChange({ ...question, explanation: event.target.value })}
         />
+      </label>
+      <label className="inline-check">
+        <input
+          checked={question.isActive}
+          onChange={(event) => onChange({ ...question, isActive: event.target.checked })}
+          type="checkbox"
+        />
+        Hiển thị sau khi lưu
       </label>
       <div className="option-editor">
         {question.options.map((option, optionIndex) => (
@@ -513,6 +597,57 @@ function ImportedQuestionEditor({
           Thêm đáp án
         </button>
       </div>
+    </article>
+  );
+}
+
+function ImportedStudyLessonEditor({
+  index,
+  lesson,
+  onChange,
+  onRemove
+}: {
+  index: number;
+  lesson: ImportedStudyLessonForm;
+  onChange: (lesson: ImportedStudyLessonForm) => void;
+  onRemove: () => void;
+}) {
+  return (
+    <article className="import-draft">
+      <div className="panel-title">
+        <span>Bài ôn nháp {index + 1}</span>
+        <button className="ghost-button compact" type="button" onClick={onRemove}>
+          Bỏ qua
+        </button>
+      </div>
+      {lesson.warnings && lesson.warnings.length > 0 && (
+        <div className="warning-list">
+          {lesson.warnings.map((warning, warningIndex) => (
+            <span key={`${warning}-${warningIndex}`}>{warning}</span>
+          ))}
+        </div>
+      )}
+      <SubjectPicker value={lesson.subject} onChange={(subject) => onChange({ ...lesson, subject })} label="Môn học" />
+      <label>
+        Tiêu đề bài ôn
+        <input value={lesson.title} onChange={(event) => onChange({ ...lesson, title: event.target.value })} />
+      </label>
+      <label>
+        Tóm tắt
+        <textarea value={lesson.summary} rows={2} onChange={(event) => onChange({ ...lesson, summary: event.target.value })} />
+      </label>
+      <label>
+        Nội dung ôn tập
+        <textarea value={lesson.content} rows={6} onChange={(event) => onChange({ ...lesson, content: event.target.value })} />
+      </label>
+      <label className="inline-check">
+        <input
+          checked={lesson.isActive}
+          onChange={(event) => onChange({ ...lesson, isActive: event.target.checked })}
+          type="checkbox"
+        />
+        Hiển thị cho người học
+      </label>
     </article>
   );
 }
@@ -889,6 +1024,13 @@ function ensureOneCorrect(options: QuestionForm["options"]) {
   }
 
   return options.map((option, index) => ({ ...option, isCorrect: index === 0 }));
+}
+
+function needsAnswerReview(question: Question) {
+  const filledOptions = question.options.filter((option) => option.content.trim());
+  const correctCount = filledOptions.filter((option) => option.isCorrect).length;
+
+  return filledOptions.length < 2 || correctCount !== 1;
 }
 
 function getPaginationItems(currentPage: number, totalPages: number) {

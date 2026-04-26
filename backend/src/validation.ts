@@ -27,15 +27,36 @@ export const questionSchema = z
     content: z.string().trim().min(5, "Câu hỏi cần ít nhất 5 ký tự").max(6000, "Câu hỏi tối đa 6.000 ký tự"),
     explanation: z.string().trim().max(4000, "Giải thích tối đa 4.000 ký tự").optional().nullable(),
     isActive: z.boolean().optional(),
-    options: z.array(optionSchema).min(2, "Cần ít nhất 2 đáp án").max(6, "Tối đa 6 đáp án")
+    options: z.array(optionSchema).max(6, "Tối đa 6 đáp án")
   })
   .superRefine((data, ctx) => {
     const correctCount = data.options.filter((option) => option.isCorrect).length;
+    const shouldPublish = data.isActive ?? true;
+
+    if (correctCount > 1) {
+      ctx.addIssue({
+        code: "custom",
+        message: "Mỗi câu hỏi chỉ được có 1 đáp án đúng",
+        path: ["options"]
+      });
+    }
+
+    if (!shouldPublish) {
+      return;
+    }
+
+    if (data.options.length < 2) {
+      ctx.addIssue({
+        code: "custom",
+        message: "Cần ít nhất 2 đáp án trước khi hiển thị câu hỏi cho người học",
+        path: ["options"]
+      });
+    }
 
     if (correctCount !== 1) {
       ctx.addIssue({
         code: "custom",
-        message: "Mỗi câu hỏi phải có đúng 1 đáp án đúng",
+        message: "Cần chọn đúng 1 đáp án đúng trước khi hiển thị câu hỏi cho người học",
         path: ["options"]
       });
     }

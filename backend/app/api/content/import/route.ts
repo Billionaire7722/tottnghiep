@@ -23,7 +23,7 @@ export async function POST(request: Request) {
       return jsonResponse(
         {
           code: "FILE_REQUIRED",
-          message: "Vui lòng chọn file câu hỏi"
+          message: "Vui lòng chọn file cần nhập"
         },
         request,
         400
@@ -31,9 +31,9 @@ export async function POST(request: Request) {
     }
 
     const text = await extractTextFromQuestionFile(file);
-    const { questions, lessons, warnings } = await parseAndReviewImportedContent(text, subject, file.name);
+    const review = await parseAndReviewImportedContent(text, subject, file.name);
 
-    return jsonResponse({ questions, lessons, warnings }, request);
+    return jsonResponse(review, request);
   } catch (error) {
     return errorResponse(error, request);
   }

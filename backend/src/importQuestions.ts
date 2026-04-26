@@ -1,4 +1,5 @@
 import mammoth from "mammoth";
+import { PDFParse } from "pdf-parse";
 import { ApiError } from "@/src/http";
 
 export type ParsedOption = {
@@ -20,29 +21,33 @@ export type DraftQuestion = ParsedQuestion & {
 const answerLabels = ["A", "B", "C", "D", "E", "F"];
 
 export async function extractTextFromQuestionFile(file: File) {
-  const maxBytes = 2 * 1024 * 1024;
+  const maxBytes = 30 * 1024 * 1024;
 
   if (file.size > maxBytes) {
-    throw new ApiError(400, "FILE_TOO_LARGE", "File tối đa 2MB");
+    throw new ApiError(400, "FILE_TOO_LARGE", "File tối đa 30MB");
   }
 
   const extension = file.name.split(".").pop()?.toLowerCase() ?? "";
   const buffer = Buffer.from(await file.arrayBuffer());
 
+  if (extension === "pdf" || file.type === "application/pdf") {
+    return extractPdfText(buffer);
+  }
+
   if (extension === "docx") {
     const result = await mammoth.extractRawText({ buffer });
-    return result.value;
+    return normalizeText(result.value);
   }
 
   if (["txt", "md", "csv"].includes(extension) || file.type.startsWith("text/")) {
-    return buffer.toString("utf8");
+    return normalizeText(buffer.toString("utf8"));
   }
 
   if (extension === "doc") {
     throw new ApiError(400, "UNSUPPORTED_DOC", "File .doc cũ chưa được hỗ trợ, vui lòng lưu lại thành .docx hoặc .txt");
   }
 
-  throw new ApiError(400, "UNSUPPORTED_FILE", "Chỉ hỗ trợ file .txt, .md, .csv hoặc .docx");
+  throw new ApiError(400, "UNSUPPORTED_FILE", "Chỉ hỗ trợ file .pdf, .txt, .md, .csv hoặc .docx");
 }
 
 export function parseQuestionText(text: string) {
@@ -200,15 +205,13 @@ function normalizeDraft(question: DraftQuestion, index: number) {
   const correctCount = next.options.filter((option) => option.isCorrect).length;
 
   if (next.options.length < 2) {
-    next.warnings.push(`Câu ${index + 1} có ít hơn 2 đáp án`);
+    next.isActive = false;
+    next.warnings.push(`Câu ${index + 1} có ít hơn 2 đáp án, đã đưa vào mục chưa đủ đáp án`);
   }
 
   if (correctCount === 0 && next.options.length > 0) {
-    next.options = next.options.map((option, optionIndex) => ({
-      ...option,
-      isCorrect: optionIndex === 0
-    }));
-    next.warnings.push(`Câu ${index + 1} chưa có đáp án đúng, hệ thống tạm chọn đáp án đầu tiên`);
+    next.isActive = false;
+    next.warnings.push(`Câu ${index + 1} chưa có đáp án đúng, đã đưa vào mục câu hỏi chưa có đáp án`);
   }
 
   if (correctCount > 1) {
@@ -225,6 +228,27 @@ function normalizeDraft(question: DraftQuestion, index: number) {
   }
 
   return next;
+}
+
+async function extractPdfText(buffer: Buffer) {
+  const parser = new PDFParse({ data: buffer });
+
+  try {
+    const result = await parser.getText();
+    const text = normalizeText(result.text ?? "");
+
+    if (text.replace(/\s/g, "").length < 20) {
+      throw new ApiError(
+        400,
+        "PDF_TEXT_EMPTY",
+        "Không nhận diện được chữ trong PDF. File có thể là bản scan/ảnh, cần OCR trước khi nhập."
+      );
+    }
+
+    return text;
+  } finally {
+    await parser.destroy();
+  }
 }
 
 function shouldStartUnnumberedQuestion(current: DraftQuestion, line: string, nextLine: string | undefined) {
@@ -374,6 +398,10 @@ function normalizeText(text: string) {
     .replace(/\r\n/g, "\n")
     .replace(/\r/g, "\n")
     .replace(/\u00a0/g, " ")
+    .replace(/-\n(?=\p{L})/gu, "")
+    .replace(/[ \t]+\n/g, "\n")
+    .replace(/\n[ \t]+/g, "\n")
+    .replace(/[ \t]{2,}/g, " ")
     .replace(/[“”]/g, '"')
     .replace(/[‘’]/g, "'");
 }

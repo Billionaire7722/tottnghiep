@@ -126,6 +126,10 @@ export type StudyLessonForm = {
   isActive: boolean;
 };
 
+export type ImportedStudyLessonForm = StudyLessonForm & {
+  warnings?: string[];
+};
+
 export type AccountForm = {
   username: string;
   displayName: string;

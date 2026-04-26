@@ -4,7 +4,7 @@ import { getExistingQuestionFingerprints } from "@/src/questions";
 import type { SubjectCode } from "@/src/subjects";
 
 export async function parseAndReviewQuestions(text: string, subject: SubjectCode) {
-  const parsedQuestions = parseQuestionText(text);
+  const parsedQuestions = parseQuestionText(text).filter(isLikelyQuestion);
   const existingFingerprints = await getExistingQuestionFingerprints(subject);
   const batchFingerprints = new Set<string>();
   const questions: DraftQuestion[] = [];
@@ -40,7 +40,30 @@ export async function parseAndReviewQuestions(text: string, subject: SubjectCode
   };
 }
 
+function isLikelyQuestion(question: DraftQuestion) {
+  if (question.options.length > 0) {
+    return true;
+  }
+
+  const normalized = stripDiacritics(question.content).toLowerCase();
+
+  return (
+    /[?？]/.test(question.content) ||
+    /\b(cau hoi|chon|hay chon|nhan dinh nao|noi dung nao|yeu to nao|bien phap nao|chi so nao|nguyen nhan nao|la gi)\b/.test(
+      normalized
+    )
+  );
+}
+
 function previewText(value: string) {
   const normalized = value.replace(/\s+/g, " ").trim();
   return normalized.length > 80 ? `${normalized.slice(0, 77)}...` : normalized;
+}
+
+function stripDiacritics(value: string) {
+  return value
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/đ/g, "d")
+    .replace(/Đ/g, "D");
 }

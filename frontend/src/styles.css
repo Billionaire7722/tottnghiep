@@ -660,6 +660,11 @@ p {
   border: 1px solid rgba(36, 29, 44, 0.08);
 }
 
+.admin-question-item.needs-answer-review {
+  background: rgba(255, 247, 232, 0.72);
+  border-color: rgba(184, 101, 37, 0.22);
+}
+
 .review-item span {
   color: var(--muted);
   font-weight: 800;
@@ -945,6 +950,18 @@ p {
 .subject-status {
   background: rgba(101, 65, 119, 0.1);
   color: #654177;
+}
+
+.warning-status {
+  background: rgba(184, 101, 37, 0.12);
+  color: #9b4f1f;
+}
+
+.answer-review-section {
+  display: grid;
+  gap: 12px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--line);
 }
 
 .row-actions {
