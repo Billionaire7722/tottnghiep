@@ -22,7 +22,7 @@ import {
   User,
   apiRequest
 } from "./api";
-import { ConfirmDialog, type ConfirmDialogContent } from "./ConfirmDialog";
+import { AppNotifications, type ConfirmationOptions, type ConfirmationRequest } from "./AppNotifications";
 import {
   AccountForm,
   AdminTab,
@@ -51,11 +51,6 @@ type CheckedAnswerState = {
 };
 type SubjectCountMap = Partial<Record<SubjectCode, number>>;
 type StudyProgressMap = Partial<Record<SubjectCode, number[]>>;
-type ConfirmationRequest = ConfirmDialogContent & {
-  resolve: (confirmed: boolean) => void;
-};
-type ConfirmationOptions = Partial<Pick<ConfirmDialogContent, "cancelLabel" | "tone">> &
-  Omit<ConfirmDialogContent, "cancelLabel" | "tone">;
 
 const tokenKey = "cnxh_token";
 const deviceKey = "cnxh_device_id";
@@ -1178,18 +1173,12 @@ function App() {
         />
       )}
 
-      {notice && <div className="toast">{notice}</div>}
-      {confirmation && (
-        <ConfirmDialog
-          title={confirmation.title}
-          message={confirmation.message}
-          confirmLabel={confirmation.confirmLabel}
-          cancelLabel={confirmation.cancelLabel}
-          tone={confirmation.tone}
-          onCancel={() => settleConfirmation(false)}
-          onConfirm={() => settleConfirmation(true)}
-        />
-      )}
+      <AppNotifications
+        notice={notice}
+        confirmation={confirmation}
+        onCancelConfirmation={() => settleConfirmation(false)}
+        onConfirmConfirmation={() => settleConfirmation(true)}
+      />
     </main>
   );
 }
