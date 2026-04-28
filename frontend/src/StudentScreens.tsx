@@ -258,9 +258,6 @@ export function ModeScreen({
 export function StudyScreen({
   subject,
   lessons,
-  questions,
-  studiedQuestionIds,
-  onMarkStudied,
   onBack,
   onStartQuiz,
   onHome,
@@ -276,23 +273,18 @@ export function StudyScreen({
   onHome: () => void;
   onHistory: () => void;
 }) {
-  const [expandedId, setExpandedId] = useState<number | null>(questions[0]?.id ?? null);
   const [search, setSearch] = useState("");
+  const [expandedLessonId, setExpandedLessonId] = useState<number | null>(lessons[0]?.id ?? null);
   const currentSubject = getSubjectOption(subject);
   const topics = subjectStudyTopics[subject];
   const normalizedSearch = search.trim().toLowerCase();
-  const filteredQuestions = useMemo(
+  const filteredLessons = useMemo(
     () =>
       normalizedSearch
-        ? questions.filter((question) => `${question.content} ${question.explanation ?? ""}`.toLowerCase().includes(normalizedSearch))
-        : questions,
-    [normalizedSearch, questions]
+        ? lessons.filter((lesson) => `${lesson.title} ${lesson.summary} ${lesson.content}`.toLowerCase().includes(normalizedSearch))
+        : lessons,
+    [lessons, normalizedSearch]
   );
-
-  function openQuestion(questionId: number) {
-    setExpandedId((current) => (current === questionId ? null : questionId));
-    onMarkStudied(questionId);
-  }
 
   return (
     <div className="student-screen study-screen">
@@ -300,7 +292,7 @@ export function StudyScreen({
 
       <label className="study-search">
         <span>Tìm bài ôn</span>
-        <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Nhập từ khóa câu hỏi..." />
+        <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Nhập từ khóa trong bài ôn..." />
       </label>
 
       <section className="topic-strip" aria-label="Chủ đề gợi ý">
@@ -312,68 +304,41 @@ export function StudyScreen({
         ))}
       </section>
 
-      {lessons.length > 0 && (
-        <section className="managed-study-section">
+      <section className="managed-study-section">
+        <div className="section-heading">
           <h2>Bài ôn theo môn</h2>
-          <div className="managed-study-list">
-            {lessons.map((lesson) => (
-              <article className="managed-study-card" key={lesson.id}>
-                <span>{currentSubject.label}</span>
-                <h3>{lesson.title}</h3>
-                {lesson.summary && <p>{lesson.summary}</p>}
-                <RichQuestionContent content={lesson.content} />
-              </article>
-            ))}
-          </div>
-        </section>
-      )}
-
-      <div className="lesson-list">
-        {filteredQuestions.length === 0 ? (
-          <p className="empty-text">Không tìm thấy câu hỏi phù hợp.</p>
+          <small>{filteredLessons.length} bài</small>
+        </div>
+        {filteredLessons.length === 0 ? (
+          <p className="empty-text">Không tìm thấy bài ôn phù hợp.</p>
         ) : (
-          filteredQuestions.map((question, index) => {
-            const correctOption = question.options.find((option) => option.isCorrect);
-            const expanded = expandedId === question.id;
-            const studied = studiedQuestionIds.has(question.id);
+          <div className="managed-study-list">
+            {filteredLessons.map((lesson, index) => {
+              const expanded = expandedLessonId === lesson.id;
 
-            return (
-              <article className={expanded ? "lesson-card expanded" : "lesson-card"} key={question.id}>
-                <button type="button" onClick={() => openQuestion(question.id)}>
-                  <span>
-                    <small>{studied ? "Đã ôn" : `Bài ${index + 1}`}</small>
-                    <strong>{summarizeQuestion(question.content)}</strong>
-                  </span>
-                  <em>{expanded ? "Thu gọn" : "Bắt đầu ôn"}</em>
-                </button>
-
-                {expanded && (
-                  <div className="lesson-detail">
-                    <RichQuestionContent content={question.content} />
-                    <div className="study-answer-box">
-                      <span>Đáp án đúng</span>
-                      <strong>{correctOption ? `${correctOption.label}. ${correctOption.content}` : "Chưa có đáp án"}</strong>
+              return (
+                <article className={expanded ? "managed-study-card expanded" : "managed-study-card"} key={lesson.id}>
+                  <button type="button" onClick={() => setExpandedLessonId((current) => (current === lesson.id ? null : lesson.id))}>
+                    <span>
+                      <small>
+                        {currentSubject.label} · Bài {index + 1}
+                      </small>
+                      <strong>{lesson.title}</strong>
+                      {lesson.summary && <em>{lesson.summary}</em>}
+                    </span>
+                    <b>{expanded ? "Thu gọn" : "Đọc bài"}</b>
+                  </button>
+                  {expanded && (
+                    <div className="managed-study-content">
+                      <RichQuestionContent content={lesson.content} />
                     </div>
-                    {question.explanation && (
-                      <div className="study-explanation">
-                        <span>Ghi nhớ</span>
-                        <p>{question.explanation}</p>
-                      </div>
-                    )}
-                    <div className="study-option-list">
-                      {question.options.map((option) => (
-                        <span className={option.isCorrect ? "correct" : ""} key={option.id}>
-                          {option.label}. {option.content}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </article>
-            );
-          })
+                  )}
+                </article>
+              );
+            })}
+          </div>
         )}
-      </div>
+      </section>
 
       <button className="sticky-primary" type="button" onClick={onStartQuiz}>
         Làm bài kiểm tra

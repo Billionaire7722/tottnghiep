@@ -62,8 +62,11 @@ function buildStudyLessons(text: string, sourceName: string, questions: DraftQue
 }
 
 function shouldTreatAsQuestionBank(sourceName: string, lines: string[], questions: DraftQuestion[]) {
-  const baseName = stripDiacritics(path.basename(sourceName)).toLowerCase();
-  const looksLikeExamFile = /\b(test|de thi|trac nghiem|cau hoi|review)\b/.test(baseName);
+  const normalizedSource = stripDiacritics(sourceName).toLowerCase().replace(/\\/g, "/");
+  const baseName = path.posix.basename(normalizedSource);
+  const looksLikeExamFile = /(?:^|[\/\s_.-])(test|de thi|trac nghiem|cau hoi|review)(?:$|[\/\s_.-])/.test(
+    normalizedSource
+  );
   const questionSignals = lines.filter(
     (line) =>
       /^(?:cau\s*)?\d+[\).:\-]\s+/i.test(stripDiacritics(line)) ||
@@ -71,7 +74,15 @@ function shouldTreatAsQuestionBank(sourceName: string, lines: string[], question
       /^(?:dap\s*an|answer)\s*[:\-]/i.test(stripDiacritics(line))
   ).length;
 
-  if (looksLikeExamFile && questions.length > 0) {
+  if (looksLikeExamFile) {
+    return true;
+  }
+
+  if (/\bde\s*so\s*\d+\b/.test(baseName)) {
+    return true;
+  }
+
+  if (questionSignals >= 8 && questionSignals >= Math.floor(lines.length * 0.18)) {
     return true;
   }
 

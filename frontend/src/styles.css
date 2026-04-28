@@ -1836,8 +1836,8 @@ p {
 }
 
 .study-screen {
-  gap: 16px;
-  background: linear-gradient(180deg, #f7f9fb, #eef2f4);
+  gap: 18px;
+  background: linear-gradient(180deg, #f8fafc, #eef3f2);
 }
 
 .study-search {
@@ -1872,8 +1872,8 @@ p {
 .topic-strip article {
   display: grid;
   gap: 6px;
-  padding: 14px;
-  border-radius: 20px;
+  padding: 14px 16px;
+  border-radius: 8px;
   background: white;
   border: 1px solid rgba(17, 21, 35, 0.06);
 }
@@ -1887,6 +1887,115 @@ p {
   color: #555b66;
   line-height: 1.35;
   font-weight: 650;
+}
+
+.managed-study-section {
+  display: grid;
+  gap: 14px;
+}
+
+.managed-study-section .section-heading {
+  align-items: end;
+}
+
+.managed-study-section .section-heading h2 {
+  font-size: clamp(1.2rem, 2vw, 1.55rem);
+  line-height: 1.2;
+}
+
+.managed-study-section .section-heading small {
+  color: #5f6470;
+  font-size: 0.86rem;
+  font-weight: 800;
+}
+
+.managed-study-list {
+  display: grid;
+  gap: 12px;
+}
+
+.managed-study-card {
+  display: grid;
+  overflow: hidden;
+  border-radius: 8px;
+  background: #ffffff;
+  border: 1px solid rgba(17, 21, 35, 0.08);
+  box-shadow: 0 12px 26px rgba(17, 21, 35, 0.06);
+}
+
+.managed-study-card > button {
+  min-height: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 16px;
+  border-radius: 0;
+  background: #ffffff;
+  color: #121623;
+  text-align: left;
+  box-shadow: none;
+}
+
+.managed-study-card > button:hover {
+  background: #f8fafc;
+  transform: none;
+}
+
+.managed-study-card > button span {
+  display: grid;
+  min-width: 0;
+  gap: 6px;
+}
+
+.managed-study-card small {
+  color: var(--app-purple);
+  font-size: 0.76rem;
+  font-weight: 850;
+}
+
+.managed-study-card strong {
+  color: #0f172a;
+  font-size: clamp(1rem, 1.45vw, 1.16rem);
+  line-height: 1.28;
+  font-weight: 850;
+  overflow-wrap: anywhere;
+}
+
+.managed-study-card em {
+  color: #5f6470;
+  font-size: 0.9rem;
+  font-style: normal;
+  font-weight: 650;
+  line-height: 1.45;
+}
+
+.managed-study-card b {
+  flex: 0 0 auto;
+  padding: 8px 12px;
+  border-radius: 999px;
+  background: #eef2ff;
+  color: #4e0da8;
+  font-size: 0.82rem;
+  font-weight: 850;
+}
+
+.managed-study-content {
+  padding: 0 16px 18px;
+  color: #1f2937;
+}
+
+.managed-study-content .rich-question-content {
+  display: grid;
+  gap: 10px;
+  color: inherit;
+  font-size: 0.96rem;
+  line-height: 1.62;
+}
+
+.managed-study-content .rich-question-content strong,
+.managed-study-content .rich-question-content b {
+  font-weight: 800;
 }
 
 .lesson-list {
@@ -2871,54 +2980,49 @@ p {
 .managed-study-section {
   display: grid;
   gap: 14px;
-  padding: clamp(18px, 3vw, 24px);
-  border-radius: 24px;
-  background: rgba(255, 255, 255, 0.88);
-  border: 1px solid rgba(36, 29, 44, 0.08);
-  box-shadow: 0 18px 42px rgba(36, 29, 44, 0.08);
+  padding: 0;
+  border-radius: 0;
+  background: transparent;
+  border: 0;
+  box-shadow: none;
 }
 
 .managed-study-section h2 {
-  font-size: clamp(1.45rem, 3vw, 2.1rem);
+  font-size: clamp(1.2rem, 2vw, 1.55rem);
 }
 
 .managed-study-list {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-  gap: 14px;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 12px;
 }
 
 .managed-study-card {
   display: grid;
-  gap: 10px;
-  align-content: start;
-  padding: 16px;
-  border-radius: 18px;
+  gap: 0;
+  overflow: hidden;
+  padding: 0;
+  border-radius: 8px;
   background: #ffffff;
-  border: 1px solid rgba(36, 29, 44, 0.08);
+  border: 1px solid rgba(17, 21, 35, 0.08);
+  box-shadow: 0 12px 26px rgba(17, 21, 35, 0.06);
 }
 
-.managed-study-card > span {
-  width: max-content;
-  padding: 5px 9px;
-  border-radius: 999px;
-  background: var(--app-purple-soft);
-  color: var(--app-purple-dark);
-  font-size: 0.72rem;
-  font-weight: 900;
+.managed-study-card > button {
+  min-height: 0;
+  border-radius: 0;
+  background: #ffffff;
+  color: #121623;
+  box-shadow: none;
 }
 
-.managed-study-card h3 {
-  font-size: 1.18rem;
-}
-
-.managed-study-card p {
-  color: var(--muted);
+.managed-study-card > button:hover {
+  background: #f8fafc;
+  transform: none;
 }
 
 .managed-study-card .rich-question-content {
-  padding-top: 6px;
-  color: var(--ink);
+  color: #1f2937;
 }
 
 .profile-admin-panel {

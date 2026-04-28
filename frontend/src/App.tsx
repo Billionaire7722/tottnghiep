@@ -378,23 +378,17 @@ function App() {
     setStudyBusy(true);
 
     try {
-      const [questionData, lessonData] = await Promise.all([
-        authedRequest<{ questions: Question[] }>(`/api/questions?subject=${encodeURIComponent(selectedSubject)}&mode=study`),
-        authedRequest<{ lessons: StudyLesson[] }>(`/api/study-lessons?subject=${encodeURIComponent(selectedSubject)}`)
-      ]);
-      const usableQuestions = questionData.questions.filter((question) => question.options.length >= 2);
-      setStudyQuestions(usableQuestions);
+      const lessonData = await authedRequest<{ lessons: StudyLesson[] }>(
+        `/api/study-lessons?subject=${encodeURIComponent(selectedSubject)}`
+      );
+      setStudyQuestions([]);
       setStudentStudyLessons(lessonData.lessons);
 
-      if (usableQuestions.length === 0 && lessonData.lessons.length === 0) {
+      if (lessonData.lessons.length === 0) {
         setNotice("Chưa có nội dung ôn tập khả dụng cho môn đã chọn");
         return;
       }
 
-      setSubjectCounts((current) => ({
-        ...current,
-        [selectedSubject]: usableQuestions.length
-      }));
       setScreen("study");
     } catch (error) {
       handleError(error);
