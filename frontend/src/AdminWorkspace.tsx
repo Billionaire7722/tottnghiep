@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState, type Dispatch, type FormEvent, type SetStateAction } from "react";
-import type { Account, AccountDetail, Question, StudyLesson, User } from "./api";
+import type { Account, AccountDetail, Question, StudyLesson, StudyLessonAttachment, User } from "./api";
+import { Icon } from "./Icons";
 import { RichQuestionContent } from "./RichQuestionContent";
 import { SubjectPicker } from "./SubjectPicker";
 import {
@@ -49,6 +50,8 @@ type AdminWorkspaceProps = {
   onSaveStudyLesson: (event: FormEvent<HTMLFormElement>) => void;
   onEditStudyLesson: (lesson: StudyLesson) => void;
   onDeleteStudyLesson: (id: number) => void;
+  onUploadStudyLessonAttachment: (lessonId: number, file: File) => void;
+  onDeleteStudyLessonAttachment: (lessonId: number, attachmentId: string) => void;
   onSaveAccount: (event: FormEvent<HTMLFormElement>) => void;
   onEditAccount: (account: Account) => void;
   onDeleteAccount: (id: string) => void;
@@ -661,7 +664,9 @@ function StudyLessonAdmin({
   busy,
   onSaveStudyLesson,
   onEditStudyLesson,
-  onDeleteStudyLesson
+  onDeleteStudyLesson,
+  onUploadStudyLessonAttachment,
+  onDeleteStudyLessonAttachment
 }: AdminWorkspaceProps) {
   const [filterSubject, setFilterSubject] = useState<SubjectCode>("dich_te");
   const filteredLessons = useMemo(
@@ -715,9 +720,10 @@ function StudyLessonAdmin({
             value={studyLessonForm.content}
             onChange={(event) => setStudyLessonForm((current) => ({ ...current, content: event.target.value }))}
             rows={10}
-            placeholder="Ghi chú, ý chính, công thức, ví dụ hoặc bảng Markdown..."
+            placeholder="Ghi chú, ý chính, công thức, ví dụ hoặc bảng Markdown. Có thể để trống nếu bài học chỉ dùng file đính kèm."
           />
         </label>
+        <p className="hint-text">Sau khi tạo bài học, bạn có thể tải lên PDF, ảnh, video, audio hoặc file tài liệu trong danh sách bên phải.</p>
         <label className="inline-check">
           <input
             checked={studyLessonForm.isActive}
@@ -749,9 +755,19 @@ function StudyLessonAdmin({
                   </div>
                   <h3>{lesson.title}</h3>
                   {lesson.summary && <p>{lesson.summary}</p>}
-                  <div className="admin-question-content">
-                    <RichQuestionContent content={lesson.content} />
-                  </div>
+                  {lesson.content ? (
+                    <div className="admin-question-content">
+                      <RichQuestionContent content={lesson.content} />
+                    </div>
+                  ) : (
+                    <p className="empty-text">Bài này chưa có nội dung chữ.</p>
+                  )}
+                  <StudyLessonAttachmentManager
+                    lesson={lesson}
+                    busy={busy}
+                    onUpload={onUploadStudyLessonAttachment}
+                    onDelete={onDeleteStudyLessonAttachment}
+                  />
                 </div>
                 <div className="row-actions">
                   <button className="secondary-button" type="button" onClick={() => onEditStudyLesson(lesson)}>
@@ -766,6 +782,87 @@ function StudyLessonAdmin({
           </div>
         )}
       </section>
+    </div>
+  );
+}
+
+function StudyLessonAttachmentManager({
+  lesson,
+  busy,
+  onUpload,
+  onDelete
+}: {
+  lesson: StudyLesson;
+  busy: boolean;
+  onUpload: (lessonId: number, file: File) => void;
+  onDelete: (lessonId: number, attachmentId: string) => void;
+}) {
+  return (
+    <div className="lesson-attachment-manager">
+      <div className="panel-title compact-title">
+        <span>Tài liệu đính kèm</span>
+        <small>{lesson.attachments?.length ?? 0} file</small>
+      </div>
+      {lesson.attachments?.length ? (
+        <div className="lesson-attachment-list">
+          {lesson.attachments.map((attachment) => (
+            <StudyLessonAttachmentRow
+              key={attachment.id}
+              lessonId={lesson.id}
+              attachment={attachment}
+              busy={busy}
+              onDelete={onDelete}
+            />
+          ))}
+        </div>
+      ) : (
+        <p className="empty-text">Chưa có file nào.</p>
+      )}
+      <label className="attachment-upload-control">
+        <Icon name="upload" />
+        Tải file lên
+        <input
+          type="file"
+          accept=".pdf,.png,.jpg,.jpeg,.webp,.gif,.mp4,.webm,.mov,.m4v,.mp3,.wav,.m4a,.txt,.md,.doc,.docx,.ppt,.pptx,.xls,.xlsx,image/*,video/*,audio/*,application/pdf"
+          disabled={busy}
+          onChange={(event) => {
+            const file = event.target.files?.[0];
+
+            if (file) {
+              onUpload(lesson.id, file);
+              event.target.value = "";
+            }
+          }}
+        />
+      </label>
+    </div>
+  );
+}
+
+function StudyLessonAttachmentRow({
+  lessonId,
+  attachment,
+  busy,
+  onDelete
+}: {
+  lessonId: number;
+  attachment: StudyLessonAttachment;
+  busy: boolean;
+  onDelete: (lessonId: number, attachmentId: string) => void;
+}) {
+  return (
+    <div className="lesson-attachment-row">
+      <a href={`/api/study-lessons/${lessonId}/attachments/${attachment.id}`} target="_blank" rel="noreferrer">
+        <span>
+          <Icon name={attachmentIcon(attachment.kind)} />
+        </span>
+        <strong>{attachment.fileName}</strong>
+        <small>{formatFileSize(attachment.size)}</small>
+      </a>
+      <button className="ghost-button compact" type="button" disabled={busy} onClick={() => onDelete(lessonId, attachment.id)}>
+        <Icon name="trash" />
+        Xóa
+      </button>
     </div>
   );
 }
@@ -1059,6 +1156,38 @@ function getPaginationItems(currentPage: number, totalPages: number) {
 
 function formatOptionalDate(value?: string | null) {
   return value ? formatDate(value) : "Chưa ghi nhận";
+}
+
+function attachmentIcon(kind: StudyLessonAttachment["kind"]) {
+  if (kind === "image") {
+    return "image";
+  }
+
+  if (kind === "video") {
+    return "video";
+  }
+
+  if (kind === "audio") {
+    return "file";
+  }
+
+  if (kind === "pdf" || kind === "document") {
+    return "fileText";
+  }
+
+  return "file";
+}
+
+function formatFileSize(size: number) {
+  if (size >= 1024 * 1024) {
+    return `${(size / 1024 / 1024).toFixed(1)} MB`;
+  }
+
+  if (size >= 1024) {
+    return `${Math.round(size / 1024)} KB`;
+  }
+
+  return `${size} B`;
 }
 
 function removeOption(index: number, setQuestionForm: Dispatch<SetStateAction<QuestionForm>>) {

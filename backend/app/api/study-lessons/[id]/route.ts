@@ -1,5 +1,6 @@
-import { requireQuestionManager } from "@/src/auth";
-import { deleteStudyLesson, updateStudyLesson } from "@/src/studyLessons";
+import { getAuthContext, requireQuestionManager } from "@/src/auth";
+import { canManageQuestions } from "@/src/roles";
+import { deleteStudyLesson, getStudyLesson, updateStudyLesson } from "@/src/studyLessons";
 import { emptyResponse, errorResponse, jsonResponse, optionsResponse, readJson, routeParamId } from "@/src/http";
 import { studyLessonSchema } from "@/src/validation";
 
@@ -11,6 +12,18 @@ type RouteContext = {
 
 export async function OPTIONS(request: Request) {
   return optionsResponse(request);
+}
+
+export async function GET(request: Request, context: RouteContext) {
+  try {
+    const auth = await getAuthContext(request);
+    const id = routeParamId(await context.params);
+    const lesson = await getStudyLesson(id, canManageQuestions(auth.user.role));
+
+    return jsonResponse({ lesson }, request);
+  } catch (error) {
+    return errorResponse(error, request);
+  }
 }
 
 export async function PUT(request: Request, context: RouteContext) {

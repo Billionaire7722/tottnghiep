@@ -632,6 +632,45 @@ function App() {
     }
   }
 
+  async function uploadStudyLessonAttachment(lessonId: number, file: File) {
+    setAdminBusy(true);
+
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      const data = await authedRequest<{ lesson: StudyLesson }>(`/api/study-lessons/${lessonId}/attachments`, {
+        method: "POST",
+        body: formData
+      });
+
+      setAdminStudyLessons((current) => current.map((lesson) => (lesson.id === lessonId ? data.lesson : lesson)));
+      setNotice("Đã tải file lên bài học");
+    } catch (error) {
+      handleError(error);
+    } finally {
+      setAdminBusy(false);
+    }
+  }
+
+  async function deleteStudyLessonAttachment(lessonId: number, attachmentId: string) {
+    if (!window.confirm("Xóa file đính kèm này khỏi bài học?")) {
+      return;
+    }
+
+    setAdminBusy(true);
+
+    try {
+      await authedRequest(`/api/study-lessons/${lessonId}/attachments/${attachmentId}`, { method: "DELETE" });
+      const data = await authedRequest<{ lesson: StudyLesson }>(`/api/study-lessons/${lessonId}`);
+      setAdminStudyLessons((current) => current.map((lesson) => (lesson.id === lessonId ? data.lesson : lesson)));
+      setNotice("Đã xóa file đính kèm");
+    } catch (error) {
+      handleError(error);
+    } finally {
+      setAdminBusy(false);
+    }
+  }
+
   async function importQuestionFile(file: File) {
     setImportBusy(true);
 
@@ -648,11 +687,11 @@ function App() {
         body: formData
       });
       setImportedQuestions(data.questions.map((question) => ({ ...question, subject: importSubject })));
-      setImportedStudyLessons(data.lessons.map((lesson) => ({ ...lesson, subject: importSubject })));
+      setImportedStudyLessons([]);
       setImportWarnings(data.warnings);
       setNotice(
-        data.questions.length > 0 || data.lessons.length > 0
-          ? `Đã đọc ${data.questions.length} câu hỏi và ${data.lessons.length} bài ôn từ file`
+        data.questions.length > 0
+          ? `Đã đọc ${data.questions.length} câu hỏi từ file`
           : "Không tìm thấy nội dung mới hợp lệ"
       );
     } catch (error) {
@@ -1016,6 +1055,8 @@ function App() {
               onSaveStudyLesson={saveStudyLesson}
               onEditStudyLesson={editStudyLesson}
               onDeleteStudyLesson={deleteStudyLessonById}
+              onUploadStudyLessonAttachment={(lessonId, file) => void uploadStudyLessonAttachment(lessonId, file)}
+              onDeleteStudyLessonAttachment={(lessonId, attachmentId) => void deleteStudyLessonAttachment(lessonId, attachmentId)}
               onSaveAccount={saveAccount}
               onEditAccount={editAccount}
               onDeleteAccount={deleteAccountById}

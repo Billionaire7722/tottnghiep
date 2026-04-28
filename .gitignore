@@ -7,4 +7,6 @@ dist
 npm-debug.log*
 pgdata
 artifacts
+uploads
+backend/uploads
 *.tsbuildinfo

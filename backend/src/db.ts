@@ -204,6 +204,24 @@ async function initializeDatabase() {
   `);
 
   await pool.query(`
+    CREATE TABLE IF NOT EXISTS study_lesson_attachments (
+      id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+      lesson_id integer NOT NULL REFERENCES study_lessons(id) ON DELETE CASCADE,
+      file_name text NOT NULL,
+      mime_type text NOT NULL,
+      file_size bigint NOT NULL,
+      kind text NOT NULL CHECK (kind IN ('image', 'video', 'audio', 'pdf', 'document', 'file')),
+      storage_key text NOT NULL UNIQUE,
+      created_by uuid REFERENCES users(id) ON DELETE SET NULL,
+      created_at timestamptz NOT NULL DEFAULT now()
+    )
+  `);
+  await pool.query(`
+    CREATE INDEX IF NOT EXISTS study_lesson_attachments_lesson_idx
+    ON study_lesson_attachments (lesson_id, created_at)
+  `);
+
+  await pool.query(`
     CREATE TABLE IF NOT EXISTS options (
       id serial PRIMARY KEY,
       question_id integer NOT NULL REFERENCES questions(id) ON DELETE CASCADE,

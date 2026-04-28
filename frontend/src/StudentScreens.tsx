@@ -1,6 +1,7 @@
 import { useMemo, useState, type CSSProperties, type FormEvent, type ReactNode } from "react";
 import cnxhMark from "./assets/cnxh-mark.svg";
-import type { Attempt, Question, QuizResult, StudyLesson, User } from "./api";
+import type { Attempt, Question, QuizResult, StudyLesson, StudyLessonAttachment, User } from "./api";
+import { Icon, type IconName } from "./Icons";
 import { RichQuestionContent } from "./RichQuestionContent";
 import {
   formatDate,
@@ -13,6 +14,13 @@ import {
 
 type SubjectCountMap = Partial<Record<SubjectCode, number>>;
 type NavActive = "home" | "study" | "test" | "profile";
+
+const subjectIconMap: Record<SubjectCode, IconName> = {
+  dich_te: "stethoscope",
+  suc_khoe_nghe_nghiep: "briefcase",
+  dinh_duong: "leaf",
+  suc_khoe_moi_truong: "shield"
+};
 
 export function PhoneShell({ children }: { children: ReactNode }) {
   return (
@@ -117,57 +125,61 @@ export function StartScreen({
   return (
     <div className="student-screen dashboard-screen">
       <header className="dashboard-hero">
-        <div className="student-avatar" aria-hidden="true">
-          {getInitial(user.displayName)}
+        <div className="dashboard-identity">
+          <div className="student-avatar" aria-hidden="true">
+            {getInitial(user.displayName)}
+          </div>
+          <div>
+            <p>Xin chào, {user.displayName || "bạn"}!</p>
+            <span>{roleLabel(user.role)}</span>
+          </div>
         </div>
-        <div>
-          <p>Hi, {user.displayName || "Student"}!</p>
-          <span>{roleLabel(user.role)} · start your productive day</span>
+        <div className="dashboard-actions">
+          {(user.role === "admin" || user.role === "editor") && (
+            <button className="secondary-button" type="button" onClick={onAdmin}>
+              <Icon name="shield" />
+              Quản trị
+            </button>
+          )}
+          <button className="home-logout-button" type="button" onClick={onLogout}>
+            <Icon name="logOut" />
+            Đăng xuất
+          </button>
         </div>
       </header>
 
       <section className="score-summary" aria-label="Tổng quan học tập">
-        <SummaryMetric icon="★" label="Điểm gần nhất" value={latest ? `${latest.score}/${latest.total}` : "--"} />
-        <SummaryMetric icon="♛" label="Điểm tốt nhất" value={bestPercentage ? `${bestPercentage}%` : "--"} />
+        <SummaryMetric icon="clipboard" label="Điểm gần nhất" value={latest ? `${latest.score}/${latest.total}` : "--"} />
+        <SummaryMetric icon="trophy" label="Điểm tốt nhất" value={bestPercentage ? `${bestPercentage}%` : "--"} />
       </section>
 
       <section className="subject-section">
         <div className="section-heading">
           <h2>Chọn môn học</h2>
-          {(user.role === "admin" || user.role === "editor") && (
-            <button className="text-link" type="button" onClick={onAdmin}>
-              Quản trị
-            </button>
-          )}
+          <small>Chọn môn rồi vào ôn tập hoặc làm bài kiểm tra</small>
         </div>
         <div className="subject-grid">
           {subjectOptions.map((subject) => {
             const total = subjectCounts[subject.value];
             const isLoading = total === undefined;
             const questionCount = total ?? 0;
-            const studied = Math.min(studiedCounts[subject.value] ?? 0, questionCount);
-            const percent = questionCount > 0 ? Math.round((studied / questionCount) * 100) : 0;
-
             return (
               <button className="subject-card" key={subject.value} type="button" onClick={() => onSubjectSelect(subject.value)}>
                 <span className="subject-card-icon" aria-hidden="true">
-                  {subject.icon}
+                  <Icon name={subjectIconMap[subject.value]} />
                 </span>
                 <strong>{subject.label}</strong>
-                <small>{isLoading ? "Đang tải..." : questionCount > 0 ? `${questionCount} câu hỏi` : "Chưa có câu hỏi"}</small>
-                <span className="mini-progress" aria-hidden="true">
-                  <span style={{ width: `${percent}%` }} />
+                <small>{subject.description}</small>
+                <em>{isLoading ? "Đang tải dữ liệu" : questionCount > 0 ? `${questionCount} câu hỏi trắc nghiệm` : "Chưa có câu hỏi"}</em>
+                <span className="subject-card-cta">
+                  Vào môn
+                  <Icon name="arrowLeft" />
                 </span>
-                <em>{isLoading ? "Đang đồng bộ" : questionCount > 0 ? `${studied}/${questionCount} đã ôn` : "Sẵn sàng cập nhật"}</em>
               </button>
             );
           })}
         </div>
       </section>
-
-      <button className="home-logout-button" type="button" onClick={onLogout}>
-        Đăng xuất
-      </button>
 
       <BottomNav active="home" onHome={() => undefined} onStudy={onStudyTab} onTest={onTestTab} onProfile={onHistory} />
     </div>
@@ -222,14 +234,14 @@ export function ModeScreen({
       <div className="mode-grid">
         <button className="mode-card" type="button" onClick={onStudy} disabled={studyBusy}>
           <span className="mode-card-icon" aria-hidden="true">
-            ◧
+            <Icon name="book" />
           </span>
           <strong>Ôn tập kiến thức</strong>
-          <small>Hệ thống lại câu hỏi, đáp án đúng và phần giải thích.</small>
+          <small>Xem bài học, ghi chú và tài liệu do admin hoặc người chỉnh sửa đăng lên.</small>
         </button>
         <button className="mode-card" type="button" onClick={onStartQuiz} disabled={quizBusy}>
           <span className="mode-card-icon" aria-hidden="true">
-            ◷
+            <Icon name="clipboard" />
           </span>
           <strong>Làm bài kiểm tra</strong>
           <small>Thử thách bản thân với bộ câu hỏi trắc nghiệm.</small>
@@ -244,7 +256,9 @@ export function ModeScreen({
             .map((option) => (
               <button className="related-card" key={option.value} type="button" onClick={() => onSubjectSelect(option.value)}>
                 <strong>{option.label}</strong>
-                <span aria-hidden="true">›</span>
+                <span aria-hidden="true" className="related-card-arrow">
+                  <Icon name="arrowLeft" />
+                </span>
               </button>
             ))}
         </div>
@@ -274,9 +288,8 @@ export function StudyScreen({
   onHistory: () => void;
 }) {
   const [search, setSearch] = useState("");
-  const [expandedLessonId, setExpandedLessonId] = useState<number | null>(lessons[0]?.id ?? null);
+  const [selectedLessonId, setSelectedLessonId] = useState<number | null>(null);
   const currentSubject = getSubjectOption(subject);
-  const topics = subjectStudyTopics[subject];
   const normalizedSearch = search.trim().toLowerCase();
   const filteredLessons = useMemo(
     () =>
@@ -285,57 +298,69 @@ export function StudyScreen({
         : lessons,
     [lessons, normalizedSearch]
   );
+  const selectedLesson = lessons.find((lesson) => lesson.id === selectedLessonId) ?? null;
+
+  if (selectedLesson) {
+    return (
+      <LessonDetailScreen
+        lesson={selectedLesson}
+        subjectLabel={currentSubject.label}
+        onBack={() => setSelectedLessonId(null)}
+        onStartQuiz={onStartQuiz}
+        onHome={onHome}
+        onHistory={onHistory}
+      />
+    );
+  }
 
   return (
     <div className="student-screen study-screen">
-      <ScreenHeader title="Ôn tập kiến thức" subtitle={currentSubject.label} onBack={onBack} />
+      <ScreenHeader title="Bài học" subtitle={currentSubject.label} onBack={onBack} />
 
       <label className="study-search">
-        <span>Tìm bài ôn</span>
-        <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Nhập từ khóa trong bài ôn..." />
+        <span>
+          <Icon name="search" />
+          Tìm bài học
+        </span>
+        <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Nhập tên bài hoặc từ khóa..." />
       </label>
-
-      <section className="topic-strip" aria-label="Chủ đề gợi ý">
-        {topics.map((topic) => (
-          <article key={topic.title}>
-            <strong>{topic.title}</strong>
-            <small>{topic.description}</small>
-          </article>
-        ))}
-      </section>
 
       <section className="managed-study-section">
         <div className="section-heading">
-          <h2>Bài ôn theo môn</h2>
+          <h2>Danh sách bài học</h2>
           <small>{filteredLessons.length} bài</small>
         </div>
         {filteredLessons.length === 0 ? (
-          <p className="empty-text">Không tìm thấy bài ôn phù hợp.</p>
+          <div className="study-empty-state">
+            <Icon name="book" />
+            <strong>Chưa có bài học phù hợp</strong>
+            <p>Admin hoặc người chỉnh sửa có thể thêm bài học và tài liệu trong khu vực quản trị.</p>
+          </div>
         ) : (
           <div className="managed-study-list">
-            {filteredLessons.map((lesson, index) => {
-              const expanded = expandedLessonId === lesson.id;
-
-              return (
-                <article className={expanded ? "managed-study-card expanded" : "managed-study-card"} key={lesson.id}>
-                  <button type="button" onClick={() => setExpandedLessonId((current) => (current === lesson.id ? null : lesson.id))}>
-                    <span>
-                      <small>
-                        {currentSubject.label} · Bài {index + 1}
-                      </small>
-                      <strong>{lesson.title}</strong>
-                      {lesson.summary && <em>{lesson.summary}</em>}
-                    </span>
-                    <b>{expanded ? "Thu gọn" : "Đọc bài"}</b>
-                  </button>
-                  {expanded && (
-                    <div className="managed-study-content">
-                      <RichQuestionContent content={lesson.content} />
-                    </div>
-                  )}
-                </article>
-              );
-            })}
+            {filteredLessons.map((lesson, index) => (
+              <article className="managed-study-card" key={lesson.id}>
+                <button type="button" onClick={() => setSelectedLessonId(lesson.id)}>
+                  <span className="lesson-card-index">{String(index + 1).padStart(2, "0")}</span>
+                  <span className="lesson-card-body">
+                    <small>{currentSubject.label}</small>
+                    <strong>{lesson.title}</strong>
+                    <em>{lesson.summary || summarizeLessonContent(lesson.content)}</em>
+                  </span>
+                  <span className="lesson-card-meta">
+                    {lesson.attachments?.length ? (
+                      <span>{lesson.attachments.length} tài liệu</span>
+                    ) : (
+                      <span>{lesson.content ? "Bài đọc" : "Đang cập nhật"}</span>
+                    )}
+                    <b>
+                      Mở bài
+                      <Icon name="arrowLeft" />
+                    </b>
+                  </span>
+                </button>
+              </article>
+            ))}
           </div>
         )}
       </section>
@@ -346,6 +371,108 @@ export function StudyScreen({
 
       <BottomNav active="study" onHome={onHome} onStudy={() => undefined} onTest={onStartQuiz} onProfile={onHistory} />
     </div>
+  );
+}
+
+function LessonDetailScreen({
+  lesson,
+  subjectLabel,
+  onBack,
+  onStartQuiz,
+  onHome,
+  onHistory
+}: {
+  lesson: StudyLesson;
+  subjectLabel: string;
+  onBack: () => void;
+  onStartQuiz: () => void;
+  onHome: () => void;
+  onHistory: () => void;
+}) {
+  return (
+    <div className="student-screen study-screen lesson-detail-screen">
+      <ScreenHeader title="Chi tiết bài học" subtitle={subjectLabel} onBack={onBack} />
+
+      <article className="lesson-detail-card">
+        <div className="lesson-detail-kicker">
+          <Icon name="book" />
+          <span>{subjectLabel}</span>
+        </div>
+        <h1>{lesson.title}</h1>
+        {lesson.summary && <p className="lesson-detail-summary">{lesson.summary}</p>}
+
+        {lesson.attachments?.length > 0 && <AttachmentGallery lesson={lesson} />}
+
+        {lesson.content ? (
+          <div className="lesson-detail-content">
+            <RichQuestionContent content={lesson.content} />
+          </div>
+        ) : (
+          <div className="study-empty-state compact">
+            <Icon name="fileText" />
+            <strong>Bài học này đang dùng tài liệu đính kèm</strong>
+            <p>Nội dung chữ sẽ hiển thị tại đây khi người chỉnh sửa bổ sung.</p>
+          </div>
+        )}
+      </article>
+
+      <button className="sticky-primary" type="button" onClick={onStartQuiz}>
+        Làm bài kiểm tra
+      </button>
+
+      <BottomNav active="study" onHome={onHome} onStudy={onBack} onTest={onStartQuiz} onProfile={onHistory} />
+    </div>
+  );
+}
+
+function AttachmentGallery({ lesson }: { lesson: StudyLesson }) {
+  return (
+    <section className="attachment-gallery" aria-label="Tài liệu bài học">
+      {lesson.attachments.map((attachment) => (
+        <AttachmentPreview key={attachment.id} lessonId={lesson.id} attachment={attachment} />
+      ))}
+    </section>
+  );
+}
+
+function AttachmentPreview({ lessonId, attachment }: { lessonId: number; attachment: StudyLessonAttachment }) {
+  const url = `/api/study-lessons/${lessonId}/attachments/${attachment.id}`;
+
+  if (attachment.kind === "image") {
+    return (
+      <figure className="attachment-preview image-preview">
+        <img src={url} alt={attachment.fileName} loading="lazy" />
+        <figcaption>{attachment.fileName}</figcaption>
+      </figure>
+    );
+  }
+
+  if (attachment.kind === "video") {
+    return (
+      <figure className="attachment-preview media-preview">
+        <video controls preload="metadata" src={url} />
+        <figcaption>{attachment.fileName}</figcaption>
+      </figure>
+    );
+  }
+
+  if (attachment.kind === "audio") {
+    return (
+      <figure className="attachment-preview media-preview">
+        <audio controls src={url} />
+        <figcaption>{attachment.fileName}</figcaption>
+      </figure>
+    );
+  }
+
+  return (
+    <a className="attachment-file-link" href={url} target="_blank" rel="noreferrer">
+      <span>
+        <Icon name={attachment.kind === "pdf" ? "fileText" : "file"} />
+      </span>
+      <strong>{attachment.fileName}</strong>
+      <small>{formatFileSize(attachment.size)}</small>
+    </a>
   );
 }
 
@@ -401,13 +528,13 @@ export function QuizScreen({
     <div className="student-screen quiz-screen">
       <header className="quiz-top">
         <button className="icon-button" type="button" onClick={index === 0 ? onExit : onBack} aria-label={index === 0 ? "Thoát bài kiểm tra" : "Câu trước"}>
-          ‹
+          <Icon name="arrowLeft" />
         </button>
         <strong>
           {index + 1}/{total}
         </strong>
         <button className="icon-button" type="button" onClick={onExit} aria-label="Thoát bài kiểm tra">
-          ⋮
+          <Icon name="more" />
         </button>
       </header>
 
@@ -435,7 +562,7 @@ export function QuizScreen({
               disabled={busy || isAnswered}
               aria-pressed={selectedOptionId === option.id}
             >
-              <span aria-hidden="true">{optionState === "correct" ? "✓" : optionState === "wrong" ? "×" : ""}</span>
+              <span aria-hidden="true">{optionState === "correct" ? <Icon name="check" /> : optionState === "wrong" ? <Icon name="x" /> : ""}</span>
               <strong>{option.content}</strong>
             </button>
           );
@@ -486,15 +613,15 @@ export function ResultScreen({
       </section>
 
       <section className="result-stats" aria-label="Thống kê kết quả">
-        <SummaryMetric icon="✓" label="Số câu đúng" value={String(correctCount)} />
-        <SummaryMetric icon="×" label="Số câu sai" value={String(wrongCount)} />
-        <SummaryMetric icon="◷" label="Tổng câu" value={String(result.total)} />
+        <SummaryMetric icon="check" label="Số câu đúng" value={String(correctCount)} />
+        <SummaryMetric icon="x" label="Số câu sai" value={String(wrongCount)} />
+        <SummaryMetric icon="clipboard" label="Tổng câu" value={String(result.total)} />
       </section>
 
       <div className="review-list">
         {result.answers.map((answer, index) => (
           <article className={answer.isCorrect ? "review-item good" : "review-item bad"} key={answer.questionId}>
-            <span aria-hidden="true">{answer.isCorrect ? "✓" : "×"}</span>
+            <span aria-hidden="true">{answer.isCorrect ? <Icon name="check" /> : <Icon name="x" />}</span>
             <div>
               <strong>
                 {index + 1}. {summarizeQuestion(answer.questionContent)}
@@ -616,18 +743,20 @@ function BottomNav({
   onTest: () => void;
   onProfile: () => void;
 }) {
-  const items: Array<{ id: NavActive; label: string; icon: string; action: () => void }> = [
-    { id: "home", label: "Trang chủ", icon: "⌂", action: onHome },
-    { id: "study", label: "Bài học", icon: "▰", action: onStudy },
-    { id: "test", label: "Kiểm tra", icon: "☑", action: onTest },
-    { id: "profile", label: "Cá nhân", icon: "○", action: onProfile }
+  const items: Array<{ id: NavActive; label: string; icon: IconName; action: () => void }> = [
+    { id: "home", label: "Trang chủ", icon: "home", action: onHome },
+    { id: "study", label: "Bài học", icon: "book", action: onStudy },
+    { id: "test", label: "Kiểm tra", icon: "clipboard", action: onTest },
+    { id: "profile", label: "Cá nhân", icon: "user", action: onProfile }
   ];
 
   return (
     <nav className="bottom-nav" aria-label="Điều hướng chính">
       {items.map((item) => (
         <button className={active === item.id ? "active" : ""} key={item.id} type="button" onClick={item.action}>
-          <span aria-hidden="true">{item.icon}</span>
+          <span aria-hidden="true">
+            <Icon name={item.icon} />
+          </span>
           <strong>{item.label}</strong>
         </button>
       ))}
@@ -639,7 +768,7 @@ function ScreenHeader({ title, subtitle, onBack }: { title: string; subtitle?: s
   return (
     <header className="screen-header">
       <button className="icon-button" type="button" onClick={onBack} aria-label="Quay lại">
-        ‹
+        <Icon name="arrowLeft" />
       </button>
       <div>
         <strong>{title}</strong>
@@ -650,10 +779,12 @@ function ScreenHeader({ title, subtitle, onBack }: { title: string; subtitle?: s
   );
 }
 
-function SummaryMetric({ icon, label, value }: { icon: string; label: string; value: string }) {
+function SummaryMetric({ icon, label, value }: { icon: IconName; label: string; value: string }) {
   return (
     <div className="summary-metric">
-      <span aria-hidden="true">{icon}</span>
+      <span aria-hidden="true">
+        <Icon name={icon} />
+      </span>
       <div>
         <strong>{value}</strong>
         <small>{label}</small>
@@ -675,4 +806,30 @@ function summarizeQuestion(content: string) {
   const value = firstLine ?? "Câu hỏi ôn tập";
 
   return value.length > 92 ? `${value.slice(0, 89)}...` : value;
+}
+
+function summarizeLessonContent(content: string) {
+  const firstLine = content
+    .replace(/\|/g, " ")
+    .split(/\n+/)
+    .map((line) => line.trim())
+    .find(Boolean);
+
+  if (!firstLine) {
+    return "Bấm để xem nội dung bài học và tài liệu đính kèm.";
+  }
+
+  return firstLine.length > 118 ? `${firstLine.slice(0, 115)}...` : firstLine;
+}
+
+function formatFileSize(size: number) {
+  if (size >= 1024 * 1024) {
+    return `${(size / 1024 / 1024).toFixed(1)} MB`;
+  }
+
+  if (size >= 1024) {
+    return `${Math.round(size / 1024)} KB`;
+  }
+
+  return `${size} B`;
 }

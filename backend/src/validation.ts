@@ -66,7 +66,7 @@ export const studyLessonSchema = z.object({
   subject: z.enum(subjects).default("dich_te"),
   title: z.string().trim().min(3, "Tiêu đề bài ôn cần ít nhất 3 ký tự").max(160, "Tiêu đề quá dài"),
   summary: z.string().trim().max(500, "Tóm tắt tối đa 500 ký tự").optional().default(""),
-  content: z.string().trim().min(5, "Nội dung bài ôn cần ít nhất 5 ký tự").max(12000, "Nội dung bài ôn tối đa 12.000 ký tự"),
+  content: z.string().trim().max(20000, "Nội dung bài ôn tối đa 20.000 ký tự").optional().default(""),
   isActive: z.boolean().optional()
 });
 

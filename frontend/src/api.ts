@@ -34,9 +34,20 @@ export type StudyLesson = {
   title: string;
   summary: string;
   content: string;
+  attachments: StudyLessonAttachment[];
   isActive?: boolean;
   createdAt?: string;
   updatedAt?: string;
+};
+
+export type StudyLessonAttachment = {
+  id: string;
+  lessonId: number;
+  fileName: string;
+  mimeType: string;
+  size: number;
+  kind: "image" | "video" | "audio" | "pdf" | "document" | "file";
+  createdAt: string;
 };
 
 export type Account = {
