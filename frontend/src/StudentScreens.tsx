@@ -443,7 +443,7 @@ function SlideDetailScreen({
   onHome: () => void;
   onHistory: () => void;
 }) {
-  const viewUrl = apiAssetUrl(slide.viewUrl);
+  const viewUrl = apiAssetUrl(`${slide.viewUrl}?v=${encodeURIComponent(slide.updatedAt)}`);
   const downloadUrl = apiAssetUrl(slide.downloadUrl);
 
   return (

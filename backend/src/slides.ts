@@ -87,10 +87,12 @@ export async function buildSlideResponse(request: Request, slide: SlideFile, dis
     ...corsHeaders(request),
     "Accept-Ranges": "bytes",
     "Cache-Control": "public, max-age=3600, stale-while-revalidate=86400",
+    "Content-Security-Policy": "frame-ancestors 'self'",
     "Content-Disposition": contentDisposition(slide.fileName, disposition),
     "Content-Type": "application/pdf",
     "ETag": etag,
-    "Last-Modified": slide.mtime.toUTCString()
+    "Last-Modified": slide.mtime.toUTCString(),
+    "X-Frame-Options": "SAMEORIGIN"
   };
 
   if (!range && request.headers.get("if-none-match") === etag) {

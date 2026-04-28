@@ -3870,6 +3870,325 @@ p {
   }
 }
 
+/* Unified light theme for login, admin, dialogs, and secondary app surfaces */
+:root {
+  --surface-bg: #f8fafc;
+  --surface-bg-strong: #f1f5f9;
+  --surface-panel: #ffffff;
+  --surface-ink: #111827;
+  --surface-muted: #4b5563;
+  --surface-line: rgba(17, 24, 39, 0.08);
+  --surface-line-strong: rgba(17, 24, 39, 0.12);
+  --surface-teal: #0f766e;
+  --surface-teal-hover: #0d665f;
+  --surface-teal-soft: #ecfdf5;
+  --surface-blue: #2563eb;
+  --surface-blue-soft: #e0f2fe;
+  --surface-danger: #9a3412;
+  --surface-danger-soft: #fff7ed;
+  --surface-shadow: 0 18px 42px rgba(31, 41, 55, 0.08);
+  --surface-shadow-soft: 0 12px 28px rgba(31, 41, 55, 0.06);
+}
+
+.app-shell {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.94), rgba(248, 250, 252, 0.98)),
+    var(--surface-bg);
+}
+
+button,
+.login-form button,
+.sticky-primary,
+.quiz-footer button,
+.result-actions button,
+.confirm-action-button {
+  background: var(--surface-teal);
+  color: #ffffff;
+  box-shadow: none;
+}
+
+button:hover:not(:disabled),
+.login-form button:hover:not(:disabled),
+.sticky-primary:hover:not(:disabled),
+.quiz-footer button:hover:not(:disabled),
+.result-actions button:hover:not(:disabled),
+.confirm-action-button:hover:not(:disabled) {
+  background: var(--surface-teal-hover);
+}
+
+input,
+textarea,
+select,
+.login-form input,
+.study-search input {
+  color: var(--surface-ink);
+  background: #ffffff;
+  border: 1px solid var(--surface-line-strong);
+  box-shadow: none;
+}
+
+input:focus,
+textarea:focus,
+select:focus {
+  border-color: rgba(15, 118, 110, 0.52);
+  box-shadow: 0 0 0 4px rgba(15, 118, 110, 0.1);
+}
+
+label,
+.hint-text,
+.empty-text {
+  color: var(--surface-muted);
+}
+
+.login-screen {
+  gap: 20px;
+  background:
+    radial-gradient(circle at 18% 18%, rgba(224, 242, 254, 0.72), transparent 28%),
+    radial-gradient(circle at 82% 12%, rgba(236, 253, 245, 0.9), transparent 30%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(248, 250, 252, 0.98)),
+    var(--surface-bg);
+  color: var(--surface-ink);
+}
+
+.login-screen .brand-mark {
+  width: min(188px, 38vw);
+  opacity: 0.92;
+  filter: drop-shadow(0 12px 22px rgba(31, 41, 55, 0.08));
+}
+
+.login-screen h1,
+.brand-block h1 {
+  color: var(--surface-ink);
+  font-size: clamp(2.7rem, 7vw, 4rem);
+}
+
+.login-screen p,
+.brand-block p {
+  color: var(--surface-muted);
+}
+
+.login-form {
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid var(--surface-line);
+  box-shadow: var(--surface-shadow);
+}
+
+.login-form button {
+  border-radius: 8px;
+}
+
+.admin-shell {
+  background:
+    radial-gradient(circle at 12% 0%, rgba(224, 242, 254, 0.7), transparent 24%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(248, 250, 252, 0.98)),
+    var(--surface-bg);
+  color: var(--surface-ink);
+}
+
+.admin-header {
+  align-items: center;
+  padding: clamp(16px, 2vw, 24px);
+  border: 1px solid var(--surface-line);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.9);
+  box-shadow: var(--surface-shadow);
+}
+
+.admin-header h1 {
+  color: var(--surface-ink);
+  font-size: clamp(2rem, 3vw, 3rem);
+}
+
+.admin-header span,
+.admin-tabs button,
+.panel-title span,
+.panel-title small,
+.admin-question-item p,
+.admin-question-content,
+.account-row small,
+.lesson-attachment-row small {
+  color: var(--surface-muted);
+}
+
+.admin-header-actions button,
+.profile-admin-actions button,
+.ghost-button,
+.secondary-button {
+  min-height: 44px;
+  border-radius: 8px;
+  box-shadow: none;
+}
+
+.ghost-button,
+.secondary-button,
+.admin-header-actions .ghost-button {
+  background: #ffffff;
+  color: var(--surface-teal);
+  border: 1px solid rgba(15, 118, 110, 0.22);
+}
+
+.ghost-button:hover:not(:disabled),
+.secondary-button:hover:not(:disabled),
+.admin-header-actions .ghost-button:hover:not(:disabled) {
+  background: var(--surface-teal-soft);
+  color: var(--surface-teal-hover);
+}
+
+.admin-header-actions .secondary-button {
+  background: var(--surface-blue-soft);
+  color: #0369a1;
+  border: 1px solid rgba(3, 105, 161, 0.18);
+}
+
+.admin-header-actions .secondary-button:hover:not(:disabled) {
+  background: #bae6fd;
+  color: #075985;
+}
+
+.admin-tabs {
+  border-radius: 8px;
+  background: #ffffff;
+  border: 1px solid var(--surface-line);
+  box-shadow: var(--surface-shadow-soft);
+}
+
+.admin-tabs button {
+  border-radius: 8px;
+  font-weight: 900;
+}
+
+.admin-tabs button.active,
+.admin-tabs button:hover:not(:disabled) {
+  background: var(--surface-teal-soft);
+  color: var(--surface-teal);
+  box-shadow: none;
+}
+
+.admin-panel,
+.detail-card,
+.session-item,
+.attempt-history-item,
+.account-row,
+.admin-question-item,
+.study-lesson-admin-item {
+  border-radius: 8px;
+  background: #ffffff;
+  border: 1px solid var(--surface-line);
+  box-shadow: var(--surface-shadow-soft);
+}
+
+.admin-panel {
+  padding: clamp(16px, 2vw, 24px);
+}
+
+.panel-title span,
+.admin-question-item h3,
+.account-row strong,
+.detail-card strong,
+.session-main strong,
+.attempt-history-item strong {
+  color: var(--surface-ink);
+}
+
+.status.active,
+.subject-status,
+.warning-status {
+  border-radius: 8px;
+}
+
+.status.active {
+  background: var(--surface-teal-soft);
+  color: var(--surface-teal);
+}
+
+.subject-status {
+  background: var(--surface-blue-soft);
+  color: #0369a1;
+}
+
+.warning-status {
+  background: var(--surface-danger-soft);
+  color: var(--surface-danger);
+}
+
+.study-lesson-admin-item .admin-question-content,
+.lesson-attachment-manager {
+  background: var(--surface-bg);
+  border: 1px solid var(--surface-line);
+}
+
+.attachment-upload-control,
+.lesson-attachment-row a span {
+  background: var(--surface-blue-soft);
+  color: #0369a1;
+}
+
+.profile-admin-panel {
+  border-radius: 8px;
+  background: #ffffff;
+  color: var(--surface-ink);
+  border: 1px solid var(--surface-line);
+  box-shadow: var(--surface-shadow);
+}
+
+.profile-admin-panel span {
+  color: var(--surface-teal);
+}
+
+.profile-admin-panel h3 {
+  color: var(--surface-ink);
+}
+
+.profile-admin-actions button {
+  background: var(--surface-teal);
+  color: #ffffff;
+  border-color: var(--surface-teal);
+}
+
+.profile-admin-actions .secondary-button,
+.profile-admin-actions .ghost-button {
+  background: var(--surface-blue-soft);
+  color: #0369a1;
+  border-color: rgba(3, 105, 161, 0.18);
+}
+
+.confirm-dialog {
+  background: #ffffff;
+  color: var(--surface-ink);
+  border-color: var(--surface-line);
+}
+
+.confirm-dialog-icon,
+.quiz-exit-button {
+  background: var(--surface-blue-soft);
+  color: #0369a1;
+  border-color: rgba(3, 105, 161, 0.18);
+}
+
+.confirm-action-button.danger,
+.danger-text-button,
+.home-logout-button,
+.dashboard-actions .home-logout-button {
+  background: var(--surface-danger-soft);
+  color: var(--surface-danger);
+  border: 1px solid rgba(154, 52, 18, 0.28);
+}
+
+.confirm-action-button.danger:hover:not(:disabled),
+.danger-text-button:hover:not(:disabled),
+.home-logout-button:hover:not(:disabled),
+.dashboard-actions .home-logout-button:hover:not(:disabled) {
+  background: #ffedd5;
+  color: #7c2d12;
+}
+
+@media (max-width: 860px) {
+  .admin-header {
+    align-items: stretch;
+  }
+}
+
 .confirm-dialog-backdrop {
   position: fixed;
   inset: 0;
@@ -4055,4 +4374,36 @@ p {
     opacity: 1;
     transform: translateY(0) scale(1);
   }
+}
+
+/* Final cascade guard for controls declared after the shared surface theme. */
+.confirm-action-button {
+  background: var(--surface-teal);
+  color: #ffffff;
+}
+
+.confirm-action-button:hover:not(:disabled) {
+  background: var(--surface-teal-hover);
+}
+
+.confirm-action-button.danger,
+.quiz-exit-button {
+  box-shadow: none;
+}
+
+.quiz-exit-button {
+  border-radius: 8px;
+  background: var(--surface-blue-soft);
+  color: #0369a1;
+  border: 1px solid rgba(3, 105, 161, 0.18);
+}
+
+.quiz-exit-button:hover:not(:disabled) {
+  background: #bae6fd;
+  color: #075985;
+}
+
+.confirm-dialog-icon {
+  background: var(--surface-blue-soft);
+  color: #0369a1;
 }
