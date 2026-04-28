@@ -1385,7 +1385,7 @@ function questionToForm(question: Question, overrides: Partial<QuestionForm> = {
 }
 
 function canPublishQuestion(question: Question) {
-  return isQuestionPublishable(question.options);
+  return isQuestionPublishable(question.options.map((o) => ({ content: o.content, isCorrect: Boolean(o.isCorrect) })));
 }
 
 function isQuestionPublishable(options: Array<{ content: string; isCorrect: boolean }>) {
