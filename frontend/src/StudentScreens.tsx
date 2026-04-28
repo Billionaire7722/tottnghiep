@@ -464,7 +464,6 @@ export function StudyScreen({
                   <span className="lesson-card-body">
                     <small>{currentSubject.label}</small>
                     <strong>{lesson.title}</strong>
-                    <em>{lesson.summary || summarizeLessonContent(lesson.content)}</em>
                   </span>
                   <span className="lesson-card-meta">
                     {lesson.attachments?.length ? (
@@ -487,7 +486,6 @@ export function StudyScreen({
                   <span className="lesson-card-body">
                     <small>{currentSubject.label} · PDF</small>
                     <strong>{slide.title}</strong>
-                    <em>{slide.fileName}</em>
                   </span>
                   <span className="lesson-card-meta">
                     <span>{formatFileSize(slide.size)}</span>
