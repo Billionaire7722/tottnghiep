@@ -964,6 +964,44 @@ p {
   border-bottom: 1px solid var(--line);
 }
 
+.answer-review-title {
+  align-items: start;
+}
+
+.answer-review-title > div:first-child {
+  display: grid;
+  gap: 4px;
+}
+
+.bulk-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.bulk-actions button {
+  min-height: 42px;
+  border-radius: 8px;
+  padding: 0 14px;
+}
+
+.danger-bulk-button {
+  background: rgba(180, 75, 95, 0.1);
+  color: var(--danger);
+  border: 1px solid rgba(180, 75, 95, 0.24);
+}
+
+.danger-bulk-button:hover:not(:disabled) {
+  background: rgba(180, 75, 95, 0.16);
+  color: #8f2f43;
+}
+
+.answer-review-section .pagination-bar {
+  padding-top: 8px;
+  border-top: 1px solid var(--line);
+}
+
 .row-actions {
   display: flex;
   flex-wrap: wrap;
@@ -5166,6 +5204,21 @@ label,
   }
 
   .row-actions button {
+    width: 100%;
+  }
+
+  .answer-review-title {
+    align-items: stretch;
+  }
+
+  .bulk-actions {
+    display: grid;
+    grid-template-columns: 1fr;
+    justify-content: stretch;
+    width: 100%;
+  }
+
+  .bulk-actions button {
     width: 100%;
   }
 

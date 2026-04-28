@@ -35,6 +35,7 @@ import {
   emptyQuestionForm,
   emptyStudyLessonForm,
   subjectOptions,
+  type QuestionForm,
   type StudyLessonForm,
   type SubjectCode
 } from "./uiTypes";
@@ -577,16 +578,7 @@ function App() {
 
   function editQuestion(question: Question) {
     setEditingQuestionId(question.id);
-    setQuestionForm({
-      subject: question.subject ?? "dich_te",
-      content: question.content,
-      explanation: question.explanation ?? "",
-      isActive: question.isActive ?? true,
-      options: question.options.map((option) => ({
-        content: option.content,
-        isCorrect: Boolean(option.isCorrect)
-      }))
-    });
+    setQuestionForm(questionToForm(question));
   }
 
   async function saveQuestion(event: FormEvent<HTMLFormElement>) {
@@ -635,6 +627,85 @@ function App() {
       await authedRequest(`/api/questions/${id}`, { method: "DELETE" });
       await loadAdminData();
       setNotice("Đã xóa câu hỏi");
+    } catch (error) {
+      handleError(error);
+    } finally {
+      setAdminBusy(false);
+    }
+  }
+
+  async function approveQuestionsByIds(ids: number[]) {
+    const selectedIds = new Set(ids);
+    const selectedQuestions = adminQuestions.filter((question) => selectedIds.has(question.id));
+    const publishableQuestions = selectedQuestions.filter(canPublishQuestion);
+    const skippedCount = selectedQuestions.length - publishableQuestions.length;
+
+    if (publishableQuestions.length === 0) {
+      setNotice("Chưa có câu hỏi nào đủ đáp án để duyệt. Hãy sửa đáp án hoặc xóa các câu này.");
+      return;
+    }
+
+    const confirmed = await requestConfirmation({
+      title: "Duyệt tất cả câu hỏi đủ điều kiện?",
+      message:
+        skippedCount > 0
+          ? `Hệ thống sẽ duyệt ${publishableQuestions.length} câu đủ đáp án. ${skippedCount} câu còn thiếu đáp án vẫn ở hàng chờ.`
+          : `Hệ thống sẽ duyệt ${publishableQuestions.length} câu hỏi và hiển thị cho người học.`,
+      confirmLabel: "Duyệt tất cả"
+    });
+
+    if (!confirmed) {
+      return;
+    }
+
+    setAdminBusy(true);
+
+    try {
+      await Promise.all(
+        publishableQuestions.map((question) =>
+          authedRequest<{ question: Question }>(`/api/questions/${question.id}`, {
+            method: "PUT",
+            body: questionToForm(question, { isActive: true })
+          })
+        )
+      );
+      await loadAdminData();
+      setNotice(
+        skippedCount > 0
+          ? `Đã duyệt ${publishableQuestions.length} câu. ${skippedCount} câu còn thiếu đáp án.`
+          : `Đã duyệt ${publishableQuestions.length} câu hỏi`
+      );
+    } catch (error) {
+      handleError(error);
+    } finally {
+      setAdminBusy(false);
+    }
+  }
+
+  async function deleteQuestionsByIds(ids: number[]) {
+    const uniqueIds = [...new Set(ids)];
+
+    if (uniqueIds.length === 0) {
+      return;
+    }
+
+    const confirmed = await requestConfirmation({
+      title: "Xóa tất cả câu hỏi đợi sửa?",
+      message: `${uniqueIds.length} câu hỏi sẽ bị xóa vĩnh viễn. Thao tác này không thể khôi phục.`,
+      confirmLabel: "Xóa tất cả",
+      tone: "danger"
+    });
+
+    if (!confirmed) {
+      return;
+    }
+
+    setAdminBusy(true);
+
+    try {
+      await Promise.all(uniqueIds.map((id) => authedRequest(`/api/questions/${id}`, { method: "DELETE" })));
+      await loadAdminData();
+      setNotice(`Đã xóa ${uniqueIds.length} câu hỏi đợi sửa`);
     } catch (error) {
       handleError(error);
     } finally {
@@ -1154,6 +1225,8 @@ function App() {
               onSaveQuestion={saveQuestion}
               onEditQuestion={editQuestion}
               onDeleteQuestion={deleteQuestionById}
+              onApproveQuestions={approveQuestionsByIds}
+              onDeleteQuestions={deleteQuestionsByIds}
               onSaveStudyLesson={saveStudyLesson}
               onEditStudyLesson={editStudyLesson}
               onDeleteStudyLesson={deleteStudyLessonById}
@@ -1295,6 +1368,24 @@ function shuffleQuestions(questions: Question[]) {
   }
 
   return next;
+}
+
+function questionToForm(question: Question, overrides: Partial<QuestionForm> = {}): QuestionForm {
+  return {
+    subject: question.subject ?? "dich_te",
+    content: question.content,
+    explanation: question.explanation ?? "",
+    isActive: question.isActive ?? true,
+    options: question.options.map((option) => ({
+      content: option.content,
+      isCorrect: Boolean(option.isCorrect)
+    })),
+    ...overrides
+  };
+}
+
+function canPublishQuestion(question: Question) {
+  return isQuestionPublishable(question.options);
 }
 
 function isQuestionPublishable(options: Array<{ content: string; isCorrect: boolean }>) {

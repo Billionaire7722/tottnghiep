@@ -20,6 +20,7 @@ import {
 } from "./uiTypes";
 
 const questionsPerPage = 5;
+const reviewQuestionsPerPage = 5;
 
 type AdminWorkspaceProps = {
   tab: AdminTab;
@@ -47,6 +48,8 @@ type AdminWorkspaceProps = {
   onSaveQuestion: (event: FormEvent<HTMLFormElement>) => void;
   onEditQuestion: (question: Question) => void;
   onDeleteQuestion: (id: number) => void;
+  onApproveQuestions: (ids: number[]) => void;
+  onDeleteQuestions: (ids: number[]) => void;
   onSaveStudyLesson: (event: FormEvent<HTMLFormElement>) => void;
   onEditStudyLesson: (lesson: StudyLesson) => void;
   onDeleteStudyLesson: (id: number) => void;
@@ -129,6 +132,8 @@ function QuestionAdmin({
   onSaveQuestion,
   onEditQuestion,
   onDeleteQuestion,
+  onApproveQuestions,
+  onDeleteQuestions,
   importedQuestions,
   importedStudyLessons,
   importWarnings,
@@ -145,8 +150,20 @@ function QuestionAdmin({
 }: AdminWorkspaceProps) {
   const [textImport, setTextImport] = useState("");
   const [questionPage, setQuestionPage] = useState(1);
-  const answerReviewQuestions = useMemo(() => questions.filter(needsAnswerReview), [questions]);
-  const publishedQuestions = useMemo(() => questions.filter((question) => !needsAnswerReview(question)), [questions]);
+  const [reviewPage, setReviewPage] = useState(1);
+  const answerReviewQuestions = useMemo(() => questions.filter(needsQuestionReview), [questions]);
+  const reviewQuestionIds = useMemo(() => answerReviewQuestions.map((question) => question.id), [answerReviewQuestions]);
+  const reviewPublishableCount = useMemo(
+    () => answerReviewQuestions.filter(canPublishQuestion).length,
+    [answerReviewQuestions]
+  );
+  const totalReviewPages = Math.max(1, Math.ceil(answerReviewQuestions.length / reviewQuestionsPerPage));
+  const paginatedReviewQuestions = useMemo(() => {
+    const start = (reviewPage - 1) * reviewQuestionsPerPage;
+    return answerReviewQuestions.slice(start, start + reviewQuestionsPerPage);
+  }, [answerReviewQuestions, reviewPage]);
+  const reviewPaginationItems = useMemo(() => getPaginationItems(reviewPage, totalReviewPages), [reviewPage, totalReviewPages]);
+  const publishedQuestions = useMemo(() => questions.filter((question) => !needsQuestionReview(question)), [questions]);
   const totalQuestionPages = Math.max(1, Math.ceil(publishedQuestions.length / questionsPerPage));
   const paginatedQuestions = useMemo(() => {
     const start = (questionPage - 1) * questionsPerPage;
@@ -157,6 +174,10 @@ function QuestionAdmin({
   useEffect(() => {
     setQuestionPage((current) => Math.min(Math.max(1, current), totalQuestionPages));
   }, [totalQuestionPages]);
+
+  useEffect(() => {
+    setReviewPage((current) => Math.min(Math.max(1, current), totalReviewPages));
+  }, [totalReviewPages]);
 
   return (
     <div className="admin-grid">
@@ -368,12 +389,35 @@ function QuestionAdmin({
         )}
         {answerReviewQuestions.length > 0 && (
           <div className="answer-review-section">
-            <div className="panel-title">
-              <span>Câu hỏi chưa có đáp án / chưa đủ đáp án</span>
-              <small>{answerReviewQuestions.length} câu cần admin duyệt</small>
+            <div className="panel-title answer-review-title">
+              <div>
+                <span>Câu hỏi đợi sửa / duyệt</span>
+                <small>
+                  {answerReviewQuestions.length} câu · trang {reviewPage}/{totalReviewPages}
+                  {reviewPublishableCount > 0 ? ` · ${reviewPublishableCount} câu có thể duyệt` : ""}
+                </small>
+              </div>
+              <div className="bulk-actions">
+                <button
+                  className="secondary-button"
+                  type="button"
+                  disabled={busy || reviewPublishableCount === 0}
+                  onClick={() => onApproveQuestions(reviewQuestionIds)}
+                >
+                  Duyệt tất cả
+                </button>
+                <button
+                  className="ghost-button danger-bulk-button"
+                  type="button"
+                  disabled={busy || reviewQuestionIds.length === 0}
+                  onClick={() => onDeleteQuestions(reviewQuestionIds)}
+                >
+                  Xóa tất cả
+                </button>
+              </div>
             </div>
             <div className="admin-list">
-              {answerReviewQuestions.map((question) => (
+              {paginatedReviewQuestions.map((question) => (
                 <QuestionListItem
                   key={question.id}
                   question={question}
@@ -382,6 +426,13 @@ function QuestionAdmin({
                 />
               ))}
             </div>
+            <PaginationControls
+              label="Phân trang câu hỏi đợi sửa"
+              page={reviewPage}
+              totalPages={totalReviewPages}
+              items={reviewPaginationItems}
+              onPageChange={setReviewPage}
+            />
           </div>
         )}
         <div className="panel-title">
@@ -404,58 +455,84 @@ function QuestionAdmin({
             ))}
           </div>
         )}
-        {publishedQuestions.length > questionsPerPage && (
-          <nav className="pagination-bar" aria-label="Phân trang danh sách câu hỏi">
-            <button className="ghost-button compact" type="button" disabled={questionPage === 1} onClick={() => setQuestionPage(1)}>
-              Trang đầu
-            </button>
-            <button
-              className="ghost-button compact"
-              type="button"
-              disabled={questionPage === 1}
-              onClick={() => setQuestionPage((current) => Math.max(1, current - 1))}
-            >
-              Trước
-            </button>
-            <div className="pagination-pages">
-              {paginationItems.map((item, index) =>
-                item === "ellipsis" ? (
-                  <span className="pagination-ellipsis" key={`ellipsis-${index}`}>
-                    ...
-                  </span>
-                ) : (
-                  <button
-                    className={item === questionPage ? "page-button active" : "page-button"}
-                    type="button"
-                    key={item}
-                    aria-current={item === questionPage ? "page" : undefined}
-                    onClick={() => setQuestionPage(item)}
-                  >
-                    {item}
-                  </button>
-                )
-              )}
-            </div>
-            <button
-              className="ghost-button compact"
-              type="button"
-              disabled={questionPage === totalQuestionPages}
-              onClick={() => setQuestionPage((current) => Math.min(totalQuestionPages, current + 1))}
-            >
-              Sau
-            </button>
-            <button
-              className="ghost-button compact"
-              type="button"
-              disabled={questionPage === totalQuestionPages}
-              onClick={() => setQuestionPage(totalQuestionPages)}
-            >
-              Trang cuối
-            </button>
-          </nav>
-        )}
+        <PaginationControls
+          label="Phân trang danh sách câu hỏi"
+          page={questionPage}
+          totalPages={totalQuestionPages}
+          items={paginationItems}
+          onPageChange={setQuestionPage}
+        />
       </section>
     </div>
+  );
+}
+
+function PaginationControls({
+  label,
+  page,
+  totalPages,
+  items,
+  onPageChange
+}: {
+  label: string;
+  page: number;
+  totalPages: number;
+  items: Array<number | "ellipsis">;
+  onPageChange: Dispatch<SetStateAction<number>>;
+}) {
+  if (totalPages <= 1) {
+    return null;
+  }
+
+  return (
+    <nav className="pagination-bar" aria-label={label}>
+      <button className="ghost-button compact" type="button" disabled={page === 1} onClick={() => onPageChange(1)}>
+        Trang đầu
+      </button>
+      <button
+        className="ghost-button compact"
+        type="button"
+        disabled={page === 1}
+        onClick={() => onPageChange((current) => Math.max(1, current - 1))}
+      >
+        Trước
+      </button>
+      <div className="pagination-pages">
+        {items.map((item, index) =>
+          item === "ellipsis" ? (
+            <span className="pagination-ellipsis" key={`ellipsis-${index}`}>
+              ...
+            </span>
+          ) : (
+            <button
+              className={item === page ? "page-button active" : "page-button"}
+              type="button"
+              key={item}
+              aria-current={item === page ? "page" : undefined}
+              onClick={() => onPageChange(item)}
+            >
+              {item}
+            </button>
+          )
+        )}
+      </div>
+      <button
+        className="ghost-button compact"
+        type="button"
+        disabled={page === totalPages}
+        onClick={() => onPageChange((current) => Math.min(totalPages, current + 1))}
+      >
+        Sau
+      </button>
+      <button
+        className="ghost-button compact"
+        type="button"
+        disabled={page === totalPages}
+        onClick={() => onPageChange(totalPages)}
+      >
+        Trang cuối
+      </button>
+    </nav>
   );
 }
 
@@ -468,7 +545,8 @@ function QuestionListItem({
   onEditQuestion: (question: Question) => void;
   onDeleteQuestion: (id: number) => void;
 }) {
-  const needsReview = needsAnswerReview(question);
+  const needsReview = needsQuestionReview(question);
+  const needsAnswerFix = needsAnswerReview(question);
 
   return (
     <article className={needsReview ? "admin-question-item needs-answer-review" : "admin-question-item"}>
@@ -476,7 +554,7 @@ function QuestionListItem({
         <div className="question-badges">
           <span className={question.isActive ? "status active" : "status"}>{question.isActive ? "Hiện" : "Ẩn"}</span>
           <span className="status subject-status">{subjectLabel(question.subject)}</span>
-          {needsReview && <span className="status warning-status">Cần đáp án</span>}
+          {needsAnswerFix && <span className="status warning-status">Cần đáp án</span>}
         </div>
         <div className="admin-question-content">
           <RichQuestionContent content={question.content} />
@@ -1128,6 +1206,17 @@ function needsAnswerReview(question: Question) {
   const correctCount = filledOptions.filter((option) => option.isCorrect).length;
 
   return filledOptions.length < 2 || correctCount !== 1;
+}
+
+function needsQuestionReview(question: Question) {
+  return question.isActive === false || needsAnswerReview(question);
+}
+
+function canPublishQuestion(question: Question) {
+  const filledOptions = question.options.filter((option) => option.content.trim());
+  const correctCount = filledOptions.filter((option) => option.isCorrect).length;
+
+  return filledOptions.length >= 2 && correctCount === 1;
 }
 
 function getPaginationItems(currentPage: number, totalPages: number) {
