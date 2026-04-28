@@ -4407,3 +4407,48 @@ label,
   background: var(--surface-blue-soft);
   color: #0369a1;
 }
+
+.result-actions {
+  gap: 12px;
+}
+
+.result-actions button {
+  min-height: 48px;
+  padding: 0 18px;
+  border-radius: 8px;
+  font-weight: 900;
+  box-shadow: none;
+}
+
+.result-actions button:first-child {
+  background: var(--surface-teal);
+  color: #ffffff;
+  border: 1px solid var(--surface-teal);
+}
+
+.result-actions button:first-child:hover:not(:disabled) {
+  background: var(--surface-teal-hover);
+  border-color: var(--surface-teal-hover);
+}
+
+.result-actions .secondary-button {
+  background: var(--surface-blue-soft);
+  color: #075985;
+  border: 1px solid rgba(3, 105, 161, 0.22);
+}
+
+.result-actions .secondary-button:hover:not(:disabled) {
+  background: #bae6fd;
+  color: #075985;
+}
+
+.result-actions .ghost-button {
+  background: #ffffff;
+  color: var(--surface-teal);
+  border: 1px solid rgba(15, 118, 110, 0.24);
+}
+
+.result-actions .ghost-button:hover:not(:disabled) {
+  background: var(--surface-teal-soft);
+  color: var(--surface-teal-hover);
+}
