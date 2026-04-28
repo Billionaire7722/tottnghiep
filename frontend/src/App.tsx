@@ -18,6 +18,7 @@ import {
   Question,
   QuizResult,
   StudyLesson,
+  StudySlide,
   User,
   apiRequest
 } from "./api";
@@ -83,6 +84,7 @@ function App() {
   const [subjectCounts, setSubjectCounts] = useState<SubjectCountMap>({});
   const [studyQuestions, setStudyQuestions] = useState<Question[]>([]);
   const [studentStudyLessons, setStudentStudyLessons] = useState<StudyLesson[]>([]);
+  const [studentStudySlides, setStudentStudySlides] = useState<StudySlide[]>([]);
   const [studyBusy, setStudyBusy] = useState(false);
   const [studyProgress, setStudyProgress] = useState<StudyProgressMap>({});
   const questionLocksRef = useRef<Record<number, boolean>>({});
@@ -134,6 +136,7 @@ function App() {
     setCheckingQuestionId(null);
     setStudyQuestions([]);
     setStudentStudyLessons([]);
+    setStudentStudySlides([]);
     setStudyProgress({});
     setSubjectCounts({});
     questionLocksRef.current = {};
@@ -426,13 +429,15 @@ function App() {
     setStudyBusy(true);
 
     try {
-      const lessonData = await authedRequest<{ lessons: StudyLesson[] }>(
-        `/api/study-lessons?subject=${encodeURIComponent(selectedSubject)}`
-      );
+      const [lessonData, slideData] = await Promise.all([
+        authedRequest<{ lessons: StudyLesson[] }>(`/api/study-lessons?subject=${encodeURIComponent(selectedSubject)}`),
+        authedRequest<{ slides: StudySlide[] }>(`/api/slides?subject=${encodeURIComponent(selectedSubject)}`)
+      ]);
       setStudyQuestions([]);
       setStudentStudyLessons(lessonData.lessons);
+      setStudentStudySlides(slideData.slides);
 
-      if (lessonData.lessons.length === 0) {
+      if (lessonData.lessons.length === 0 && slideData.slides.length === 0) {
         setNotice("Chưa có nội dung ôn tập khả dụng cho môn đã chọn");
         return;
       }
@@ -1039,6 +1044,7 @@ function App() {
                 <StudyScreen
                   subject={selectedSubject}
                   lessons={studentStudyLessons}
+                  slides={studentStudySlides}
                   questions={studyQuestions}
                   studiedQuestionIds={new Set(studyProgress[selectedSubject] ?? [])}
                   onMarkStudied={markQuestionStudied}

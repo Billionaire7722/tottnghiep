@@ -1,6 +1,15 @@
 import { useMemo, useState, type CSSProperties, type FormEvent, type ReactNode } from "react";
 import cnxhMark from "./assets/cnxh-mark.svg";
-import type { Attempt, Question, QuizResult, StudyLesson, StudyLessonAttachment, User } from "./api";
+import {
+  apiAssetUrl,
+  type Attempt,
+  type Question,
+  type QuizResult,
+  type StudyLesson,
+  type StudyLessonAttachment,
+  type StudySlide,
+  type User
+} from "./api";
 import { Icon, type IconName } from "./Icons";
 import { RichQuestionContent } from "./RichQuestionContent";
 import {
@@ -272,6 +281,7 @@ export function ModeScreen({
 export function StudyScreen({
   subject,
   lessons,
+  slides,
   onBack,
   onStartQuiz,
   onHome,
@@ -279,6 +289,7 @@ export function StudyScreen({
 }: {
   subject: SubjectCode;
   lessons: StudyLesson[];
+  slides: StudySlide[];
   questions: Question[];
   studiedQuestionIds: Set<number>;
   onMarkStudied: (questionId: number) => void;
@@ -288,7 +299,7 @@ export function StudyScreen({
   onHistory: () => void;
 }) {
   const [search, setSearch] = useState("");
-  const [selectedLessonId, setSelectedLessonId] = useState<number | null>(null);
+  const [selectedItem, setSelectedItem] = useState<{ type: "lesson"; id: number } | { type: "slide"; id: string } | null>(null);
   const currentSubject = getSubjectOption(subject);
   const normalizedSearch = search.trim().toLowerCase();
   const filteredLessons = useMemo(
@@ -298,14 +309,38 @@ export function StudyScreen({
         : lessons,
     [lessons, normalizedSearch]
   );
-  const selectedLesson = lessons.find((lesson) => lesson.id === selectedLessonId) ?? null;
+  const filteredSlides = useMemo(
+    () =>
+      normalizedSearch
+        ? slides.filter((slide) => `${slide.title} ${slide.fileName}`.toLowerCase().includes(normalizedSearch))
+        : slides,
+    [slides, normalizedSearch]
+  );
+  const selectedLesson =
+    selectedItem?.type === "lesson" ? lessons.find((lesson) => lesson.id === selectedItem.id) ?? null : null;
+  const selectedSlide =
+    selectedItem?.type === "slide" ? slides.find((slide) => slide.id === selectedItem.id) ?? null : null;
+  const totalItems = filteredLessons.length + filteredSlides.length;
 
   if (selectedLesson) {
     return (
       <LessonDetailScreen
         lesson={selectedLesson}
         subjectLabel={currentSubject.label}
-        onBack={() => setSelectedLessonId(null)}
+        onBack={() => setSelectedItem(null)}
+        onStartQuiz={onStartQuiz}
+        onHome={onHome}
+        onHistory={onHistory}
+      />
+    );
+  }
+
+  if (selectedSlide) {
+    return (
+      <SlideDetailScreen
+        slide={selectedSlide}
+        subjectLabel={currentSubject.label}
+        onBack={() => setSelectedItem(null)}
         onStartQuiz={onStartQuiz}
         onHome={onHome}
         onHistory={onHistory}
@@ -327,10 +362,10 @@ export function StudyScreen({
 
       <section className="managed-study-section">
         <div className="section-heading">
-          <h2>Danh sách bài học</h2>
-          <small>{filteredLessons.length} bài</small>
+          <h2>Danh sách ôn tập</h2>
+          <small>{totalItems} mục</small>
         </div>
-        {filteredLessons.length === 0 ? (
+        {totalItems === 0 ? (
           <div className="study-empty-state">
             <Icon name="book" />
             <strong>Chưa có bài học phù hợp</strong>
@@ -340,7 +375,7 @@ export function StudyScreen({
           <div className="managed-study-list">
             {filteredLessons.map((lesson, index) => (
               <article className="managed-study-card" key={lesson.id}>
-                <button type="button" onClick={() => setSelectedLessonId(lesson.id)}>
+                <button type="button" onClick={() => setSelectedItem({ type: "lesson", id: lesson.id })}>
                   <span className="lesson-card-index">{String(index + 1).padStart(2, "0")}</span>
                   <span className="lesson-card-body">
                     <small>{currentSubject.label}</small>
@@ -361,6 +396,25 @@ export function StudyScreen({
                 </button>
               </article>
             ))}
+            {filteredSlides.map((slide, index) => (
+              <article className="managed-study-card slide-study-card" key={slide.id}>
+                <button type="button" onClick={() => setSelectedItem({ type: "slide", id: slide.id })}>
+                  <span className="lesson-card-index">{String(filteredLessons.length + index + 1).padStart(2, "0")}</span>
+                  <span className="lesson-card-body">
+                    <small>{currentSubject.label} · PDF</small>
+                    <strong>{slide.title}</strong>
+                    <em>{slide.fileName}</em>
+                  </span>
+                  <span className="lesson-card-meta">
+                    <span>{formatFileSize(slide.size)}</span>
+                    <b>
+                      Mở PDF
+                      <Icon name="fileText" />
+                    </b>
+                  </span>
+                </button>
+              </article>
+            ))}
           </div>
         )}
       </section>
@@ -370,6 +424,60 @@ export function StudyScreen({
       </button>
 
       <BottomNav active="study" onHome={onHome} onStudy={() => undefined} onTest={onStartQuiz} onProfile={onHistory} />
+    </div>
+  );
+}
+
+function SlideDetailScreen({
+  slide,
+  subjectLabel,
+  onBack,
+  onStartQuiz,
+  onHome,
+  onHistory
+}: {
+  slide: StudySlide;
+  subjectLabel: string;
+  onBack: () => void;
+  onStartQuiz: () => void;
+  onHome: () => void;
+  onHistory: () => void;
+}) {
+  const viewUrl = apiAssetUrl(slide.viewUrl);
+  const downloadUrl = apiAssetUrl(slide.downloadUrl);
+
+  return (
+    <div className="student-screen study-screen lesson-detail-screen">
+      <ScreenHeader title="Slide bài giảng" subtitle={subjectLabel} onBack={onBack} />
+
+      <article className="lesson-detail-card slide-detail-card">
+        <div className="lesson-detail-kicker">
+          <Icon name="fileText" />
+          <span>{subjectLabel}</span>
+        </div>
+        <h1>{slide.title}</h1>
+        <p className="lesson-detail-summary">{formatFileSize(slide.size)}</p>
+
+        <div className="slide-detail-actions">
+          <a className="slide-download-button" href={downloadUrl}>
+            <Icon name="download" />
+            Tải PDF
+          </a>
+          <a className="slide-open-link" href={viewUrl} target="_blank" rel="noreferrer">
+            Mở tab mới
+          </a>
+        </div>
+
+        <div className="pdf-viewer-shell">
+          <iframe title={slide.title} src={viewUrl} loading="lazy" />
+        </div>
+      </article>
+
+      <button className="sticky-primary" type="button" onClick={onStartQuiz}>
+        Làm bài kiểm tra
+      </button>
+
+      <BottomNav active="study" onHome={onHome} onStudy={onBack} onTest={onStartQuiz} onProfile={onHistory} />
     </div>
   );
 }
@@ -436,7 +544,7 @@ function AttachmentGallery({ lesson }: { lesson: StudyLesson }) {
 }
 
 function AttachmentPreview({ lessonId, attachment }: { lessonId: number; attachment: StudyLessonAttachment }) {
-  const url = `/api/study-lessons/${lessonId}/attachments/${attachment.id}`;
+  const url = apiAssetUrl(`/api/study-lessons/${lessonId}/attachments/${attachment.id}`);
 
   if (attachment.kind === "image") {
     return (

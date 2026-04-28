@@ -38,9 +38,11 @@ services:
       ADMIN_PASSWORD: ${ADMIN_PASSWORD}
       ADMIN_DISPLAY_NAME: ${ADMIN_DISPLAY_NAME}
       CORS_ORIGIN: ${PUBLIC_ORIGIN}
+      SLIDE_DIR: /app/slide
       UPLOAD_DIR: /app/uploads
       NEXT_TELEMETRY_DISABLED: "1"
     volumes:
+      - ./slide:/app/slide:ro
       - backend_uploads:/app/uploads
     depends_on:
       db:

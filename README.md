@@ -32,6 +32,12 @@ npm run dev:frontend
 
 Khi chạy local, backend cần biến môi trường `DATABASE_URL` trỏ tới PostgreSQL.
 
+## Slide PDF ôn tập
+
+Đặt PDF bài giảng trong thư mục `slide/` ở root repo, chia theo 4 thư mục môn học. Backend đọc trực tiếp thư mục này và stream PDF qua `/api/slides`, vì vậy PDF không bị đóng gói vào bundle frontend.
+
+Với Docker, `docker-compose.yml` và `docker-compose.prod.yml` đã mount `./slide` vào backend dưới dạng read-only tại `/app/slide`.
+
 ## Chạy production bằng Docker
 
 Tạo file `.env.production` từ `.env.production.example`, đổi toàn bộ mật khẩu/secret, rồi chạy:

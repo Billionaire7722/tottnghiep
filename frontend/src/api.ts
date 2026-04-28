@@ -50,6 +50,17 @@ export type StudyLessonAttachment = {
   createdAt: string;
 };
 
+export type StudySlide = {
+  id: string;
+  subject: SubjectCode;
+  title: string;
+  fileName: string;
+  size: number;
+  updatedAt: string;
+  viewUrl: string;
+  downloadUrl: string;
+};
+
 export type Account = {
   id: string;
   username: string;
@@ -134,6 +145,14 @@ export class ApiClientError extends Error {
 }
 
 const apiUrl = import.meta.env.VITE_API_URL ?? (import.meta.env.PROD ? "" : "http://localhost:3000");
+
+export function apiAssetUrl(path: string) {
+  if (/^https?:\/\//i.test(path)) {
+    return path;
+  }
+
+  return `${apiUrl}${path}`;
+}
 
 export async function apiRequest<T>(
   path: string,
