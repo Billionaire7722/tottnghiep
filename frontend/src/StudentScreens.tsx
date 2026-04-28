@@ -23,6 +23,9 @@ import {
 
 type SubjectCountMap = Partial<Record<SubjectCode, number>>;
 type NavActive = "home" | "study" | "test" | "profile";
+export type QuizQuestionLimit = 10 | 20 | 50 | "all";
+
+const quizQuestionLimitOptions: QuizQuestionLimit[] = [10, 20, 50, "all"];
 
 const subjectIconMap: Record<SubjectCode, IconName> = {
   dich_te: "stethoscope",
@@ -274,6 +277,87 @@ export function ModeScreen({
       </section>
 
       <BottomNav active="home" onHome={onHome} onStudy={onStudy} onTest={onStartQuiz} onProfile={onHistory} />
+    </div>
+  );
+}
+
+export function QuizSetupScreen({
+  subject,
+  totalQuestions,
+  selectedLimit,
+  quizBusy,
+  onLimitChange,
+  onBack,
+  onStartQuiz,
+  onHome,
+  onHistory
+}: {
+  subject: SubjectCode;
+  totalQuestions?: number;
+  selectedLimit: QuizQuestionLimit;
+  quizBusy: boolean;
+  onLimitChange: (value: QuizQuestionLimit) => void;
+  onBack: () => void;
+  onStartQuiz: (value: QuizQuestionLimit) => void;
+  onHome: () => void;
+  onHistory: () => void;
+}) {
+  const currentSubject = getSubjectOption(subject);
+  const questionCountKnown = typeof totalQuestions === "number";
+  const availableQuestions = totalQuestions ?? 0;
+  const selectedLimitAvailable = isQuizQuestionLimitAvailable(selectedLimit, totalQuestions);
+
+  return (
+    <div className="student-screen quiz-setup-screen">
+      <ScreenHeader title="Thiết lập bài kiểm tra" subtitle={currentSubject.label} onBack={onBack} />
+
+      <section className="quiz-setup-panel">
+        <div className="lesson-detail-kicker">
+          <Icon name="clipboard" />
+          <span>{currentSubject.label}</span>
+        </div>
+        <h1>Chọn số lượng câu hỏi</h1>
+        <p>
+          {questionCountKnown
+            ? availableQuestions > 0
+              ? `Hiện có ${availableQuestions} câu hỏi khả dụng.`
+              : "Môn này chưa có câu hỏi khả dụng."
+            : "Đang cập nhật số câu hỏi khả dụng."}
+        </p>
+
+        <div className="quiz-limit-grid" role="radiogroup" aria-label="Số lượng câu hỏi">
+          {quizQuestionLimitOptions.map((option) => {
+            const disabled = !isQuizQuestionLimitAvailable(option, totalQuestions);
+            const isSelected = selectedLimit === option;
+
+            return (
+              <button
+                className={isSelected ? "quiz-limit-option active" : "quiz-limit-option"}
+                key={String(option)}
+                type="button"
+                onClick={() => onLimitChange(option)}
+                disabled={disabled || quizBusy}
+                role="radio"
+                aria-checked={isSelected}
+              >
+                <strong>{option === "all" ? "Tất cả" : option}</strong>
+                <span>{quizLimitDescription(option, totalQuestions)}</span>
+              </button>
+            );
+          })}
+        </div>
+
+        <button
+          className="quiz-setup-start"
+          type="button"
+          onClick={() => onStartQuiz(selectedLimit)}
+          disabled={quizBusy || !selectedLimitAvailable}
+        >
+          {quizBusy ? "Đang tạo bài" : "Bắt đầu làm bài"}
+        </button>
+      </section>
+
+      <BottomNav active="test" onHome={onHome} onStudy={onBack} onTest={() => undefined} onProfile={onHistory} />
     </div>
   );
 }
@@ -710,7 +794,7 @@ export function ResultScreen({
 
   return (
     <div className="student-screen result-screen">
-      <ScreenHeader title="Test Results Summary" onBack={onHome} />
+      <ScreenHeader title="Kết quả bài kiểm tra" onBack={onHome} />
 
       <section className="result-hero">
         <div className="score-ring" style={scoreStyle}>
@@ -900,6 +984,30 @@ function SummaryMetric({ icon, label, value }: { icon: IconName; label: string; 
       </div>
     </div>
   );
+}
+
+function isQuizQuestionLimitAvailable(limit: QuizQuestionLimit, totalQuestions: number | undefined) {
+  if (typeof totalQuestions !== "number") {
+    return true;
+  }
+
+  if (totalQuestions <= 0) {
+    return false;
+  }
+
+  return limit === "all" || limit <= totalQuestions;
+}
+
+function quizLimitDescription(limit: QuizQuestionLimit, totalQuestions: number | undefined) {
+  if (limit === "all") {
+    return typeof totalQuestions === "number" && totalQuestions > 0 ? `${totalQuestions} câu` : "Toàn bộ câu hỏi";
+  }
+
+  if (typeof totalQuestions === "number" && totalQuestions > 0 && limit > totalQuestions) {
+    return `Chỉ có ${totalQuestions} câu`;
+  }
+
+  return "Câu ngẫu nhiên";
 }
 
 function getInitial(value: string) {

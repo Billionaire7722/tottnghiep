@@ -5,10 +5,12 @@ import {
   LoginScreen,
   ModeScreen,
   PhoneShell,
+  QuizSetupScreen,
   QuizScreen,
   ResultScreen,
   StartScreen,
-  StudyScreen
+  StudyScreen,
+  type QuizQuestionLimit
 } from "./StudentScreens";
 import {
   Account,
@@ -73,6 +75,7 @@ function App() {
   const [answerFeedback, setAnswerFeedback] = useState<{ questionId: number; isCorrect: boolean } | null>(null);
   const [checkingQuestionId, setCheckingQuestionId] = useState<number | null>(null);
   const [quizBusy, setQuizBusy] = useState(false);
+  const [quizQuestionLimit, setQuizQuestionLimit] = useState<QuizQuestionLimit>(10);
   const [result, setResult] = useState<QuizResult | null>(null);
   const [attempts, setAttempts] = useState<Attempt[]>([]);
   const [selectedSubject, setSelectedSubject] = useState<SubjectCode>("dich_te");
@@ -129,6 +132,7 @@ function App() {
     setCheckedAnswers({});
     setAnswerFeedback(null);
     setCheckingQuestionId(null);
+    setQuizQuestionLimit(10);
     setStudyQuestions([]);
     setStudentStudyLessons([]);
     setStudentStudySlides([]);
@@ -386,7 +390,8 @@ function App() {
     questionLocksRef.current = {};
   }
 
-  async function startQuiz() {
+  async function startQuiz(limit: QuizQuestionLimit) {
+    setQuizQuestionLimit(limit);
     setQuizBusy(true);
 
     try {
@@ -394,7 +399,8 @@ function App() {
         `/api/questions?subject=${encodeURIComponent(selectedSubject)}`
       );
       const usableQuestions = data.questions.filter((question) => question.options.length >= 2);
-      setQuestions(usableQuestions);
+      const selectedQuestions = chooseQuizQuestions(usableQuestions, limit);
+      setQuestions(selectedQuestions);
       setAnswers({});
       setCheckedAnswers({});
       setAnswerFeedback(null);
@@ -448,6 +454,12 @@ function App() {
   function openSubject(subject: SubjectCode) {
     setSelectedSubject(subject);
     setScreen("mode");
+  }
+
+  function openQuizSetup() {
+    const totalQuestions = subjectCounts[selectedSubject];
+    setQuizQuestionLimit((current) => normalizeQuizQuestionLimit(current, totalQuestions));
+    setScreen("quizSetup");
   }
 
   function goHome() {
@@ -1029,10 +1041,23 @@ function App() {
                   quizBusy={quizBusy}
                   onBack={goHome}
                   onStudy={() => void startStudy()}
-                  onStartQuiz={() => void startQuiz()}
+                  onStartQuiz={openQuizSetup}
                   onSubjectSelect={openSubject}
                   onHistory={openHistory}
                   onHome={goHome}
+                />
+              )}
+              {screen === "quizSetup" && (
+                <QuizSetupScreen
+                  subject={selectedSubject}
+                  totalQuestions={subjectCounts[selectedSubject]}
+                  selectedLimit={quizQuestionLimit}
+                  quizBusy={quizBusy}
+                  onLimitChange={setQuizQuestionLimit}
+                  onBack={() => setScreen("mode")}
+                  onStartQuiz={(limit) => void startQuiz(limit)}
+                  onHome={goHome}
+                  onHistory={openHistory}
                 />
               )}
               {screen === "study" && (
@@ -1044,7 +1069,7 @@ function App() {
                   studiedQuestionIds={new Set(studyProgress[selectedSubject] ?? [])}
                   onMarkStudied={markQuestionStudied}
                   onBack={() => setScreen("mode")}
-                  onStartQuiz={() => void startQuiz()}
+                  onStartQuiz={openQuizSetup}
                   onHome={goHome}
                   onHistory={openHistory}
                 />
@@ -1083,7 +1108,7 @@ function App() {
               {screen === "result" && result && (
                 <ResultScreen
                   result={result}
-                  onRetry={startQuiz}
+                  onRetry={() => void startQuiz(quizQuestionLimit)}
                   onHome={goHome}
                   onHistory={openHistory}
                 />
@@ -1240,6 +1265,36 @@ function getStudiedCounts(progress: StudyProgressMap): SubjectCountMap {
     counts[subject.value] = progress[subject.value]?.length ?? 0;
     return counts;
   }, {});
+}
+
+function normalizeQuizQuestionLimit(limit: QuizQuestionLimit, totalQuestions: number | undefined) {
+  if (typeof totalQuestions !== "number" || totalQuestions <= 0 || limit === "all") {
+    return limit;
+  }
+
+  return limit <= totalQuestions ? limit : "all";
+}
+
+function chooseQuizQuestions(questions: Question[], limit: QuizQuestionLimit) {
+  const requestedCount = limit === "all" ? questions.length : limit;
+  const selectedCount = Math.min(requestedCount, questions.length);
+
+  if (selectedCount >= questions.length) {
+    return questions;
+  }
+
+  return shuffleQuestions(questions).slice(0, selectedCount);
+}
+
+function shuffleQuestions(questions: Question[]) {
+  const next = [...questions];
+
+  for (let index = next.length - 1; index > 0; index -= 1) {
+    const swapIndex = Math.floor(Math.random() * (index + 1));
+    [next[index], next[swapIndex]] = [next[swapIndex], next[index]];
+  }
+
+  return next;
 }
 
 function isQuestionPublishable(options: Array<{ content: string; isCorrect: boolean }>) {

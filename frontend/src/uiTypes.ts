@@ -1,4 +1,4 @@
-export type Screen = "start" | "mode" | "study" | "quiz" | "result" | "history" | "admin";
+export type Screen = "start" | "mode" | "study" | "quizSetup" | "quiz" | "result" | "history" | "admin";
 export type AdminTab = "questions" | "study" | "accounts";
 export type AccountRole = "admin" | "editor" | "user";
 
