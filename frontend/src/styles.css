@@ -3616,18 +3616,13 @@ p {
   color: #111827;
   font-size: 1.16rem;
   line-height: 1.22;
-  display: -webkit-box;
-  overflow: hidden;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 2;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 .managed-study-card em {
   color: #4b5563;
-  display: -webkit-box;
-  overflow: hidden;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 3;
+  overflow-wrap: anywhere;
 }
 
 .lesson-card-meta {
