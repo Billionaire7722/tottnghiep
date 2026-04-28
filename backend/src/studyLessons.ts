@@ -4,7 +4,7 @@ import { mkdir, stat, unlink, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { Readable } from "node:stream";
 import { dbQuery } from "@/src/db";
-import { ApiError, corsHeaders } from "@/src/http";
+import { ApiError, corsHeaders, writeServerError } from "@/src/http";
 import type { Role } from "@/src/roles";
 import { canManageQuestions } from "@/src/roles";
 import type { SubjectCode } from "@/src/subjects";
@@ -489,7 +489,7 @@ function resolveAttachmentPath(storageKey: string) {
 function removeAttachmentFile(storageKey: string) {
   return unlink(resolveAttachmentPath(storageKey)).catch((error: NodeJS.ErrnoException) => {
     if (error.code !== "ENOENT") {
-      console.error(error);
+      writeServerError(error);
     }
   });
 }

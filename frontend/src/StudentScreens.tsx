@@ -533,8 +533,9 @@ export function QuizScreen({
         <strong>
           {index + 1}/{total}
         </strong>
-        <button className="icon-button" type="button" onClick={onExit} aria-label="Thoát bài kiểm tra">
-          <Icon name="more" />
+        <button className="quiz-exit-button" type="button" onClick={onExit}>
+          <Icon name="home" />
+          <span>Thoát</span>
         </button>
       </header>
 

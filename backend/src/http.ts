@@ -74,7 +74,7 @@ export function errorResponse(error: unknown, request: Request) {
     );
   }
 
-  console.error(error);
+  writeServerError(error);
 
   return jsonResponse(
     {
@@ -84,6 +84,27 @@ export function errorResponse(error: unknown, request: Request) {
     request,
     500
   );
+}
+
+export function writeServerError(error: unknown) {
+  const detail = formatServerError(error);
+  process.stderr.write(`[cnxh] ${new Date().toISOString()} ${detail}\n`);
+}
+
+function formatServerError(error: unknown) {
+  if (error instanceof Error) {
+    return error.stack ?? error.message;
+  }
+
+  if (typeof error === "string") {
+    return error;
+  }
+
+  try {
+    return JSON.stringify(error);
+  } catch {
+    return String(error);
+  }
 }
 
 export async function readJson(request: Request) {

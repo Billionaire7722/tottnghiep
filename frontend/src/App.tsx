@@ -21,6 +21,7 @@ import {
   User,
   apiRequest
 } from "./api";
+import { ConfirmDialog, type ConfirmDialogContent } from "./ConfirmDialog";
 import {
   AccountForm,
   AdminTab,
@@ -49,6 +50,11 @@ type CheckedAnswerState = {
 };
 type SubjectCountMap = Partial<Record<SubjectCode, number>>;
 type StudyProgressMap = Partial<Record<SubjectCode, number[]>>;
+type ConfirmationRequest = ConfirmDialogContent & {
+  resolve: (confirmed: boolean) => void;
+};
+type ConfirmationOptions = Partial<Pick<ConfirmDialogContent, "cancelLabel" | "tone">> &
+  Omit<ConfirmDialogContent, "cancelLabel" | "tone">;
 
 const tokenKey = "cnxh_token";
 const deviceKey = "cnxh_device_id";
@@ -62,6 +68,7 @@ function App() {
   const [loginUsername, setLoginUsername] = useState("");
   const [loginPassword, setLoginPassword] = useState("");
   const [loginBusy, setLoginBusy] = useState(false);
+  const [confirmation, setConfirmation] = useState<ConfirmationRequest | null>(null);
 
   const [questions, setQuestions] = useState<Question[]>([]);
   const [questionIndex, setQuestionIndex] = useState(0);
@@ -151,6 +158,29 @@ function App() {
       setNotice("Có lỗi xảy ra, vui lòng thử lại");
     },
     [clearAuth]
+  );
+
+  const requestConfirmation = useCallback((options: ConfirmationOptions) => {
+    return new Promise<boolean>((resolve) => {
+      setConfirmation({
+        cancelLabel: "Hủy",
+        tone: "default",
+        ...options,
+        resolve
+      });
+    });
+  }, []);
+
+  const settleConfirmation = useCallback(
+    (confirmed: boolean) => {
+      if (!confirmation) {
+        return;
+      }
+
+      confirmation.resolve(confirmed);
+      setConfirmation(null);
+    },
+    [confirmation]
   );
 
   useEffect(() => {
@@ -313,7 +343,15 @@ function App() {
   }
 
   async function logout() {
-    if (!window.confirm("Bạn có chắc muốn đăng xuất?")) {
+    const confirmed = await requestConfirmation({
+      title: "Đăng xuất khỏi tài khoản?",
+      message: "Bạn sẽ cần đăng nhập lại để tiếp tục ôn tập hoặc quản trị nội dung.",
+      confirmLabel: "Đăng xuất",
+      cancelLabel: "Ở lại",
+      tone: "danger"
+    });
+
+    if (!confirmed) {
       return;
     }
 
@@ -327,17 +365,27 @@ function App() {
     clearAuth("Đã đăng xuất");
   }
 
-  function returnToStartWithConfirm() {
-    if (window.confirm("Bạn có chắc muốn thoát bài kiểm tra? Bài làm hiện tại sẽ không được lưu.")) {
-      setScreen("mode");
-      setQuestions([]);
-      setAnswers({});
-      setCheckedAnswers({});
-      setAnswerFeedback(null);
-      setCheckingQuestionId(null);
-      setQuestionIndex(0);
-      questionLocksRef.current = {};
+  async function exitQuizWithDialog() {
+    const confirmed = await requestConfirmation({
+      title: "Thoát bài kiểm tra?",
+      message: "Bài làm hiện tại sẽ không được lưu. Bạn sẽ quay lại trang chủ.",
+      confirmLabel: "Thoát về trang chủ",
+      cancelLabel: "Tiếp tục làm bài",
+      tone: "danger"
+    });
+
+    if (!confirmed) {
+      return;
     }
+
+    setScreen("start");
+    setQuestions([]);
+    setAnswers({});
+    setCheckedAnswers({});
+    setAnswerFeedback(null);
+    setCheckingQuestionId(null);
+    setQuestionIndex(0);
+    questionLocksRef.current = {};
   }
 
   async function startQuiz() {
@@ -558,7 +606,14 @@ function App() {
   }
 
   async function deleteQuestionById(id: number) {
-    if (!window.confirm("Xóa vĩnh viễn câu hỏi này?")) {
+    const confirmed = await requestConfirmation({
+      title: "Xóa câu hỏi?",
+      message: "Câu hỏi này sẽ bị xóa vĩnh viễn và không thể khôi phục từ giao diện quản trị.",
+      confirmLabel: "Xóa câu hỏi",
+      tone: "danger"
+    });
+
+    if (!confirmed) {
       return;
     }
 
@@ -615,7 +670,14 @@ function App() {
   }
 
   async function deleteStudyLessonById(id: number) {
-    if (!window.confirm("Xóa vĩnh viễn bài ôn tập này?")) {
+    const confirmed = await requestConfirmation({
+      title: "Xóa bài ôn tập?",
+      message: "Bài ôn tập này sẽ bị xóa vĩnh viễn khỏi danh sách học tập.",
+      confirmLabel: "Xóa bài ôn tập",
+      tone: "danger"
+    });
+
+    if (!confirmed) {
       return;
     }
 
@@ -653,7 +715,14 @@ function App() {
   }
 
   async function deleteStudyLessonAttachment(lessonId: number, attachmentId: string) {
-    if (!window.confirm("Xóa file đính kèm này khỏi bài học?")) {
+    const confirmed = await requestConfirmation({
+      title: "Xóa file đính kèm?",
+      message: "File này sẽ bị gỡ khỏi bài học và học viên sẽ không còn mở được tài liệu này.",
+      confirmLabel: "Xóa file",
+      tone: "danger"
+    });
+
+    if (!confirmed) {
       return;
     }
 
@@ -875,7 +944,14 @@ function App() {
   }
 
   async function deleteAccountById(id: string) {
-    if (!window.confirm("Xóa tài khoản này? Dữ liệu bài làm cũ vẫn được giữ lại.")) {
+    const confirmed = await requestConfirmation({
+      title: "Xóa tài khoản?",
+      message: "Tài khoản này sẽ không còn đăng nhập được. Dữ liệu bài làm cũ vẫn được giữ lại.",
+      confirmLabel: "Xóa tài khoản",
+      tone: "danger"
+    });
+
+    if (!confirmed) {
       return;
     }
 
@@ -992,7 +1068,7 @@ function App() {
                     setAnswerFeedback(null);
                     setQuestionIndex((current) => Math.max(0, current - 1));
                   }}
-                  onExit={returnToStartWithConfirm}
+                  onExit={exitQuizWithDialog}
                   onNext={() => {
                     setAnswerFeedback(null);
                     if (questionIndex === questions.length - 1) {
@@ -1097,6 +1173,17 @@ function App() {
       )}
 
       {notice && <div className="toast">{notice}</div>}
+      {confirmation && (
+        <ConfirmDialog
+          title={confirmation.title}
+          message={confirmation.message}
+          confirmLabel={confirmation.confirmLabel}
+          cancelLabel={confirmation.cancelLabel}
+          tone={confirmation.tone}
+          onCancel={() => settleConfirmation(false)}
+          onConfirm={() => settleConfirmation(true)}
+        />
+      )}
     </main>
   );
 }

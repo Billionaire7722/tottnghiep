@@ -3811,3 +3811,190 @@ p {
     height: 40px;
   }
 }
+
+.confirm-dialog-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  background: rgba(17, 21, 35, 0.58);
+  animation: dialogBackdropIn 160ms ease both;
+}
+
+.confirm-dialog {
+  width: min(92vw, 480px);
+  display: grid;
+  gap: 22px;
+  padding: 24px;
+  border-radius: 8px;
+  background: #ffffff;
+  color: var(--app-ink, #111523);
+  border: 1px solid rgba(17, 21, 35, 0.08);
+  box-shadow: 0 28px 70px rgba(17, 21, 35, 0.26);
+  animation: dialogIn 180ms ease both;
+}
+
+.confirm-dialog-header {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 14px;
+  align-items: start;
+}
+
+.confirm-dialog-icon {
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+  border-radius: 8px;
+  background: #eef2ff;
+  color: var(--app-purple, #6721c8);
+}
+
+.confirm-dialog.danger .confirm-dialog-icon {
+  background: #fff1f2;
+  color: var(--danger);
+}
+
+.confirm-dialog-icon svg,
+.confirm-dialog-close svg,
+.quiz-exit-button svg {
+  width: 18px;
+  height: 18px;
+}
+
+.confirm-dialog h2 {
+  color: var(--app-ink, #111523);
+  font-size: 1.24rem;
+  line-height: 1.18;
+}
+
+.confirm-dialog p {
+  margin-top: 8px;
+  color: #4b5563;
+  font-size: 0.96rem;
+  line-height: 1.55;
+}
+
+.confirm-dialog-close {
+  width: 38px;
+  min-height: 38px;
+  display: grid;
+  place-items: center;
+  border-radius: 8px;
+  background: transparent;
+  color: #64748b;
+  box-shadow: none;
+}
+
+.confirm-dialog-close:hover:not(:disabled) {
+  background: #f1f5f9;
+  color: #111827;
+}
+
+.confirm-dialog-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.confirm-dialog-actions button,
+.confirm-action-button {
+  min-height: 44px;
+  padding: 0 16px;
+  border-radius: 8px;
+}
+
+.confirm-action-button {
+  background: var(--app-purple, #6721c8);
+  color: white;
+}
+
+.confirm-action-button:hover:not(:disabled) {
+  background: var(--app-purple-dark, #4e0da8);
+}
+
+.confirm-action-button.danger {
+  background: var(--danger);
+}
+
+.confirm-action-button.danger:hover:not(:disabled) {
+  background: #96394c;
+}
+
+.quiz-top {
+  grid-template-columns: minmax(88px, 1fr) auto minmax(88px, 1fr);
+}
+
+.quiz-top .icon-button {
+  justify-self: start;
+}
+
+.quiz-top strong {
+  justify-self: center;
+}
+
+.quiz-exit-button {
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-self: end;
+  justify-content: center;
+  gap: 8px;
+  padding: 0 14px;
+  border-radius: 999px;
+  background: var(--app-purple-soft);
+  color: var(--app-purple);
+  border: 1px solid rgba(103, 33, 200, 0.14);
+  box-shadow: none;
+  font-size: 0.9rem;
+  font-weight: 900;
+}
+
+.quiz-exit-button:hover:not(:disabled) {
+  background: #e4d4ff;
+  color: var(--app-purple-dark);
+}
+
+@media (max-width: 860px) {
+  .quiz-top .quiz-exit-button {
+    background: rgba(255, 255, 255, 0.16);
+    color: white;
+    border-color: rgba(255, 255, 255, 0.18);
+  }
+
+  .quiz-top .quiz-exit-button:hover:not(:disabled) {
+    background: rgba(255, 255, 255, 0.24);
+    color: white;
+  }
+}
+
+@media (max-width: 560px) {
+  .confirm-dialog-actions {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+}
+
+@keyframes dialogBackdropIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes dialogIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
