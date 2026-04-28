@@ -1949,73 +1949,141 @@ p {
 
 .managed-study-list {
   display: grid;
-  gap: 12px;
+  gap: 10px;
 }
 
 .managed-study-card {
   display: grid;
   overflow: hidden;
-  border-radius: 8px;
+  border-radius: 16px;
   background: #ffffff;
-  border: 1px solid rgba(17, 21, 35, 0.08);
-  box-shadow: 0 12px 26px rgba(17, 21, 35, 0.06);
+  border: 1.5px solid rgba(17, 21, 35, 0.07);
+  box-shadow: 0 4px 16px rgba(17, 21, 35, 0.05);
+  transition: box-shadow 0.18s ease, border-color 0.18s ease, transform 0.15s ease;
+}
+
+.managed-study-card:hover {
+  box-shadow: 0 8px 28px rgba(90, 13, 202, 0.13);
+  border-color: rgba(90, 13, 202, 0.2);
+  transform: translateY(-2px);
 }
 
 .managed-study-card > button {
   min-height: 0;
   display: flex;
-  align-items: center;
+  align-items: stretch;
   justify-content: space-between;
-  gap: 16px;
-  padding: 16px;
+  gap: 0;
+  padding: 0;
   border-radius: 0;
-  background: #ffffff;
+  background: transparent;
   color: #121623;
   text-align: left;
   box-shadow: none;
 }
 
 .managed-study-card > button:hover {
-  background: #f8fafc;
+  background: transparent;
   transform: none;
 }
 
-.managed-study-card > button span {
-  display: grid;
+.lesson-card-index {
+  flex: 0 0 auto;
+  display: flex !important;
+  align-items: center;
+  justify-content: center;
+  width: 52px;
+  padding: 16px 0;
+  background: linear-gradient(160deg, #f3eeff, #ece4ff);
+  color: var(--app-purple);
+  font-size: 1rem;
+  font-weight: 900;
+  letter-spacing: 0.02em;
+  border-right: 1.5px solid rgba(90, 13, 202, 0.08);
+}
+
+.slide-study-card .lesson-card-index {
+  background: linear-gradient(160deg, #eef6ff, #e3eeff);
+  color: #1a6fc4;
+  border-right-color: rgba(26, 111, 196, 0.1);
+}
+
+.lesson-card-body {
+  flex: 1 1 0;
   min-width: 0;
-  gap: 6px;
+  display: flex !important;
+  flex-direction: column;
+  gap: 4px;
+  padding: 14px 14px;
+  align-self: stretch;
 }
 
 .managed-study-card small {
   color: var(--app-purple);
-  font-size: 0.76rem;
+  font-size: 0.72rem;
   font-weight: 850;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.slide-study-card .managed-study-card small,
+.slide-study-card small {
+  color: #1a6fc4;
 }
 
 .managed-study-card strong {
   color: #0f172a;
-  font-size: clamp(1rem, 1.45vw, 1.16rem);
-  line-height: 1.28;
-  font-weight: 850;
+  font-size: clamp(0.92rem, 1.4vw, 1.08rem);
+  line-height: 1.32;
+  font-weight: 800;
+  white-space: normal;
   overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 .managed-study-card em {
-  color: #5f6470;
-  font-size: 0.9rem;
-  font-style: normal;
-  font-weight: 650;
-  line-height: 1.45;
+  display: none;
+}
+
+.lesson-card-meta {
+  flex: 0 0 auto;
+  display: flex !important;
+  flex-direction: column;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 14px 14px;
+  min-width: 84px;
+  border-left: 1.5px solid rgba(17, 21, 35, 0.05);
+}
+
+.lesson-card-meta > span {
+  color: #7a8294;
+  font-size: 0.76rem;
+  font-weight: 750;
+  white-space: nowrap;
 }
 
 .managed-study-card b {
-  flex: 0 0 auto;
-  padding: 8px 12px;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 10px;
   border-radius: 999px;
-  background: #eef2ff;
-  color: #4e0da8;
-  font-size: 0.82rem;
+  background: linear-gradient(135deg, #7c3aed, #5a0dca);
+  color: white;
+  font-size: 0.75rem;
   font-weight: 850;
+  white-space: nowrap;
+  transition: opacity 0.15s;
+}
+
+.managed-study-card > button:hover b {
+  opacity: 0.88;
+}
+
+.slide-study-card b {
+  background: linear-gradient(135deg, #1a6fc4, #1251a0);
 }
 
 .managed-study-content {
@@ -3031,8 +3099,8 @@ p {
 
 .managed-study-list {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-  gap: 12px;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 10px;
 }
 
 .managed-study-card {
@@ -3040,22 +3108,29 @@ p {
   gap: 0;
   overflow: hidden;
   padding: 0;
-  border-radius: 8px;
+  border-radius: 16px;
   background: #ffffff;
-  border: 1px solid rgba(17, 21, 35, 0.08);
-  box-shadow: 0 12px 26px rgba(17, 21, 35, 0.06);
+  border: 1.5px solid rgba(17, 21, 35, 0.07);
+  box-shadow: 0 4px 16px rgba(17, 21, 35, 0.05);
+  transition: box-shadow 0.18s ease, border-color 0.18s ease, transform 0.15s ease;
+}
+
+.managed-study-card:hover {
+  box-shadow: 0 8px 28px rgba(90, 13, 202, 0.13);
+  border-color: rgba(90, 13, 202, 0.2);
+  transform: translateY(-2px);
 }
 
 .managed-study-card > button {
   min-height: 0;
   border-radius: 0;
-  background: #ffffff;
+  background: transparent;
   color: #121623;
   box-shadow: none;
 }
 
 .managed-study-card > button:hover {
-  background: #f8fafc;
+  background: transparent;
   transform: none;
 }
 
