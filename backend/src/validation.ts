@@ -92,6 +92,11 @@ export const profileAvatarSchema = z.object({
   avatarKey: z.enum(profileAvatarKeys)
 });
 
+export const passwordChangeSchema = z.object({
+  currentPassword: z.string().min(1, "Vui lòng nhập mật khẩu hiện tại"),
+  newPassword: z.string().min(8, "Mật khẩu mới cần ít nhất 8 ký tự").max(120, "Mật khẩu mới quá dài")
+});
+
 export const answerSubmitSchema = z.object({
   answers: z
     .array(
@@ -118,6 +123,7 @@ export type StudyLessonInput = z.infer<typeof studyLessonSchema>;
 export type AccountCreateInput = z.infer<typeof accountCreateSchema>;
 export type AccountUpdateInput = z.infer<typeof accountUpdateSchema>;
 export type ProfileAvatarInput = z.infer<typeof profileAvatarSchema>;
+export type PasswordChangeInput = z.infer<typeof passwordChangeSchema>;
 export type AnswerSubmitInput = z.infer<typeof answerSubmitSchema>;
 export type AnswerCheckInput = z.infer<typeof answerCheckSchema>;
 export type QuestionTextImportInput = z.infer<typeof questionTextImportSchema>;

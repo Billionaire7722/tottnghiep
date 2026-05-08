@@ -206,10 +206,8 @@ export function StartScreen({
   onSubjectSelect,
   onStudyTab,
   onTestTab,
-  onHistory,
-  onAdmin,
-  onAvatarClick,
-  onLogout
+  onProfile,
+  onAvatarClick
 }: {
   user: User;
   attempts: Attempt[];
@@ -218,10 +216,8 @@ export function StartScreen({
   onSubjectSelect: (value: SubjectCode) => void;
   onStudyTab: () => void;
   onTestTab: () => void;
-  onHistory: () => void;
-  onAdmin: () => void;
+  onProfile: () => void;
   onAvatarClick: () => void;
-  onLogout: () => void;
 }) {
   const latest = attempts[0];
   const bestPercentage = attempts.reduce((best, attempt) => Math.max(best, Math.round(attempt.percentage)), 0);
@@ -237,18 +233,6 @@ export function StartScreen({
             <p>Xin chào, {user.displayName || "bạn"}!</p>
             <span>{roleLabel(user.role)}</span>
           </div>
-        </div>
-        <div className="dashboard-actions">
-          {(user.role === "admin" || user.role === "editor") && (
-            <button className="secondary-button" type="button" onClick={onAdmin}>
-              <Icon name="shield" />
-              Quản trị
-            </button>
-          )}
-          <button className="home-logout-button" type="button" onClick={onLogout}>
-            <Icon name="logOut" />
-            Đăng xuất
-          </button>
         </div>
       </header>
 
@@ -298,7 +282,7 @@ export function StartScreen({
         </div>
       </section>
 
-      <BottomNav active="home" onHome={() => undefined} onStudy={onStudyTab} onTest={onTestTab} onProfile={onHistory} />
+      <BottomNav active="home" onHome={() => undefined} onStudy={onStudyTab} onTest={onTestTab} onProfile={onProfile} />
     </div>
   );
 }
@@ -884,12 +868,14 @@ export function ResultScreen({
   result,
   onRetry,
   onHome,
-  onHistory
+  onHistory,
+  onProfile
 }: {
   result: QuizResult;
   onRetry: () => void;
   onHome: () => void;
   onHistory: () => void;
+  onProfile: () => void;
 }) {
   const correctCount = result.score;
   const wrongCount = Math.max(result.total - result.score, 0);
@@ -942,37 +928,331 @@ export function ResultScreen({
         </button>
       </div>
 
-      <BottomNav active="test" onHome={onHome} onStudy={onHome} onTest={onRetry} onProfile={onHistory} />
+      <BottomNav active="test" onHome={onHome} onStudy={onHome} onTest={onRetry} onProfile={onProfile} />
+    </div>
+  );
+}
+
+export function ProfileScreen({
+  user,
+  onStudy,
+  onTest,
+  onAvatarClick,
+  onOpenSettings,
+  onLogout
+}: {
+  user: User;
+  onStudy: () => void;
+  onTest: () => void;
+  onAvatarClick: () => void;
+  onOpenSettings: () => void;
+  onLogout: () => void;
+}) {
+  return (
+    <div className="student-screen profile-screen">
+      <header className="section-title">
+        <div>
+          <span>Cá nhân</span>
+          <h2>Hồ sơ của bạn</h2>
+        </div>
+        <button className="secondary-button settings-open-button" type="button" onClick={onOpenSettings}>
+          <Icon name="more" />
+          Cài đặt
+        </button>
+      </header>
+      <section className="profile-hero">
+        <button className="avatar-trigger profile-avatar-trigger" type="button" aria-label="Chọn ảnh đại diện" onClick={onAvatarClick}>
+          <StudentAvatar user={user} className="profile-avatar-preview" />
+        </button>
+        <div>
+          <span>Hồ sơ học tập</span>
+          <h3>{user.displayName || user.username}</h3>
+          <p>{roleLabel(user.role)}</p>
+        </div>
+      </section>
+      <section className="profile-settings-hint">
+        <span>Cài đặt nằm trong drawer bên phải</span>
+        <p>Đổi mật khẩu, bật dark mode, xem chính sách và mở lịch sử làm bài từ khu vực cài đặt.</p>
+      </section>
+      <BottomNav
+        active="profile"
+        homeLabel="Đăng xuất"
+        homeIcon="logOut"
+        homeTone="danger"
+        onHome={onLogout}
+        onStudy={onStudy}
+        onTest={onTest}
+        onProfile={() => undefined}
+      />
+    </div>
+  );
+}
+
+export function SettingsDrawer({
+  user,
+  open,
+  darkMode,
+  onClose,
+  onAccount,
+  onPolicies,
+  onHistory,
+  onToggleDarkMode,
+  onLogout,
+  onManageQuestions,
+  onManageStudy,
+  onManageAccounts
+}: {
+  user: User;
+  open: boolean;
+  darkMode: boolean;
+  onClose: () => void;
+  onAccount: () => void;
+  onPolicies: () => void;
+  onHistory: () => void;
+  onToggleDarkMode: () => void;
+  onLogout: () => void;
+  onManageQuestions: () => void;
+  onManageStudy: () => void;
+  onManageAccounts: () => void;
+}) {
+  const canManageContent = user.role === "admin" || user.role === "editor";
+  const canManageAccounts = user.role === "admin";
+
+  return (
+    <div className={open ? "settings-drawer-layer open" : "settings-drawer-layer"} aria-hidden={!open}>
+      <button className="settings-drawer-scrim" type="button" aria-label="Đóng cài đặt" onClick={onClose} />
+      <aside className="settings-drawer" aria-label="Cài đặt cá nhân">
+        <header>
+          <div>
+            <span>Cài đặt</span>
+            <h2>{user.displayName || user.username}</h2>
+          </div>
+          <button className="icon-button" type="button" aria-label="Đóng" onClick={onClose}>
+            <Icon name="x" />
+          </button>
+        </header>
+        <div className="settings-list">
+          <button type="button" onClick={onAccount}>
+            <Icon name="user" />
+            <span>
+              <strong>Quản lý tài khoản</strong>
+              <small>Đổi mật khẩu đăng nhập</small>
+            </span>
+          </button>
+          <label className="settings-switch-row">
+            <span>
+              <strong>Dark mode</strong>
+              <small>Đổi giao diện tối cho app</small>
+            </span>
+            <input type="checkbox" checked={darkMode} onChange={onToggleDarkMode} />
+            <i aria-hidden="true" />
+          </label>
+          <button type="button" onClick={onPolicies}>
+            <Icon name="fileText" />
+            <span>
+              <strong>Policies</strong>
+              <small>Chính sách sử dụng và bảo mật</small>
+            </span>
+          </button>
+          <button type="button" onClick={onHistory}>
+            <Icon name="clipboard" />
+            <span>
+              <strong>Lịch sử làm bài</strong>
+              <small>Xem lại các lần kiểm tra</small>
+            </span>
+          </button>
+          {canManageContent && (
+            <div className="settings-admin-group">
+              <span>Khu vực quản trị</span>
+              <button type="button" onClick={onManageQuestions}>
+                <Icon name="shield" />
+                <strong>Quản trị câu hỏi</strong>
+              </button>
+              <button type="button" onClick={onManageStudy}>
+                <Icon name="book" />
+                <strong>Quản trị ôn tập</strong>
+              </button>
+              {canManageAccounts && (
+                <button type="button" onClick={onManageAccounts}>
+                  <Icon name="user" />
+                  <strong>Quản trị tài khoản hệ thống</strong>
+                </button>
+              )}
+            </div>
+          )}
+        </div>
+        <button className="settings-logout-button" type="button" onClick={onLogout}>
+          <Icon name="logOut" />
+          Đăng xuất
+        </button>
+      </aside>
+    </div>
+  );
+}
+
+export function AccountManagementScreen({
+  busy,
+  onBack,
+  onHome,
+  onStudy,
+  onTest,
+  onProfile,
+  onChangePassword
+}: {
+  busy: boolean;
+  onBack: () => void;
+  onHome: () => void;
+  onStudy: () => void;
+  onTest: () => void;
+  onProfile: () => void;
+  onChangePassword: (input: { currentPassword: string; newPassword: string }) => Promise<boolean>;
+}) {
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [formError, setFormError] = useState("");
+
+  async function submitPassword(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setFormError("");
+
+    if (newPassword !== confirmPassword) {
+      setFormError("Mật khẩu mới nhập lại chưa khớp");
+      return;
+    }
+
+    const saved = await onChangePassword({ currentPassword, newPassword });
+
+    if (saved) {
+      setCurrentPassword("");
+      setNewPassword("");
+      setConfirmPassword("");
+    }
+  }
+
+  return (
+    <div className="student-screen account-screen">
+      <ScreenHeader title="Quản lý tài khoản" onBack={onBack} />
+      <section className="account-security-card">
+        <span>Bảo mật tài khoản</span>
+        <h2>Đổi mật khẩu</h2>
+        <p>Mật khẩu mới nên có ít nhất 8 ký tự, không dùng lại mật khẩu cũ và không chia sẻ với người khác.</p>
+      </section>
+      <form className="password-form" onSubmit={submitPassword}>
+        <label>
+          Mật khẩu hiện tại
+          <input type="password" value={currentPassword} onChange={(event) => setCurrentPassword(event.target.value)} autoComplete="current-password" required />
+        </label>
+        <label>
+          Mật khẩu mới
+          <input type="password" value={newPassword} onChange={(event) => setNewPassword(event.target.value)} autoComplete="new-password" minLength={8} required />
+        </label>
+        <label>
+          Nhập lại mật khẩu mới
+          <input type="password" value={confirmPassword} onChange={(event) => setConfirmPassword(event.target.value)} autoComplete="new-password" minLength={8} required />
+        </label>
+        {formError && <p className="form-error">{formError}</p>}
+        <button type="submit" disabled={busy}>
+          {busy ? "Đang lưu" : "Lưu mật khẩu mới"}
+        </button>
+      </form>
+      <BottomNav active="profile" onHome={onHome} onStudy={onStudy} onTest={onTest} onProfile={onProfile} />
+    </div>
+  );
+}
+
+export function PoliciesScreen({
+  onBack,
+  onHome,
+  onStudy,
+  onTest,
+  onProfile
+}: {
+  onBack: () => void;
+  onHome: () => void;
+  onStudy: () => void;
+  onTest: () => void;
+  onProfile: () => void;
+}) {
+  const policySections = [
+    {
+      title: "1. Phạm vi áp dụng",
+      content:
+        "Ứng dụng hỗ trợ người học ôn tập, làm bài kiểm tra, xem tài liệu học tập và theo dõi tiến độ cá nhân. Chính sách này áp dụng cho mọi tài khoản đăng nhập, bao gồm người học, người chỉnh sửa nội dung và quản trị viên."
+    },
+    {
+      title: "2. Dữ liệu tài khoản",
+      content:
+        "Hệ thống lưu tên đăng nhập, tên hiển thị, vai trò, trạng thái hoạt động, ảnh đại diện đã chọn, phiên đăng nhập và thời điểm hoạt động gần nhất. Mật khẩu không được lưu dạng văn bản gốc; hệ thống chỉ lưu mã băm mật khẩu để xác thực."
+    },
+    {
+      title: "3. Dữ liệu học tập và lịch sử làm bài",
+      content:
+        "Khi người dùng nộp bài, ứng dụng lưu điểm số, tổng số câu, tỷ lệ đúng, thời điểm nộp bài và chi tiết đáp án để người dùng xem lại. Dữ liệu này phục vụ theo dõi tiến độ, phát hiện nội dung cần ôn lại và hỗ trợ quản trị đánh giá chất lượng câu hỏi."
+    },
+    {
+      title: "4. Phiên đăng nhập và thiết bị",
+      content:
+        "Ứng dụng ghi nhận mã thiết bị, trình duyệt, địa chỉ IP ở mức cần thiết và thời hạn phiên để bảo vệ tài khoản. Với tài khoản người học thông thường, phiên cũ có thể bị thay thế khi đăng nhập ở thiết bị khác nhằm hạn chế chia sẻ tài khoản."
+    },
+    {
+      title: "5. Quyền của người dùng",
+      content:
+        "Người dùng có thể đổi mật khẩu, chọn ảnh đại diện, xem lịch sử làm bài và đăng xuất khỏi phiên hiện tại. Nếu phát hiện thông tin sai, người dùng nên liên hệ quản trị viên để được cập nhật tên hiển thị, trạng thái tài khoản hoặc quyền truy cập."
+    },
+    {
+      title: "6. Trách nhiệm bảo mật",
+      content:
+        "Người dùng cần giữ bí mật mật khẩu, không chia sẻ tài khoản, đăng xuất trên thiết bị dùng chung và đổi mật khẩu khi nghi ngờ bị lộ. Quản trị viên cần cấp quyền đúng vai trò, khóa tài khoản không còn sử dụng và kiểm tra nội dung trước khi công khai."
+    },
+    {
+      title: "7. Nội dung học tập",
+      content:
+        "Câu hỏi, lời giải, bài học, tệp đính kèm và slide được dùng cho mục đích ôn tập. Người dùng không nên sao chép, phát tán hoặc chỉnh sửa nội dung ngoài phạm vi được cấp quyền. Nội dung sai lệch cần được báo lại để chỉnh sửa kịp thời."
+    },
+    {
+      title: "8. Thay đổi chính sách",
+      content:
+        "Chính sách có thể được cập nhật khi ứng dụng thay đổi tính năng, yêu cầu bảo mật hoặc quy trình quản trị. Phiên bản mới sẽ áp dụng từ thời điểm được triển khai trong ứng dụng."
+    }
+  ];
+
+  return (
+    <div className="student-screen policies-screen">
+      <ScreenHeader title="Policies" onBack={onBack} />
+      <section className="policy-intro">
+        <span>Chính sách sử dụng và bảo mật</span>
+        <h2>Minh bạch về dữ liệu và trách nhiệm sử dụng</h2>
+        <p>Các nội dung dưới đây mô tả cách ứng dụng xử lý tài khoản, lịch sử học tập, phiên đăng nhập và quyền của người dùng.</p>
+      </section>
+      <div className="policy-list">
+        {policySections.map((section) => (
+          <article className="policy-card" key={section.title}>
+            <h3>{section.title}</h3>
+            <p>{section.content}</p>
+          </article>
+        ))}
+      </div>
+      <BottomNav active="profile" onHome={onHome} onStudy={onStudy} onTest={onTest} onProfile={onProfile} />
     </div>
   );
 }
 
 export function HistoryScreen({
-  user,
   attempts,
   onHome,
   onStudy,
   onTest,
-  onAvatarClick,
-  onManageQuestions,
-  onManageStudy,
-  onManageAccounts,
+  onProfile,
   onRefresh
 }: {
-  user: User;
   attempts: Attempt[];
   onHome: () => void;
   onStudy: () => void;
   onTest: () => void;
-  onAvatarClick: () => void;
-  onManageQuestions: () => void;
-  onManageStudy: () => void;
-  onManageAccounts: () => void;
+  onProfile: () => void;
   onRefresh: () => void;
 }) {
-  const canManageContent = user.role === "admin" || user.role === "editor";
-  const canManageAccounts = user.role === "admin";
-
   return (
     <div className="student-screen history-screen">
       <header className="section-title">
@@ -984,37 +1264,6 @@ export function HistoryScreen({
           Tải lại
         </button>
       </header>
-      <section className="profile-hero">
-        <button className="avatar-trigger profile-avatar-trigger" type="button" aria-label="Chọn ảnh đại diện" onClick={onAvatarClick}>
-          <StudentAvatar user={user} className="profile-avatar-preview" />
-        </button>
-        <div>
-          <span>Hồ sơ của bạn</span>
-          <h3>{user.displayName || user.username}</h3>
-          <p>{roleLabel(user.role)}</p>
-        </div>
-      </section>
-      {canManageContent && (
-        <section className="profile-admin-panel">
-          <div>
-            <span>Khu vực quản trị</span>
-            <h3>{canManageAccounts ? "Quản lý nội dung và tài khoản" : "Quản lý nội dung học tập"}</h3>
-          </div>
-          <div className="profile-admin-actions">
-            <button type="button" onClick={onManageQuestions}>
-              Quản lý câu hỏi
-            </button>
-            <button className="secondary-button" type="button" onClick={onManageStudy}>
-              Quản lý ôn tập
-            </button>
-            {canManageAccounts && (
-              <button className="ghost-button" type="button" onClick={onManageAccounts}>
-                Quản lý tài khoản
-              </button>
-            )}
-          </div>
-        </section>
-      )}
       <div className="history-list">
         {attempts.length === 0 ? (
           <p className="empty-text">Chưa có lần làm bài nào.</p>
@@ -1032,29 +1281,32 @@ export function HistoryScreen({
           ))
         )}
       </div>
-      <button type="button" onClick={onHome}>
-        Trang chủ
-      </button>
-      <BottomNav active="profile" onHome={onHome} onStudy={onStudy} onTest={onTest} onProfile={() => undefined} />
+      <BottomNav active="profile" onHome={onHome} onStudy={onStudy} onTest={onTest} onProfile={onProfile} />
     </div>
   );
 }
 
 function BottomNav({
   active,
+  homeLabel = "Trang chủ",
+  homeIcon = "home",
+  homeTone = "default",
   onHome,
   onStudy,
   onTest,
   onProfile
 }: {
   active: NavActive;
+  homeLabel?: string;
+  homeIcon?: IconName;
+  homeTone?: "default" | "danger";
   onHome: () => void;
   onStudy: () => void;
   onTest: () => void;
   onProfile: () => void;
 }) {
-  const items: Array<{ id: NavActive; label: string; icon: IconName; action: () => void }> = [
-    { id: "home", label: "Trang chủ", icon: "home", action: onHome },
+  const items: Array<{ id: NavActive; label: string; icon: IconName; action: () => void; tone?: "default" | "danger" }> = [
+    { id: "home", label: homeLabel, icon: homeIcon, action: onHome, tone: homeTone },
     { id: "study", label: "Bài học", icon: "book", action: onStudy },
     { id: "test", label: "Kiểm tra", icon: "clipboard", action: onTest },
     { id: "profile", label: "Cá nhân", icon: "user", action: onProfile }
@@ -1063,7 +1315,12 @@ function BottomNav({
   return (
     <nav className="bottom-nav" aria-label="Điều hướng chính">
       {items.map((item) => (
-        <button className={active === item.id ? "active" : ""} key={item.id} type="button" onClick={item.action}>
+        <button
+          className={`${active === item.id ? "active" : ""} ${item.tone === "danger" ? "danger-nav-item" : ""}`.trim()}
+          key={item.id}
+          type="button"
+          onClick={item.action}
+        >
           <span aria-hidden="true">
             <Icon name={item.icon} />
           </span>

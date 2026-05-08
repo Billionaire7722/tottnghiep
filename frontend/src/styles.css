@@ -5767,3 +5767,472 @@ label,
   border-color: rgba(234, 88, 12, 0.46);
   box-shadow: 0 18px 44px rgba(234, 88, 12, 0.16);
 }
+
+.app-shell {
+  background:
+    linear-gradient(120deg, rgba(248, 250, 252, 0.24), rgba(219, 234, 254, 0.2) 44%, rgba(254, 243, 199, 0.16)),
+    url("https://images.pexels.com/photos/10794100/pexels-photo-10794100.jpeg?auto=compress&cs=tinysrgb&w=1800"),
+    #eef7f5;
+  background-position: center;
+  background-size: cover;
+  background-attachment: fixed;
+}
+
+.dashboard-screen,
+.mode-screen,
+.study-screen,
+.quiz-setup-screen,
+.result-screen,
+.history-screen,
+.profile-screen,
+.account-screen,
+.policies-screen {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.7), rgba(248, 250, 252, 0.62)),
+    transparent;
+  backdrop-filter: blur(3px);
+}
+
+.profile-screen,
+.account-screen,
+.policies-screen {
+  display: grid;
+  align-content: start;
+  gap: 18px;
+  padding-top: 32px;
+}
+
+.settings-open-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding-inline: 14px;
+}
+
+.settings-open-button svg,
+.settings-list svg,
+.settings-logout-button svg {
+  width: 18px;
+  height: 18px;
+}
+
+.profile-avatar-trigger {
+  width: auto;
+  min-height: auto;
+  padding: 0;
+  border-radius: 50%;
+  background: transparent;
+  box-shadow: none;
+}
+
+.profile-avatar-trigger:hover:not(:disabled) {
+  background: transparent;
+}
+
+.profile-settings-hint,
+.account-security-card,
+.policy-intro {
+  display: grid;
+  gap: 8px;
+  padding: 18px;
+  border-radius: 8px;
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.92), rgba(236, 253, 245, 0.88)),
+    #ffffff;
+  border: 1px solid rgba(15, 118, 110, 0.14);
+  box-shadow: 0 14px 34px rgba(15, 23, 42, 0.08);
+}
+
+.profile-settings-hint span,
+.account-security-card span,
+.policy-intro span {
+  color: #0f766e;
+  font-size: 0.8rem;
+  font-weight: 950;
+}
+
+.profile-settings-hint p,
+.account-security-card p,
+.policy-intro p,
+.policy-card p {
+  color: #475569;
+  font-weight: 750;
+  line-height: 1.55;
+}
+
+.settings-logout-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: rgba(254, 242, 242, 0.92);
+  color: #b91c1c;
+  border: 1px solid rgba(185, 28, 28, 0.22);
+}
+
+.settings-logout-button:hover:not(:disabled) {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.bottom-nav button.danger-nav-item {
+  color: #b91c1c;
+}
+
+.bottom-nav button.danger-nav-item:hover:not(:disabled) {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.settings-drawer-layer {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 180ms ease;
+}
+
+.settings-drawer-layer.open {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.settings-drawer-scrim {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  min-height: 100%;
+  border-radius: 0;
+  background: rgba(15, 23, 42, 0.36);
+  backdrop-filter: blur(5px);
+}
+
+.settings-drawer-scrim:hover:not(:disabled) {
+  background: rgba(15, 23, 42, 0.4);
+  transform: none;
+}
+
+.settings-drawer {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: min(420px, 92vw);
+  height: 100%;
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  gap: 18px;
+  overflow: auto;
+  padding: 24px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(239, 246, 255, 0.96)),
+    #ffffff;
+  color: #111827;
+  border-left: 1px solid rgba(15, 23, 42, 0.1);
+  box-shadow: -28px 0 70px rgba(15, 23, 42, 0.2);
+  transform: translateX(100%);
+  transition: transform 220ms ease;
+}
+
+.settings-drawer-layer.open .settings-drawer {
+  transform: translateX(0);
+}
+
+.settings-drawer header {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 14px;
+  align-items: start;
+}
+
+.settings-drawer header span,
+.settings-admin-group > span {
+  color: #0f766e;
+  font-size: 0.8rem;
+  font-weight: 950;
+}
+
+.settings-drawer h2 {
+  margin-top: 4px;
+  color: #111827;
+  font-size: 1.6rem;
+  line-height: 1.1;
+}
+
+.settings-list {
+  display: grid;
+  align-content: start;
+  gap: 10px;
+}
+
+.settings-list > button,
+.settings-switch-row,
+.settings-admin-group button {
+  min-height: 68px;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 12px;
+  padding: 14px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.78);
+  color: #1f2937;
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  box-shadow: 0 10px 22px rgba(15, 23, 42, 0.06);
+  text-align: left;
+}
+
+.settings-list > button:hover:not(:disabled),
+.settings-admin-group button:hover:not(:disabled) {
+  background: #ecfdf5;
+  color: #0f766e;
+}
+
+.settings-list span,
+.settings-admin-group button {
+  min-width: 0;
+}
+
+.settings-list strong {
+  display: block;
+  color: inherit;
+  line-height: 1.2;
+}
+
+.settings-list small {
+  display: block;
+  margin-top: 3px;
+  color: #64748b;
+  font-weight: 800;
+  line-height: 1.35;
+}
+
+.settings-switch-row {
+  grid-template-columns: minmax(0, 1fr) auto;
+  cursor: pointer;
+}
+
+.settings-switch-row input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.settings-switch-row i {
+  position: relative;
+  width: 52px;
+  height: 30px;
+  border-radius: 999px;
+  background: #cbd5e1;
+  box-shadow: inset 0 0 0 1px rgba(15, 23, 42, 0.08);
+  transition: background 160ms ease;
+}
+
+.settings-switch-row i::before {
+  content: "";
+  position: absolute;
+  top: 4px;
+  left: 4px;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: #ffffff;
+  box-shadow: 0 4px 10px rgba(15, 23, 42, 0.18);
+  transition: transform 160ms ease;
+}
+
+.settings-switch-row input:checked + i {
+  background: #0f766e;
+}
+
+.settings-switch-row input:checked + i::before {
+  transform: translateX(22px);
+}
+
+.settings-admin-group {
+  display: grid;
+  gap: 8px;
+  margin-top: 4px;
+  padding-top: 14px;
+  border-top: 1px solid rgba(15, 23, 42, 0.08);
+}
+
+.settings-admin-group button {
+  min-height: 56px;
+  width: 100%;
+}
+
+.password-form {
+  display: grid;
+  gap: 14px;
+  padding: 18px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  box-shadow: 0 16px 38px rgba(15, 23, 42, 0.08);
+}
+
+.password-form button {
+  background: #0f766e;
+}
+
+.password-form button:hover:not(:disabled) {
+  background: #115e59;
+}
+
+.form-error {
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: #fee2e2;
+  color: #991b1b;
+  font-weight: 850;
+}
+
+.policy-list {
+  display: grid;
+  gap: 12px;
+}
+
+.policy-card {
+  display: grid;
+  gap: 8px;
+  padding: 16px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  box-shadow: 0 12px 28px rgba(15, 23, 42, 0.06);
+}
+
+.policy-card h3 {
+  color: #111827;
+  font-size: 1rem;
+}
+
+.app-shell.dark-mode {
+  color: #e5edf5;
+  background:
+    linear-gradient(120deg, rgba(2, 6, 23, 0.28), rgba(8, 47, 73, 0.34) 44%, rgba(69, 26, 3, 0.22)),
+    url("https://images.pexels.com/photos/10794100/pexels-photo-10794100.jpeg?auto=compress&cs=tinysrgb&w=1800"),
+    #020617;
+  background-position: center;
+  background-size: cover;
+  background-attachment: fixed;
+}
+
+.app-shell.dark-mode .phone-frame {
+  background: #020617;
+  box-shadow:
+    0 24px 54px rgba(2, 6, 23, 0.42),
+    inset 0 0 0 2px rgba(255, 255, 255, 0.08);
+}
+
+.app-shell.dark-mode .phone-screen,
+.app-shell.dark-mode .dashboard-screen,
+.app-shell.dark-mode .mode-screen,
+.app-shell.dark-mode .study-screen,
+.app-shell.dark-mode .quiz-setup-screen,
+.app-shell.dark-mode .result-screen,
+.app-shell.dark-mode .history-screen,
+.app-shell.dark-mode .profile-screen,
+.app-shell.dark-mode .account-screen,
+.app-shell.dark-mode .policies-screen {
+  background:
+    linear-gradient(180deg, rgba(15, 23, 42, 0.82), rgba(30, 41, 59, 0.72)),
+    transparent;
+  color: #e5edf5;
+}
+
+.app-shell.dark-mode .student-screen h1,
+.app-shell.dark-mode .student-screen h2,
+.app-shell.dark-mode .student-screen h3,
+.app-shell.dark-mode .student-screen strong,
+.app-shell.dark-mode .settings-drawer h2,
+.app-shell.dark-mode .policy-card h3 {
+  color: #f8fafc;
+}
+
+.app-shell.dark-mode .section-title span,
+.app-shell.dark-mode label,
+.app-shell.dark-mode .empty-text,
+.app-shell.dark-mode .settings-list small,
+.app-shell.dark-mode .history-item span,
+.app-shell.dark-mode .profile-settings-hint p,
+.app-shell.dark-mode .account-security-card p,
+.app-shell.dark-mode .policy-intro p,
+.app-shell.dark-mode .policy-card p {
+  color: #cbd5e1;
+}
+
+.app-shell.dark-mode input,
+.app-shell.dark-mode textarea,
+.app-shell.dark-mode select,
+.app-shell.dark-mode .password-form,
+.app-shell.dark-mode .profile-hero,
+.app-shell.dark-mode .profile-settings-hint,
+.app-shell.dark-mode .account-security-card,
+.app-shell.dark-mode .policy-intro,
+.app-shell.dark-mode .policy-card,
+.app-shell.dark-mode .history-item,
+.app-shell.dark-mode .result-score,
+.app-shell.dark-mode .review-item {
+  background: rgba(15, 23, 42, 0.86);
+  color: #f8fafc;
+  border-color: rgba(148, 163, 184, 0.22);
+}
+
+.app-shell.dark-mode .bottom-nav,
+.app-shell.dark-mode .settings-drawer {
+  background:
+    linear-gradient(180deg, rgba(15, 23, 42, 0.98), rgba(30, 41, 59, 0.96)),
+    #0f172a;
+  color: #f8fafc;
+  border-color: rgba(148, 163, 184, 0.18);
+}
+
+.app-shell.dark-mode .settings-list > button,
+.app-shell.dark-mode .settings-switch-row,
+.app-shell.dark-mode .settings-admin-group button {
+  background: rgba(30, 41, 59, 0.92);
+  color: #f8fafc;
+  border-color: rgba(148, 163, 184, 0.16);
+}
+
+.app-shell.dark-mode .ghost-button,
+.app-shell.dark-mode .secondary-button {
+  background: rgba(30, 41, 59, 0.82);
+  color: #dbeafe;
+  border-color: rgba(147, 197, 253, 0.22);
+}
+
+.app-shell.dark-mode .bottom-nav button.active,
+.app-shell.dark-mode .bottom-nav button:hover:not(:disabled) {
+  color: #5eead4;
+  background: rgba(20, 184, 166, 0.16);
+}
+
+.app-shell.dark-mode .bottom-nav button.danger-nav-item {
+  color: #fca5a5;
+}
+
+.app-shell.dark-mode .bottom-nav button.danger-nav-item:hover:not(:disabled) {
+  color: #fecaca;
+  background: rgba(185, 28, 28, 0.2);
+}
+
+@media (max-width: 520px) {
+  .settings-drawer {
+    width: min(100vw, 390px);
+    padding: 20px;
+  }
+
+  .section-title {
+    align-items: flex-start;
+  }
+
+  .settings-open-button {
+    min-width: 44px;
+    padding-inline: 12px;
+  }
+}

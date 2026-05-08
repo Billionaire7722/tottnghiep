@@ -2,13 +2,17 @@ import { FormEvent, useCallback, useEffect, useRef, useState } from "react";
 import { AdminWorkspace } from "./AdminWorkspace";
 import {
   AvatarPickerDialog,
+  AccountManagementScreen,
   HistoryScreen,
   LoginScreen,
   ModeScreen,
   PhoneShell,
+  PoliciesScreen,
+  ProfileScreen,
   QuizSetupScreen,
   QuizScreen,
   ResultScreen,
+  SettingsDrawer,
   StartScreen,
   StudyScreen,
   type NavActive,
@@ -60,6 +64,7 @@ type StudyProgressMap = Partial<Record<SubjectCode, number[]>>;
 const tokenKey = "cnxh_token";
 const deviceKey = "cnxh_device_id";
 const studyProgressKey = "cnxh_study_progress";
+const darkModeKey = "cnxh_dark_mode";
 
 function App() {
   const [auth, setAuth] = useState<AuthState | null>(null);
@@ -72,6 +77,9 @@ function App() {
   const [loginBusy, setLoginBusy] = useState(false);
   const [avatarBusy, setAvatarBusy] = useState(false);
   const [avatarPickerOpen, setAvatarPickerOpen] = useState(false);
+  const [settingsDrawerOpen, setSettingsDrawerOpen] = useState(false);
+  const [passwordBusy, setPasswordBusy] = useState(false);
+  const [darkMode, setDarkMode] = useState(() => localStorage.getItem(darkModeKey) === "true");
   const [confirmation, setConfirmation] = useState<ConfirmationRequest | null>(null);
 
   const [questions, setQuestions] = useState<Question[]>([]);
@@ -133,6 +141,8 @@ function App() {
     setLoginPassword("");
     setAvatarBusy(false);
     setAvatarPickerOpen(false);
+    setSettingsDrawerOpen(false);
+    setPasswordBusy(false);
     setScreen("start");
     setModeNavActive("home");
     setResult(null);
@@ -326,6 +336,10 @@ function App() {
     }
   }, [screen, loadAdminData]);
 
+  useEffect(() => {
+    localStorage.setItem(darkModeKey, String(darkMode));
+  }, [darkMode]);
+
   async function handleLogin(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setLoginBusy(true);
@@ -376,6 +390,24 @@ function App() {
       handleError(error);
     } finally {
       setAvatarBusy(false);
+    }
+  }
+
+  async function changePassword(input: { currentPassword: string; newPassword: string }) {
+    setPasswordBusy(true);
+
+    try {
+      await authedRequest("/api/auth/password", {
+        method: "PATCH",
+        body: input
+      });
+      setNotice("Đã cập nhật mật khẩu");
+      return true;
+    } catch (error) {
+      handleError(error);
+      return false;
+    } finally {
+      setPasswordBusy(false);
     }
   }
 
@@ -494,6 +526,11 @@ function App() {
     setScreen("mode");
   }
 
+  function openModeFromNav(active: "study" | "test") {
+    setModeNavActive(active);
+    setScreen("mode");
+  }
+
   function openQuizSetup() {
     const totalQuestions = subjectCounts[selectedSubject];
     setQuizQuestionLimit((current) => normalizeQuizQuestionLimit(current, totalQuestions));
@@ -503,16 +540,24 @@ function App() {
   function goHome() {
     setScreen("start");
     setModeNavActive("home");
+    setSettingsDrawerOpen(false);
     setAnswerFeedback(null);
+  }
+
+  function openProfile() {
+    setSettingsDrawerOpen(false);
+    setScreen("profile");
   }
 
   function openHistory() {
     void loadAttempts();
+    setSettingsDrawerOpen(false);
     setScreen("history");
   }
 
   function openAdminTab(tab: AdminTab) {
     setAdminTab(tab);
+    setSettingsDrawerOpen(false);
     setScreen("admin");
   }
 
@@ -1116,11 +1161,12 @@ function App() {
   }
 
   return (
-    <main className="app-shell">
+    <main className={darkMode ? "app-shell dark-mode" : "app-shell"}>
       {auth ? (
         <section className={screen === "admin" ? "workspace workspace-wide" : "workspace"}>
           {screen !== "admin" ? (
-            <PhoneShell>
+            <>
+              <PhoneShell>
               {screen === "start" && (
                 <StartScreen
                   user={auth.user}
@@ -1136,16 +1182,8 @@ function App() {
                     setModeNavActive("test");
                     setScreen("mode");
                   }}
-                  onHistory={openHistory}
-                  onAdmin={() => {
-                    if (auth.user.role === "editor") {
-                      setAdminTab("questions");
-                    }
-
-                    setScreen("admin");
-                  }}
+                  onProfile={openProfile}
                   onAvatarClick={() => setAvatarPickerOpen(true)}
-                  onLogout={logout}
                 />
               )}
               {screen === "mode" && (
@@ -1159,7 +1197,7 @@ function App() {
                   onStudy={() => void startStudy()}
                   onStartQuiz={openQuizSetup}
                   onSubjectSelect={openSubject}
-                  onHistory={openHistory}
+                  onHistory={openProfile}
                   onHome={goHome}
                   navActive={modeNavActive}
                 />
@@ -1174,7 +1212,7 @@ function App() {
                   onBack={() => setScreen("mode")}
                   onStartQuiz={(limit) => void startQuiz(limit)}
                   onHome={goHome}
-                  onHistory={openHistory}
+                  onHistory={openProfile}
                 />
               )}
               {screen === "study" && (
@@ -1188,7 +1226,7 @@ function App() {
                   onBack={() => setScreen("mode")}
                   onStartQuiz={openQuizSetup}
                   onHome={goHome}
-                  onHistory={openHistory}
+                  onHistory={openProfile}
                 />
               )}
               {screen === "quiz" && questions[questionIndex] && (
@@ -1228,23 +1266,71 @@ function App() {
                   onRetry={() => void startQuiz(quizQuestionLimit)}
                   onHome={goHome}
                   onHistory={openHistory}
+                  onProfile={openProfile}
                 />
               )}
               {screen === "history" && (
                 <HistoryScreen
-                  user={auth.user}
                   attempts={attempts}
                   onHome={goHome}
-                  onStudy={() => setScreen("mode")}
-                  onTest={() => setScreen("mode")}
-                  onAvatarClick={() => setAvatarPickerOpen(true)}
-                  onManageQuestions={() => openAdminTab("questions")}
-                  onManageStudy={() => openAdminTab("study")}
-                  onManageAccounts={() => openAdminTab("accounts")}
+                  onStudy={() => openModeFromNav("study")}
+                  onTest={() => openModeFromNav("test")}
+                  onProfile={openProfile}
                   onRefresh={loadAttempts}
                 />
               )}
-            </PhoneShell>
+              {screen === "profile" && (
+                <ProfileScreen
+                  user={auth.user}
+                  onStudy={() => openModeFromNav("study")}
+                  onTest={() => openModeFromNav("test")}
+                  onAvatarClick={() => setAvatarPickerOpen(true)}
+                  onOpenSettings={() => setSettingsDrawerOpen(true)}
+                  onLogout={logout}
+                />
+              )}
+              {screen === "account" && (
+                <AccountManagementScreen
+                  busy={passwordBusy}
+                  onBack={openProfile}
+                  onHome={goHome}
+                  onStudy={() => openModeFromNav("study")}
+                  onTest={() => openModeFromNav("test")}
+                  onProfile={openProfile}
+                  onChangePassword={changePassword}
+                />
+              )}
+              {screen === "policies" && (
+                <PoliciesScreen
+                  onBack={openProfile}
+                  onHome={goHome}
+                  onStudy={() => openModeFromNav("study")}
+                  onTest={() => openModeFromNav("test")}
+                  onProfile={openProfile}
+                />
+              )}
+              </PhoneShell>
+              <SettingsDrawer
+                user={auth.user}
+                open={settingsDrawerOpen}
+                darkMode={darkMode}
+                onClose={() => setSettingsDrawerOpen(false)}
+                onAccount={() => {
+                  setSettingsDrawerOpen(false);
+                  setScreen("account");
+                }}
+                onPolicies={() => {
+                  setSettingsDrawerOpen(false);
+                  setScreen("policies");
+                }}
+                onHistory={openHistory}
+                onToggleDarkMode={() => setDarkMode((current) => !current)}
+                onLogout={logout}
+                onManageQuestions={() => openAdminTab("questions")}
+                onManageStudy={() => openAdminTab("study")}
+                onManageAccounts={() => openAdminTab("accounts")}
+              />
+            </>
           ) : (
             <AdminWorkspace
               tab={adminTab}

@@ -202,6 +202,39 @@ export async function updateUserAvatar(userId: string, avatarKey: ProfileAvatarK
   return toSafeUser(user);
 }
 
+export async function changeUserPassword(userId: string, currentPassword: string, newPassword: string) {
+  const result = await dbQuery<{ passwordHash: string }>(
+    `
+      SELECT password_hash AS "passwordHash"
+      FROM users
+      WHERE id = $1
+      LIMIT 1
+    `,
+    [userId]
+  );
+  const user = result.rows[0];
+
+  if (!user) {
+    throw new ApiError(404, "USER_NOT_FOUND", "Không tìm thấy tài khoản");
+  }
+
+  const passwordOk = await bcrypt.compare(currentPassword, user.passwordHash);
+
+  if (!passwordOk) {
+    throw new ApiError(400, "CURRENT_PASSWORD_INVALID", "Mật khẩu hiện tại không đúng");
+  }
+
+  await dbQuery(
+    `
+      UPDATE users
+      SET password_hash = $2,
+          updated_at = now()
+      WHERE id = $1
+    `,
+    [userId, await bcrypt.hash(newPassword, 12)]
+  );
+}
+
 export async function requireAdmin(request: Request) {
   const context = await getAuthContext(request);
 
