@@ -11,6 +11,7 @@ import {
   ResultScreen,
   StartScreen,
   StudyScreen,
+  type NavActive,
   type QuizQuestionLimit
 } from "./StudentScreens";
 import {
@@ -64,6 +65,7 @@ function App() {
   const [auth, setAuth] = useState<AuthState | null>(null);
   const [booting, setBooting] = useState(true);
   const [screen, setScreen] = useState<Screen>("start");
+  const [modeNavActive, setModeNavActive] = useState<NavActive>("home");
   const [notice, setNotice] = useState("");
   const [loginUsername, setLoginUsername] = useState("");
   const [loginPassword, setLoginPassword] = useState("");
@@ -132,6 +134,7 @@ function App() {
     setAvatarBusy(false);
     setAvatarPickerOpen(false);
     setScreen("start");
+    setModeNavActive("home");
     setResult(null);
     setQuestions([]);
     setAnswers({});
@@ -485,6 +488,9 @@ function App() {
 
   function openSubject(subject: SubjectCode) {
     setSelectedSubject(subject);
+    if (screen === "start") {
+      setModeNavActive("home");
+    }
     setScreen("mode");
   }
 
@@ -496,6 +502,7 @@ function App() {
 
   function goHome() {
     setScreen("start");
+    setModeNavActive("home");
     setAnswerFeedback(null);
   }
 
@@ -1121,8 +1128,14 @@ function App() {
                   subjectCounts={subjectCounts}
                   studiedCounts={getStudiedCounts(studyProgress)}
                   onSubjectSelect={openSubject}
-                  onStudyTab={() => setScreen("mode")}
-                  onTestTab={() => setScreen("mode")}
+                  onStudyTab={() => {
+                    setModeNavActive("study");
+                    setScreen("mode");
+                  }}
+                  onTestTab={() => {
+                    setModeNavActive("test");
+                    setScreen("mode");
+                  }}
                   onHistory={openHistory}
                   onAdmin={() => {
                     if (auth.user.role === "editor") {
@@ -1148,6 +1161,7 @@ function App() {
                   onSubjectSelect={openSubject}
                   onHistory={openHistory}
                   onHome={goHome}
+                  navActive={modeNavActive}
                 />
               )}
               {screen === "quizSetup" && (

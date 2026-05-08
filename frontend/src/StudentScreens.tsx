@@ -23,7 +23,7 @@ import {
 } from "./uiTypes";
 
 type SubjectCountMap = Partial<Record<SubjectCode, number>>;
-type NavActive = "home" | "study" | "test" | "profile";
+export type NavActive = "home" | "study" | "test" | "profile";
 export type QuizQuestionLimit = 10 | 20 | 50 | "all";
 
 const quizQuestionLimitOptions: QuizQuestionLimit[] = [10, 20, 50, "all"];
@@ -314,7 +314,8 @@ export function ModeScreen({
   onStartQuiz,
   onSubjectSelect,
   onHistory,
-  onHome
+  onHome,
+  navActive
 }: {
   subject: SubjectCode;
   totalQuestions: number;
@@ -327,6 +328,7 @@ export function ModeScreen({
   onSubjectSelect: (value: SubjectCode) => void;
   onHistory: () => void;
   onHome: () => void;
+  navActive: NavActive;
 }) {
   const currentSubject = getSubjectOption(subject);
   const progress = totalQuestions > 0 ? Math.round((Math.min(studiedQuestions, totalQuestions) / totalQuestions) * 100) : 0;
@@ -349,14 +351,14 @@ export function ModeScreen({
       </section>
 
       <div className="mode-grid">
-        <button className="mode-card" type="button" onClick={onStudy} disabled={studyBusy}>
+        <button className="mode-card study-mode-card" type="button" onClick={onStudy} disabled={studyBusy}>
           <span className="mode-card-icon" aria-hidden="true">
             <Icon name="book" />
           </span>
           <strong>Ôn tập kiến thức</strong>
           <small>Xem bài học, ghi chú và tài liệu do admin hoặc người chỉnh sửa đăng lên.</small>
         </button>
-        <button className="mode-card" type="button" onClick={onStartQuiz} disabled={quizBusy}>
+        <button className="mode-card quiz-mode-card" type="button" onClick={onStartQuiz} disabled={quizBusy}>
           <span className="mode-card-icon" aria-hidden="true">
             <Icon name="clipboard" />
           </span>
@@ -381,7 +383,7 @@ export function ModeScreen({
         </div>
       </section>
 
-      <BottomNav active="home" onHome={onHome} onStudy={onStudy} onTest={onStartQuiz} onProfile={onHistory} />
+      <BottomNav active={navActive} onHome={onHome} onStudy={onStudy} onTest={onStartQuiz} onProfile={onHistory} />
     </div>
   );
 }
