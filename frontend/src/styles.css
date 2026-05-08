@@ -102,8 +102,12 @@ p {
   place-items: center;
   padding: 16px;
   background:
-    linear-gradient(135deg, rgba(222, 194, 244, 0.72), rgba(200, 241, 222, 0.42)),
+    linear-gradient(120deg, rgba(248, 250, 252, 0.94), rgba(236, 253, 245, 0.88)),
+    url("https://images.pexels.com/photos/10794100/pexels-photo-10794100.jpeg?auto=compress&cs=tinysrgb&w=1600"),
     #f5f4f7;
+  background-position: center;
+  background-size: cover;
+  background-attachment: fixed;
 }
 
 .workspace {
@@ -5386,4 +5390,320 @@ label,
   .bottom-nav strong {
     font-size: 0.68rem;
   }
+}
+
+.student-avatar {
+  position: relative;
+  overflow: hidden;
+}
+
+.student-avatar img {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
+}
+
+.student-avatar.has-image {
+  padding: 3px;
+  background: #ffffff;
+  border: 1px solid rgba(15, 118, 110, 0.18);
+}
+
+.student-avatar.has-image img {
+  border-radius: 50%;
+}
+
+.top-bar-user {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.top-bar-user > div {
+  display: grid;
+  gap: 2px;
+}
+
+.top-bar-avatar {
+  width: 42px;
+  height: 42px;
+  flex-basis: 42px;
+  font-size: 1.1rem;
+}
+
+.avatar-trigger {
+  min-height: 0;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: inherit;
+  box-shadow: none;
+}
+
+.avatar-trigger:hover:not(:disabled) {
+  background: transparent;
+  transform: translateY(-1px);
+}
+
+.avatar-trigger:focus-visible {
+  outline: 3px solid rgba(15, 118, 110, 0.28);
+  outline-offset: 4px;
+}
+
+.profile-avatar-trigger {
+  width: 76px;
+  height: 76px;
+}
+
+.subject-card {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  min-height: 258px;
+  padding: 0 20px 20px;
+}
+
+.subject-card-image {
+  height: 122px;
+  display: block;
+  margin: 0 -20px;
+  background-image:
+    linear-gradient(180deg, rgba(15, 23, 42, 0.05), rgba(15, 23, 42, 0.34)),
+    var(--subject-image);
+  background-position: center;
+  background-size: cover;
+}
+
+.subject-card-kicker {
+  width: fit-content;
+  margin-top: 14px;
+  padding: 5px 9px;
+  border-radius: 999px;
+  background: #f8fafc;
+  color: var(--subject-accent);
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  font-size: 0.76rem;
+  font-weight: 950;
+}
+
+.subject-card .subject-card-icon {
+  position: absolute;
+  top: 94px;
+  right: 18px;
+  background: #ffffff;
+  color: var(--subject-accent);
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  box-shadow: 0 12px 28px rgba(15, 23, 42, 0.16);
+}
+
+.subject-card:hover:not(:disabled) .subject-card-image {
+  filter: saturate(1.08);
+}
+
+.profile-hero,
+.avatar-picker {
+  border-radius: 8px;
+  background: #ffffff;
+  border: 1px solid rgba(17, 24, 39, 0.08);
+  box-shadow: 0 14px 34px rgba(31, 41, 55, 0.08);
+}
+
+.profile-hero {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 16px;
+  align-items: center;
+  padding: 18px;
+  background:
+    linear-gradient(135deg, rgba(236, 253, 245, 0.94), rgba(239, 246, 255, 0.94)),
+    #ffffff;
+}
+
+.profile-avatar-preview {
+  width: 76px;
+  height: 76px;
+  flex-basis: 76px;
+  font-size: 2rem;
+}
+
+.profile-hero span,
+.avatar-picker-heading span {
+  color: #0f766e;
+  font-size: 0.8rem;
+  font-weight: 950;
+}
+
+.profile-hero h3 {
+  margin-top: 3px;
+  color: #111827;
+  font-size: clamp(1.35rem, 3vw, 2rem);
+  line-height: 1.08;
+}
+
+.profile-hero p {
+  margin-top: 4px;
+  color: #4b5563;
+  font-weight: 800;
+}
+
+.avatar-picker {
+  display: grid;
+  gap: 14px;
+  padding: 18px;
+}
+
+.avatar-picker-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.avatar-picker-heading em {
+  color: #0369a1;
+  font-size: 0.82rem;
+  font-style: normal;
+  font-weight: 900;
+}
+
+.avatar-option-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.avatar-option {
+  position: relative;
+  min-height: 96px;
+  display: grid;
+  place-items: center;
+  gap: 6px;
+  padding: 10px 8px;
+  border-radius: 8px;
+  background: #f8fafc;
+  color: #334155;
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  box-shadow: none;
+}
+
+.avatar-option:hover:not(:disabled),
+.avatar-option.selected {
+  transform: translateY(-1px);
+  background: #ecfdf5;
+  color: #0f766e;
+  border-color: rgba(15, 118, 110, 0.32);
+}
+
+.avatar-option:disabled {
+  opacity: 1;
+}
+
+.avatar-option img {
+  width: 54px;
+  height: 54px;
+  border-radius: 50%;
+  object-fit: cover;
+  background: #ffffff;
+}
+
+.avatar-option span {
+  font-size: 0.78rem;
+  font-weight: 900;
+}
+
+.avatar-option svg {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 16px;
+  height: 16px;
+}
+
+.avatar-dialog-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 70;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  background: rgba(15, 23, 42, 0.46);
+  backdrop-filter: blur(10px);
+}
+
+.avatar-dialog {
+  width: min(92vw, 520px);
+  display: grid;
+  gap: 18px;
+  padding: 22px;
+  border-radius: 12px;
+  background: #ffffff;
+  color: #111827;
+  border: 1px solid rgba(255, 255, 255, 0.72);
+  box-shadow: 0 28px 80px rgba(15, 23, 42, 0.28);
+}
+
+.avatar-dialog header {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 14px;
+  align-items: start;
+}
+
+.avatar-dialog header span {
+  color: #0f766e;
+  font-size: 0.8rem;
+  font-weight: 950;
+}
+
+.avatar-dialog h2 {
+  margin-top: 3px;
+  color: #111827;
+  font-size: clamp(1.35rem, 4vw, 1.8rem);
+  line-height: 1.1;
+}
+
+.avatar-dialog p {
+  color: #0369a1;
+  font-size: 0.9rem;
+  font-weight: 850;
+}
+
+@media (min-width: 861px) {
+  .student-screen {
+    padding-left: max(140px, clamp(24px, 5vw, 64px));
+  }
+}
+
+@media (max-width: 860px) {
+  .subject-card {
+    min-height: 236px;
+  }
+
+  .avatar-option-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 420px) {
+  .profile-hero {
+    grid-template-columns: 1fr;
+    justify-items: start;
+  }
+
+  .avatar-option {
+    min-height: 88px;
+  }
+}
+
+.app-shell {
+  background:
+    linear-gradient(120deg, rgba(248, 250, 252, 0.94), rgba(236, 253, 245, 0.88)),
+    url("https://images.pexels.com/photos/10794100/pexels-photo-10794100.jpeg?auto=compress&cs=tinysrgb&w=1600"),
+    #f5f4f7;
+  background-position: center;
+  background-size: cover;
+  background-attachment: fixed;
 }

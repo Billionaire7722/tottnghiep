@@ -1,6 +1,7 @@
 import { FormEvent, useCallback, useEffect, useRef, useState } from "react";
 import { AdminWorkspace } from "./AdminWorkspace";
 import {
+  AvatarPickerDialog,
   HistoryScreen,
   LoginScreen,
   ModeScreen,
@@ -67,6 +68,8 @@ function App() {
   const [loginUsername, setLoginUsername] = useState("");
   const [loginPassword, setLoginPassword] = useState("");
   const [loginBusy, setLoginBusy] = useState(false);
+  const [avatarBusy, setAvatarBusy] = useState(false);
+  const [avatarPickerOpen, setAvatarPickerOpen] = useState(false);
   const [confirmation, setConfirmation] = useState<ConfirmationRequest | null>(null);
 
   const [questions, setQuestions] = useState<Question[]>([]);
@@ -126,6 +129,8 @@ function App() {
     setAuth(null);
     setLoginUsername("");
     setLoginPassword("");
+    setAvatarBusy(false);
+    setAvatarPickerOpen(false);
     setScreen("start");
     setResult(null);
     setQuestions([]);
@@ -342,6 +347,32 @@ function App() {
       handleError(error);
     } finally {
       setLoginBusy(false);
+    }
+  }
+
+  async function changeAvatar(avatarKey: string) {
+    if (!auth) {
+      return;
+    }
+
+    const previousUser = auth.user;
+    setAvatarBusy(true);
+    setAuth((current) => (current ? { ...current, user: { ...current.user, avatarKey } } : current));
+
+    try {
+      const data = await authedRequest<{ user: User }>("/api/auth/me", {
+        method: "PATCH",
+        body: { avatarKey }
+      });
+
+      setAuth((current) => (current ? { ...current, user: normalizeUser(data.user) } : current));
+      setAvatarPickerOpen(false);
+      setNotice("Đã cập nhật ảnh đại diện");
+    } catch (error) {
+      setAuth((current) => (current ? { ...current, user: previousUser } : current));
+      handleError(error);
+    } finally {
+      setAvatarBusy(false);
     }
   }
 
@@ -1100,6 +1131,7 @@ function App() {
 
                     setScreen("admin");
                   }}
+                  onAvatarClick={() => setAvatarPickerOpen(true)}
                   onLogout={logout}
                 />
               )}
@@ -1191,6 +1223,7 @@ function App() {
                   onHome={goHome}
                   onStudy={() => setScreen("mode")}
                   onTest={() => setScreen("mode")}
+                  onAvatarClick={() => setAvatarPickerOpen(true)}
                   onManageQuestions={() => openAdminTab("questions")}
                   onManageStudy={() => openAdminTab("study")}
                   onManageAccounts={() => openAdminTab("accounts")}
@@ -1271,6 +1304,19 @@ function App() {
         />
       )}
 
+      {auth && avatarPickerOpen && (
+        <AvatarPickerDialog
+          user={auth.user}
+          busy={avatarBusy}
+          onClose={() => {
+            if (!avatarBusy) {
+              setAvatarPickerOpen(false);
+            }
+          }}
+          onSelect={(avatarKey) => void changeAvatar(avatarKey)}
+        />
+      )}
+
       <AppNotifications
         notice={notice}
         confirmation={confirmation}
@@ -1297,16 +1343,21 @@ function getDeviceId() {
 }
 
 function normalizeUser(user: User) {
+  const normalizedUser = {
+    ...user,
+    avatarKey: user.avatarKey ?? null
+  };
+
   const displayNameLooksBroken = /[?�]|Ã|áº|á»/.test(user.displayName);
 
   if (user.username === "admin" && displayNameLooksBroken) {
     return {
-      ...user,
+      ...normalizedUser,
       displayName: "Quản trị viên"
     };
   }
 
-  return user;
+  return normalizedUser;
 }
 
 function readStudyProgress(userId: string): StudyProgressMap {

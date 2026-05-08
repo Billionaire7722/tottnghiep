@@ -3,6 +3,7 @@ import jwt from "jsonwebtoken";
 import { randomUUID } from "node:crypto";
 import { dbQuery, ensureDatabase, withTransaction } from "@/src/db";
 import { ApiError } from "@/src/http";
+import type { ProfileAvatarKey } from "@/src/profileAvatars";
 import { canManageAccounts, canManageQuestions, isRole, type Role } from "@/src/roles";
 import type { z } from "zod";
 import type { loginSchema } from "@/src/validation";
@@ -11,6 +12,7 @@ export type AuthUser = {
   id: string;
   username: string;
   displayName: string;
+  avatarKey: ProfileAvatarKey | null;
   role: Role;
   isActive: boolean;
 };
@@ -24,6 +26,7 @@ type UserRecord = {
   id: string;
   username: string;
   displayName: string;
+  avatarKey: ProfileAvatarKey | null;
   passwordHash: string;
   role: Role;
   isActive: boolean;
@@ -56,6 +59,7 @@ export async function loginUser(input: z.infer<typeof loginSchema>, request: Req
         id,
         username,
         display_name AS "displayName",
+        avatar_key AS "avatarKey",
         password_hash AS "passwordHash",
         role,
         is_active AS "isActive"
@@ -125,6 +129,7 @@ export async function getAuthContext(request: Request): Promise<AuthContext> {
         u.id,
         u.username,
         u.display_name AS "displayName",
+        u.avatar_key AS "avatarKey",
         u.role,
         u.is_active AS "isActive",
         s.active AS "sessionActive",
@@ -162,10 +167,39 @@ export async function getAuthContext(request: Request): Promise<AuthContext> {
       id: row.id,
       username: row.username,
       displayName: row.displayName,
+      avatarKey: row.avatarKey,
       role: row.role,
       isActive: row.isActive
     }
   };
+}
+
+export async function updateUserAvatar(userId: string, avatarKey: ProfileAvatarKey) {
+  const result = await dbQuery<UserRecord>(
+    `
+      UPDATE users
+      SET avatar_key = $2,
+          updated_at = now()
+      WHERE id = $1
+      RETURNING
+        id,
+        username,
+        display_name AS "displayName",
+        avatar_key AS "avatarKey",
+        password_hash AS "passwordHash",
+        role,
+        is_active AS "isActive"
+    `,
+    [userId, avatarKey]
+  );
+
+  const user = result.rows[0];
+
+  if (!user) {
+    throw new ApiError(404, "USER_NOT_FOUND", "KhÃ´ng tÃ¬m tháº¥y tÃ i khoáº£n");
+  }
+
+  return toSafeUser(user);
 }
 
 export async function requireAdmin(request: Request) {
@@ -276,6 +310,7 @@ function toSafeUser(user: UserRecord): AuthUser {
     id: user.id,
     username: user.username,
     displayName: user.displayName,
+    avatarKey: user.avatarKey,
     role: user.role,
     isActive: user.isActive
   };

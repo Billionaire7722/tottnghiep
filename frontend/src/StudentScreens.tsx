@@ -11,6 +11,7 @@ import {
   type User
 } from "./api";
 import { Icon, type IconName } from "./Icons";
+import { getProfileAvatar, profileAvatars } from "./profileImages";
 import { RichQuestionContent } from "./RichQuestionContent";
 import {
   formatDate,
@@ -34,10 +35,39 @@ const subjectIconMap: Record<SubjectCode, IconName> = {
   suc_khoe_moi_truong: "shield"
 };
 
+const subjectVisualMap: Record<SubjectCode, { imageUrl: string; accent: string }> = {
+  dich_te: {
+    imageUrl: "https://images.pexels.com/photos/9768439/pexels-photo-9768439.jpeg?auto=compress&cs=tinysrgb&w=900",
+    accent: "#2563eb"
+  },
+  suc_khoe_nghe_nghiep: {
+    imageUrl: "https://images.pexels.com/photos/13384293/pexels-photo-13384293.jpeg?auto=compress&cs=tinysrgb&w=900",
+    accent: "#0f766e"
+  },
+  dinh_duong: {
+    imageUrl: "https://images.pexels.com/photos/29462488/pexels-photo-29462488.jpeg?auto=compress&cs=tinysrgb&w=900",
+    accent: "#ca8a04"
+  },
+  suc_khoe_moi_truong: {
+    imageUrl: "https://images.pexels.com/photos/10794100/pexels-photo-10794100.jpeg?auto=compress&cs=tinysrgb&w=900",
+    accent: "#15803d"
+  }
+};
+
 export function PhoneShell({ children }: { children: ReactNode }) {
   return (
     <div className="phone-frame">
       <div className="phone-screen">{children}</div>
+    </div>
+  );
+}
+
+function StudentAvatar({ user, className = "" }: { user: User; className?: string }) {
+  const avatar = getProfileAvatar(user.avatarKey);
+
+  return (
+    <div className={`student-avatar ${avatar ? "has-image" : ""} ${className}`.trim()} aria-hidden="true">
+      {avatar ? <img src={avatar.src} alt="" /> : getInitial(user.displayName)}
     </div>
   );
 }
@@ -95,9 +125,12 @@ type TopBarAction = {
 export function TopBar({ user, action }: { user: User; action?: TopBarAction }) {
   return (
     <header className="top-bar">
-      <div>
-        <strong>{user.displayName}</strong>
-        <span>{roleLabel(user.role)}</span>
+      <div className="top-bar-user">
+        <StudentAvatar user={user} className="top-bar-avatar" />
+        <div>
+          <strong>{user.displayName}</strong>
+          <span>{roleLabel(user.role)}</span>
+        </div>
       </div>
       {action && (
         <button className={action.tone === "danger" ? "danger-text-button" : "ghost-button"} type="button" onClick={action.onClick}>
@@ -105,6 +138,63 @@ export function TopBar({ user, action }: { user: User; action?: TopBarAction }) 
         </button>
       )}
     </header>
+  );
+}
+
+export function AvatarPickerDialog({
+  user,
+  busy,
+  onSelect,
+  onClose
+}: {
+  user: User;
+  busy: boolean;
+  onSelect: (avatarKey: string) => void;
+  onClose: () => void;
+}) {
+  const selectedAvatarKey = getProfileAvatar(user.avatarKey)?.key ?? null;
+
+  return (
+    <div className="avatar-dialog-backdrop" role="presentation" onClick={onClose}>
+      <section
+        className="avatar-dialog"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="avatar-dialog-title"
+        onClick={(event) => event.stopPropagation()}
+      >
+        <header>
+          <div>
+            <span>Ảnh đại diện</span>
+            <h2 id="avatar-dialog-title">Chọn ảnh đại diện</h2>
+          </div>
+          <button className="icon-button" type="button" aria-label="Đóng" onClick={onClose}>
+            <Icon name="x" />
+          </button>
+        </header>
+        <div className="avatar-option-grid">
+          {profileAvatars.map((avatar) => {
+            const selected = selectedAvatarKey === avatar.key;
+
+            return (
+              <button
+                className={selected ? "avatar-option selected" : "avatar-option"}
+                key={avatar.key}
+                type="button"
+                aria-pressed={selected}
+                disabled={busy || selected}
+                onClick={() => onSelect(avatar.key)}
+              >
+                <img src={avatar.src} alt="" />
+                <span>{avatar.label}</span>
+                {selected && <Icon name="check" />}
+              </button>
+            );
+          })}
+        </div>
+        {busy && <p>Đang lưu lựa chọn...</p>}
+      </section>
+    </div>
   );
 }
 
@@ -118,6 +208,7 @@ export function StartScreen({
   onTestTab,
   onHistory,
   onAdmin,
+  onAvatarClick,
   onLogout
 }: {
   user: User;
@@ -129,6 +220,7 @@ export function StartScreen({
   onTestTab: () => void;
   onHistory: () => void;
   onAdmin: () => void;
+  onAvatarClick: () => void;
   onLogout: () => void;
 }) {
   const latest = attempts[0];
@@ -138,9 +230,9 @@ export function StartScreen({
     <div className="student-screen dashboard-screen">
       <header className="dashboard-hero">
         <div className="dashboard-identity">
-          <div className="student-avatar" aria-hidden="true">
-            {getInitial(user.displayName)}
-          </div>
+          <button className="avatar-trigger" type="button" aria-label="Chọn ảnh đại diện" onClick={onAvatarClick}>
+            <StudentAvatar user={user} />
+          </button>
           <div>
             <p>Xin chào, {user.displayName || "bạn"}!</p>
             <span>{roleLabel(user.role)}</span>
@@ -175,8 +267,21 @@ export function StartScreen({
             const total = subjectCounts[subject.value];
             const isLoading = total === undefined;
             const questionCount = total ?? 0;
+            const visual = subjectVisualMap[subject.value];
+            const cardStyle = {
+              "--subject-image": `url(${visual.imageUrl})`,
+              "--subject-accent": visual.accent
+            } as CSSProperties;
             return (
-              <button className="subject-card" key={subject.value} type="button" onClick={() => onSubjectSelect(subject.value)}>
+              <button
+                className="subject-card"
+                key={subject.value}
+                type="button"
+                style={cardStyle}
+                onClick={() => onSubjectSelect(subject.value)}
+              >
+                <span className="subject-card-image" aria-hidden="true" />
+                <span className="subject-card-kicker">{subject.shortLabel}</span>
                 <span className="subject-card-icon" aria-hidden="true">
                   <Icon name={subjectIconMap[subject.value]} />
                 </span>
@@ -846,6 +951,7 @@ export function HistoryScreen({
   onHome,
   onStudy,
   onTest,
+  onAvatarClick,
   onManageQuestions,
   onManageStudy,
   onManageAccounts,
@@ -856,6 +962,7 @@ export function HistoryScreen({
   onHome: () => void;
   onStudy: () => void;
   onTest: () => void;
+  onAvatarClick: () => void;
   onManageQuestions: () => void;
   onManageStudy: () => void;
   onManageAccounts: () => void;
@@ -875,6 +982,16 @@ export function HistoryScreen({
           Tải lại
         </button>
       </header>
+      <section className="profile-hero">
+        <button className="avatar-trigger profile-avatar-trigger" type="button" aria-label="Chọn ảnh đại diện" onClick={onAvatarClick}>
+          <StudentAvatar user={user} className="profile-avatar-preview" />
+        </button>
+        <div>
+          <span>Hồ sơ của bạn</span>
+          <h3>{user.displayName || user.username}</h3>
+          <p>{roleLabel(user.role)}</p>
+        </div>
+      </section>
       {canManageContent && (
         <section className="profile-admin-panel">
           <div>

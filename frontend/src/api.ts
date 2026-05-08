@@ -6,6 +6,7 @@ export type User = {
   id: string;
   username: string;
   displayName: string;
+  avatarKey: string | null;
   role: Role;
   isActive: boolean;
 };

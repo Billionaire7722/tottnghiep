@@ -82,12 +82,30 @@ async function initializeDatabase() {
       id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
       username text UNIQUE NOT NULL,
       display_name text NOT NULL,
+      avatar_key text,
       password_hash text NOT NULL,
       role text NOT NULL CHECK (role IN ('admin', 'editor', 'user')) DEFAULT 'user',
       is_active boolean NOT NULL DEFAULT true,
       created_at timestamptz NOT NULL DEFAULT now(),
       updated_at timestamptz NOT NULL DEFAULT now()
     )
+  `);
+
+  await pool.query("ALTER TABLE users ADD COLUMN IF NOT EXISTS avatar_key text");
+  await pool.query(`
+    DO $$
+    BEGIN
+      IF NOT EXISTS (
+        SELECT 1
+        FROM pg_constraint
+        WHERE conrelid = 'users'::regclass
+          AND conname = 'users_avatar_key_check'
+      ) THEN
+        ALTER TABLE users
+        ADD CONSTRAINT users_avatar_key_check
+        CHECK (avatar_key IS NULL OR avatar_key IN ('panda', 'sloth', 'dog', 'koala'));
+      END IF;
+    END $$;
   `);
 
   await pool.query(`

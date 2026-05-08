@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { roles } from "@/src/roles";
 import { subjects } from "@/src/subjects";
+import { profileAvatarKeys } from "@/src/profileAvatars";
 
 const usernameSchema = z
   .string()
@@ -87,6 +88,10 @@ export const accountUpdateSchema = z
   })
   .refine((data) => Object.keys(data).length > 0, "Không có dữ liệu cần cập nhật");
 
+export const profileAvatarSchema = z.object({
+  avatarKey: z.enum(profileAvatarKeys)
+});
+
 export const answerSubmitSchema = z.object({
   answers: z
     .array(
@@ -112,6 +117,7 @@ export type QuestionInput = z.infer<typeof questionSchema>;
 export type StudyLessonInput = z.infer<typeof studyLessonSchema>;
 export type AccountCreateInput = z.infer<typeof accountCreateSchema>;
 export type AccountUpdateInput = z.infer<typeof accountUpdateSchema>;
+export type ProfileAvatarInput = z.infer<typeof profileAvatarSchema>;
 export type AnswerSubmitInput = z.infer<typeof answerSubmitSchema>;
 export type AnswerCheckInput = z.infer<typeof answerCheckSchema>;
 export type QuestionTextImportInput = z.infer<typeof questionTextImportSchema>;
