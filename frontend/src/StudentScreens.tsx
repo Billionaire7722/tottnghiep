@@ -968,18 +968,18 @@ export function ResultScreen({
 
 export function ProfileScreen({
   user,
+  onHome,
   onStudy,
   onTest,
   onAvatarClick,
-  onOpenSettings,
-  onLogout
+  onOpenSettings
 }: {
   user: User;
+  onHome: () => void;
   onStudy: () => void;
   onTest: () => void;
   onAvatarClick: () => void;
   onOpenSettings: () => void;
-  onLogout: () => void;
 }) {
   return (
     <div className="student-screen profile-screen">
@@ -1003,16 +1003,9 @@ export function ProfileScreen({
           <p>{roleLabel(user.role)}</p>
         </div>
       </section>
-      <section className="profile-settings-hint">
-        <span>Cài đặt nằm trong drawer bên phải</span>
-        <p>Đổi mật khẩu, bật dark mode, xem chính sách và mở lịch sử làm bài từ khu vực cài đặt.</p>
-      </section>
       <BottomNav
         active="profile"
-        homeLabel="Đăng xuất"
-        homeIcon="logOut"
-        homeTone="danger"
-        onHome={onLogout}
+        onHome={onHome}
         onStudy={onStudy}
         onTest={onTest}
         onProfile={() => undefined}

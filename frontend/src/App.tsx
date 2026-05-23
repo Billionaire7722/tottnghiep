@@ -1349,11 +1349,11 @@ function App() {
               {screen === "profile" && (
                 <ProfileScreen
                   user={auth.user}
+                  onHome={goHome}
                   onStudy={() => openModeFromNav("study")}
                   onTest={() => openModeFromNav("test")}
                   onAvatarClick={() => setAvatarPickerOpen(true)}
                   onOpenSettings={() => setSettingsDrawerOpen(true)}
-                  onLogout={logout}
                 />
               )}
               {screen === "account" && (
