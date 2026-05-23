@@ -36,9 +36,20 @@ export type StudyLesson = {
   summary: string;
   content: string;
   attachments: StudyLessonAttachment[];
+  reviewQuestions: StudyLessonReviewQuestion[];
   isActive?: boolean;
   createdAt?: string;
   updatedAt?: string;
+};
+
+export type StudyLessonReviewQuestion = {
+  id: number;
+  lessonId: number;
+  content: string;
+  answer: string;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
 };
 
 export type StudyLessonAttachment = {

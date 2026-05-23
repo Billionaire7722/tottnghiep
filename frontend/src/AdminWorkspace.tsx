@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState, type Dispatch, type FormEvent, type SetStateAction } from "react";
-import type { Account, AccountDetail, Question, StudyLesson, StudyLessonAttachment, User } from "./api";
+import type { Account, AccountDetail, Question, StudyLesson, StudyLessonAttachment, StudyLessonReviewQuestion, User } from "./api";
 import { Icon } from "./Icons";
 import { RichQuestionContent } from "./RichQuestionContent";
 import { SubjectPicker } from "./SubjectPicker";
@@ -10,9 +10,11 @@ import {
   ImportedStudyLessonForm,
   QuestionForm,
   StudyLessonForm,
+  StudyLessonReviewQuestionForm,
   emptyAccountForm,
   emptyQuestionForm,
   emptyStudyLessonForm,
+  emptyStudyLessonReviewQuestionForm,
   formatDate,
   roleLabel,
   subjectLabel,
@@ -55,6 +57,9 @@ type AdminWorkspaceProps = {
   onDeleteStudyLesson: (id: number) => void;
   onUploadStudyLessonAttachment: (lessonId: number, file: File) => void;
   onDeleteStudyLessonAttachment: (lessonId: number, attachmentId: string) => void;
+  onAddStudyLessonReviewQuestion: (lessonId: number, input: StudyLessonReviewQuestionForm) => void;
+  onUpdateStudyLessonReviewQuestion: (lessonId: number, questionId: number, input: StudyLessonReviewQuestionForm) => void;
+  onDeleteStudyLessonReviewQuestion: (lessonId: number, questionId: number) => void;
   onSaveAccount: (event: FormEvent<HTMLFormElement>) => void;
   onEditAccount: (account: Account) => void;
   onDeleteAccount: (id: string) => void;
@@ -744,7 +749,10 @@ function StudyLessonAdmin({
   onEditStudyLesson,
   onDeleteStudyLesson,
   onUploadStudyLessonAttachment,
-  onDeleteStudyLessonAttachment
+  onDeleteStudyLessonAttachment,
+  onAddStudyLessonReviewQuestion,
+  onUpdateStudyLessonReviewQuestion,
+  onDeleteStudyLessonReviewQuestion
 }: AdminWorkspaceProps) {
   const [filterSubject, setFilterSubject] = useState<SubjectCode>("dich_te");
   const filteredLessons = useMemo(
@@ -846,6 +854,13 @@ function StudyLessonAdmin({
                     onUpload={onUploadStudyLessonAttachment}
                     onDelete={onDeleteStudyLessonAttachment}
                   />
+                  <StudyLessonReviewQuestionManager
+                    lesson={lesson}
+                    busy={busy}
+                    onAdd={onAddStudyLessonReviewQuestion}
+                    onUpdate={onUpdateStudyLessonReviewQuestion}
+                    onDelete={onDeleteStudyLessonReviewQuestion}
+                  />
                 </div>
                 <div className="row-actions">
                   <button className="secondary-button" type="button" onClick={() => onEditStudyLesson(lesson)}>
@@ -913,6 +928,179 @@ function StudyLessonAttachmentManager({
           }}
         />
       </label>
+    </div>
+  );
+}
+
+function StudyLessonReviewQuestionManager({
+  lesson,
+  busy,
+  onAdd,
+  onUpdate,
+  onDelete
+}: {
+  lesson: StudyLesson;
+  busy: boolean;
+  onAdd: (lessonId: number, input: StudyLessonReviewQuestionForm) => void;
+  onUpdate: (lessonId: number, questionId: number, input: StudyLessonReviewQuestionForm) => void;
+  onDelete: (lessonId: number, questionId: number) => void;
+}) {
+  const [draft, setDraft] = useState<StudyLessonReviewQuestionForm>(emptyStudyLessonReviewQuestionForm);
+  const [editingQuestionId, setEditingQuestionId] = useState<number | null>(null);
+  const [editingDraft, setEditingDraft] = useState<StudyLessonReviewQuestionForm>(emptyStudyLessonReviewQuestionForm);
+  const reviewQuestions = lesson.reviewQuestions ?? [];
+
+  useEffect(() => {
+    setDraft(emptyStudyLessonReviewQuestionForm());
+    setEditingDraft(emptyStudyLessonReviewQuestionForm());
+    setEditingQuestionId(null);
+  }, [lesson.id]);
+
+  function submitDraft(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    if (!draft.content.trim()) {
+      return;
+    }
+
+    onAdd(lesson.id, draft);
+    setDraft(emptyStudyLessonReviewQuestionForm());
+  }
+
+  function startEditing(question: StudyLessonReviewQuestion) {
+    setEditingQuestionId(question.id);
+    setEditingDraft({
+      content: question.content,
+      answer: question.answer ?? "",
+      isActive: question.isActive
+    });
+  }
+
+  function submitEdit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    if (!editingQuestionId || !editingDraft.content.trim()) {
+      return;
+    }
+
+    onUpdate(lesson.id, editingQuestionId, editingDraft);
+    setEditingQuestionId(null);
+    setEditingDraft(emptyStudyLessonReviewQuestionForm());
+  }
+
+  return (
+    <div className="lesson-review-manager">
+      <div className="panel-title compact-title">
+        <span>Câu hỏi ôn tập</span>
+        <small>{reviewQuestions.length} câu</small>
+      </div>
+
+      {reviewQuestions.length ? (
+        <div className="lesson-review-admin-list">
+          {reviewQuestions.map((question) => (
+            <article className="lesson-review-admin-item" key={question.id}>
+              {editingQuestionId === question.id ? (
+                <form className="lesson-review-form" onSubmit={submitEdit}>
+                  <label>
+                    Câu hỏi
+                    <textarea
+                      value={editingDraft.content}
+                      rows={3}
+                      onChange={(event) => setEditingDraft((current) => ({ ...current, content: event.target.value }))}
+                    />
+                  </label>
+                  <label>
+                    Gợi ý trả lời
+                    <textarea
+                      value={editingDraft.answer}
+                      rows={3}
+                      onChange={(event) => setEditingDraft((current) => ({ ...current, answer: event.target.value }))}
+                    />
+                  </label>
+                  <label className="inline-check">
+                    <input
+                      checked={editingDraft.isActive}
+                      onChange={(event) => setEditingDraft((current) => ({ ...current, isActive: event.target.checked }))}
+                      type="checkbox"
+                    />
+                    Hiển thị cho người học
+                  </label>
+                  <div className="row-actions">
+                    <button className="secondary-button" type="submit" disabled={busy || !editingDraft.content.trim()}>
+                      Lưu
+                    </button>
+                    <button
+                      className="ghost-button"
+                      type="button"
+                      disabled={busy}
+                      onClick={() => {
+                        setEditingQuestionId(null);
+                        setEditingDraft(emptyStudyLessonReviewQuestionForm());
+                      }}
+                    >
+                      Hủy
+                    </button>
+                  </div>
+                </form>
+              ) : (
+                <>
+                  <div className="question-badges">
+                    <span className={question.isActive ? "status active" : "status"}>{question.isActive ? "Hiện" : "Ẩn"}</span>
+                  </div>
+                  <strong>{question.content}</strong>
+                  {question.answer && (
+                    <div className="lesson-review-answer">
+                      <RichQuestionContent content={question.answer} />
+                    </div>
+                  )}
+                  <div className="row-actions">
+                    <button className="secondary-button" type="button" disabled={busy} onClick={() => startEditing(question)}>
+                      Sửa
+                    </button>
+                    <button className="ghost-button" type="button" disabled={busy} onClick={() => onDelete(lesson.id, question.id)}>
+                      Xóa
+                    </button>
+                  </div>
+                </>
+              )}
+            </article>
+          ))}
+        </div>
+      ) : (
+        <p className="empty-text">Chưa có câu hỏi ôn tập cho bài này.</p>
+      )}
+
+      <form className="lesson-review-form" onSubmit={submitDraft}>
+        <label>
+          Thêm câu hỏi ôn tập
+          <textarea
+            value={draft.content}
+            rows={3}
+            onChange={(event) => setDraft((current) => ({ ...current, content: event.target.value }))}
+            placeholder="Ví dụ: Vì sao chỉ số này quan trọng trong thực hành?"
+          />
+        </label>
+        <label>
+          Gợi ý trả lời
+          <textarea
+            value={draft.answer}
+            rows={3}
+            onChange={(event) => setDraft((current) => ({ ...current, answer: event.target.value }))}
+            placeholder="Có thể để trống nếu chỉ muốn gợi nhắc người học tự trả lời."
+          />
+        </label>
+        <label className="inline-check">
+          <input
+            checked={draft.isActive}
+            onChange={(event) => setDraft((current) => ({ ...current, isActive: event.target.checked }))}
+            type="checkbox"
+          />
+          Hiển thị cho người học
+        </label>
+        <button className="secondary-button" type="submit" disabled={busy || !draft.content.trim()}>
+          Thêm câu hỏi
+        </button>
+      </form>
     </div>
   );
 }

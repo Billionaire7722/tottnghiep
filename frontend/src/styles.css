@@ -6236,3 +6236,626 @@ label,
     padding-inline: 12px;
   }
 }
+
+/* Apple-style app refresh */
+:root {
+  --apple-bg: #f5f5f7;
+  --apple-bg-2: #eef2f7;
+  --apple-card: rgba(255, 255, 255, 0.82);
+  --apple-card-strong: rgba(255, 255, 255, 0.96);
+  --apple-line: rgba(15, 23, 42, 0.1);
+  --apple-line-strong: rgba(15, 23, 42, 0.16);
+  --apple-text: #111827;
+  --apple-muted: #64748b;
+  --apple-blue: #007aff;
+  --apple-blue-soft: #e8f2ff;
+  --apple-green: #34c759;
+  --apple-teal: #0f766e;
+  --apple-red: #ff3b30;
+  --apple-shadow: 0 24px 70px rgba(15, 23, 42, 0.12);
+  --apple-shadow-soft: 0 12px 32px rgba(15, 23, 42, 0.08);
+}
+
+html {
+  background: var(--apple-bg);
+}
+
+body {
+  color: var(--apple-text);
+  background: var(--apple-bg);
+}
+
+body,
+button,
+input,
+textarea,
+select {
+  font-family:
+    -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", Inter, "Segoe UI", sans-serif;
+}
+
+button,
+.sticky-primary,
+.quiz-setup-start,
+.slide-download-button,
+.attachment-upload-control {
+  min-height: 44px;
+  border-radius: 999px;
+  background: var(--apple-blue);
+  color: #ffffff;
+  box-shadow: 0 10px 24px rgba(0, 122, 255, 0.18);
+  transition:
+    transform 160ms ease,
+    box-shadow 160ms ease,
+    background 160ms ease,
+    border-color 160ms ease;
+}
+
+button:hover:not(:disabled),
+.slide-download-button:hover,
+.attachment-upload-control:hover {
+  background: #0066d6;
+  box-shadow: 0 14px 30px rgba(0, 122, 255, 0.22);
+  transform: translateY(-1px);
+}
+
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible {
+  outline: 3px solid rgba(0, 122, 255, 0.28);
+  outline-offset: 3px;
+}
+
+.ghost-button,
+.secondary-button,
+.slide-open-link,
+.settings-open-button,
+.profile-admin-actions button,
+.admin-header-actions button,
+.admin-tabs button {
+  border: 1px solid var(--apple-line);
+  background: rgba(255, 255, 255, 0.72);
+  color: var(--apple-blue);
+  box-shadow: none;
+}
+
+.ghost-button:hover:not(:disabled),
+.secondary-button:hover:not(:disabled),
+.slide-open-link:hover,
+.settings-open-button:hover:not(:disabled),
+.admin-header-actions button:hover:not(:disabled),
+.admin-tabs button:hover:not(:disabled) {
+  border-color: rgba(0, 122, 255, 0.28);
+  background: var(--apple-blue-soft);
+  color: #005ecb;
+  box-shadow: none;
+}
+
+input,
+textarea,
+select {
+  border: 1px solid var(--apple-line);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.78);
+  color: var(--apple-text);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.72);
+}
+
+input:focus,
+textarea:focus,
+select:focus {
+  border-color: rgba(0, 122, 255, 0.48);
+  background: #ffffff;
+}
+
+.app-shell {
+  min-height: 100svh;
+  padding: clamp(16px, 2.5vw, 32px);
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.92), rgba(238, 242, 247, 0.84)),
+    linear-gradient(180deg, var(--apple-bg), var(--apple-bg-2));
+  background-attachment: fixed;
+}
+
+.workspace {
+  width: min(100%, 1220px);
+}
+
+.workspace-wide {
+  width: min(100%, 1320px);
+}
+
+.phone-frame {
+  width: min(100%, 1180px);
+  height: min(900px, calc(100svh - 40px));
+  min-height: min(760px, calc(100svh - 40px));
+  padding: 0;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.58);
+  border: 1px solid rgba(255, 255, 255, 0.72);
+  box-shadow: var(--apple-shadow);
+  overflow: hidden;
+}
+
+.phone-speaker {
+  display: none;
+}
+
+.phone-screen,
+.student-screen,
+.dashboard-screen,
+.mode-screen,
+.study-screen,
+.quiz-setup-screen,
+.quiz-screen,
+.result-screen,
+.history-screen,
+.profile-screen,
+.account-screen,
+.policies-screen {
+  width: 100%;
+  min-height: 100%;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.94), rgba(248, 250, 252, 0.88)),
+    var(--apple-bg);
+  color: var(--apple-text);
+}
+
+.student-screen {
+  padding: clamp(28px, 5vw, 64px);
+  gap: clamp(20px, 3vw, 36px);
+}
+
+.student-screen h1,
+.student-screen h2,
+.admin-header h1,
+.lesson-detail-card h1,
+.profile-screen h1,
+.result-screen h1 {
+  color: var(--apple-text);
+  letter-spacing: 0;
+  font-weight: 800;
+}
+
+.student-screen h1,
+.lesson-detail-card h1 {
+  font-size: clamp(2rem, 5vw, 4.25rem);
+  line-height: 0.98;
+}
+
+.student-screen h2,
+.section-heading h2 {
+  font-size: clamp(1.5rem, 3vw, 2.35rem);
+  line-height: 1.05;
+}
+
+.screen-header,
+.section-heading,
+.panel-title,
+.answer-review-title,
+.compact-title {
+  color: var(--apple-text);
+}
+
+.screen-header small,
+.section-heading small,
+.panel-title small,
+.lesson-card-body small,
+.managed-study-card small,
+.lesson-detail-summary,
+.empty-text,
+.hint-text {
+  color: var(--apple-muted);
+}
+
+.subject-grid,
+.mode-grid,
+.managed-study-list,
+.lesson-list,
+.history-list,
+.review-list {
+  gap: 16px;
+}
+
+.subject-card,
+.study-mode-card,
+.managed-study-card,
+.lesson-card,
+.lesson-detail-card,
+.profile-hero,
+.profile-settings-hint,
+.account-security-card,
+.policy-card,
+.policy-intro,
+.history-item,
+.result-score,
+.review-item,
+.quiz-card,
+.question-bubble,
+.answer-option,
+.import-draft,
+.admin-panel,
+.admin-question-item,
+.study-lesson-admin-item,
+.profile-admin-panel,
+.settings-switch-row,
+.settings-list > button,
+.settings-admin-group button,
+.lesson-review-section,
+.lesson-review-admin-item,
+.lesson-attachment-manager,
+.attachment-preview,
+.attachment-file-link {
+  border-radius: 8px;
+  border: 1px solid var(--apple-line);
+  background: var(--apple-card-strong);
+  box-shadow: var(--apple-shadow-soft);
+}
+
+.subject-card,
+.study-mode-card,
+.managed-study-card,
+.lesson-card,
+.history-item,
+.review-item,
+.answer-option,
+.settings-list > button,
+.settings-admin-group button {
+  transition:
+    transform 160ms ease,
+    border-color 160ms ease,
+    box-shadow 160ms ease,
+    background 160ms ease;
+}
+
+.subject-card:hover,
+.study-mode-card:hover:not(:disabled),
+.managed-study-card:hover,
+.lesson-card:hover,
+.history-item:hover,
+.settings-list > button:hover,
+.settings-admin-group button:hover {
+  border-color: rgba(0, 122, 255, 0.2);
+  background: #ffffff;
+  box-shadow: 0 18px 44px rgba(15, 23, 42, 0.1);
+  transform: translateY(-2px);
+}
+
+.managed-study-card > button,
+.lesson-card > button,
+.subject-card,
+.study-mode-card {
+  background: transparent;
+  box-shadow: none;
+}
+
+.managed-study-card > button:hover,
+.lesson-card > button:hover {
+  background: transparent;
+  box-shadow: none;
+}
+
+.lesson-card-index,
+.mode-card-icon,
+.subject-icon,
+.lesson-review-index,
+.lesson-attachment-row a span {
+  border-radius: 8px;
+  background: var(--apple-blue-soft);
+  color: var(--apple-blue);
+}
+
+.status.active,
+.correct-toggle.active,
+.study-answer-box span,
+.study-explanation span {
+  background: rgba(52, 199, 89, 0.14);
+  color: #15803d;
+}
+
+.warning-status,
+.danger-nav-item,
+.app-shell .ghost-button.danger,
+.review-item.bad > span {
+  color: var(--apple-red);
+}
+
+.bottom-nav {
+  border: 1px solid rgba(255, 255, 255, 0.64);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.78);
+  box-shadow: 0 20px 54px rgba(15, 23, 42, 0.14);
+  backdrop-filter: blur(24px);
+}
+
+.bottom-nav button {
+  border-radius: 8px;
+  color: #64748b;
+  box-shadow: none;
+}
+
+.bottom-nav button.active,
+.bottom-nav button:hover:not(:disabled) {
+  background: var(--apple-blue-soft);
+  color: var(--apple-blue);
+}
+
+.settings-drawer,
+.modal-card,
+.avatar-dialog,
+.confirmation-card {
+  border: 1px solid rgba(255, 255, 255, 0.66);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.88);
+  box-shadow: var(--apple-shadow);
+  backdrop-filter: blur(28px);
+}
+
+.admin-shell {
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.68);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.88), rgba(248, 250, 252, 0.78)),
+    var(--apple-bg);
+  box-shadow: var(--apple-shadow);
+  backdrop-filter: blur(28px);
+}
+
+.admin-header,
+.admin-tabs,
+.admin-grid {
+  width: min(1180px, calc(100vw - 48px));
+}
+
+.admin-header {
+  border-bottom: 1px solid var(--apple-line);
+}
+
+.admin-tabs {
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.62);
+  border: 1px solid var(--apple-line);
+  padding: 6px;
+}
+
+.admin-tabs button {
+  min-height: 40px;
+}
+
+.admin-tabs button.active {
+  border-color: transparent;
+  background: #ffffff;
+  color: var(--apple-blue);
+  box-shadow: 0 8px 22px rgba(15, 23, 42, 0.08);
+}
+
+.admin-panel,
+.profile-admin-panel {
+  padding: clamp(18px, 2.4vw, 28px);
+}
+
+.admin-question-item,
+.study-lesson-admin-item,
+.lesson-review-admin-item {
+  padding: 18px;
+}
+
+.row-actions {
+  gap: 8px;
+}
+
+.lesson-review-manager,
+.lesson-review-section {
+  display: grid;
+  gap: 14px;
+  padding: 16px;
+}
+
+.lesson-review-manager {
+  margin-top: 12px;
+}
+
+.lesson-review-admin-list,
+.lesson-review-list {
+  display: grid;
+  gap: 10px;
+}
+
+.lesson-review-admin-item,
+.lesson-review-item {
+  display: grid;
+  gap: 10px;
+}
+
+.lesson-review-item {
+  grid-template-columns: auto minmax(0, 1fr);
+  padding: 14px;
+  background: rgba(255, 255, 255, 0.72);
+}
+
+.lesson-review-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  color: var(--apple-text);
+  font-weight: 850;
+}
+
+.lesson-review-heading span {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.lesson-review-heading svg {
+  width: 18px;
+  height: 18px;
+  color: var(--apple-blue);
+}
+
+.lesson-review-answer {
+  margin-top: 8px;
+  color: #475569;
+  font-weight: 600;
+  line-height: 1.6;
+}
+
+.lesson-review-form {
+  display: grid;
+  gap: 12px;
+}
+
+.lesson-detail-content,
+.managed-study-content,
+.admin-question-content,
+.rich-question-content {
+  color: #1f2937;
+  line-height: 1.68;
+}
+
+.settings-drawer-layer:not(.open) {
+  visibility: hidden;
+}
+
+.settings-drawer-layer:not(.open) .settings-drawer-scrim {
+  backdrop-filter: none;
+}
+
+.app-shell.dark-mode {
+  --apple-card: rgba(17, 24, 39, 0.82);
+  --apple-card-strong: rgba(15, 23, 42, 0.92);
+  --apple-line: rgba(148, 163, 184, 0.18);
+  --apple-line-strong: rgba(148, 163, 184, 0.28);
+  --apple-text: #f8fafc;
+  --apple-muted: #cbd5e1;
+  --apple-blue-soft: rgba(0, 122, 255, 0.18);
+  color: var(--apple-text);
+  background:
+    linear-gradient(135deg, rgba(2, 6, 23, 0.96), rgba(15, 23, 42, 0.92)),
+    #020617;
+}
+
+.app-shell.dark-mode .phone-frame,
+.app-shell.dark-mode .phone-screen,
+.app-shell.dark-mode .student-screen,
+.app-shell.dark-mode .admin-shell {
+  background:
+    linear-gradient(180deg, rgba(15, 23, 42, 0.95), rgba(2, 6, 23, 0.9)),
+    #020617;
+  color: var(--apple-text);
+}
+
+.app-shell.dark-mode .subject-card,
+.app-shell.dark-mode .study-mode-card,
+.app-shell.dark-mode .managed-study-card,
+.app-shell.dark-mode .lesson-card,
+.app-shell.dark-mode .lesson-detail-card,
+.app-shell.dark-mode .profile-hero,
+.app-shell.dark-mode .profile-settings-hint,
+.app-shell.dark-mode .account-security-card,
+.app-shell.dark-mode .policy-card,
+.app-shell.dark-mode .history-item,
+.app-shell.dark-mode .result-score,
+.app-shell.dark-mode .review-item,
+.app-shell.dark-mode .admin-panel,
+.app-shell.dark-mode .admin-question-item,
+.app-shell.dark-mode .study-lesson-admin-item,
+.app-shell.dark-mode .lesson-review-section,
+.app-shell.dark-mode .lesson-review-admin-item,
+.app-shell.dark-mode .lesson-attachment-manager,
+.app-shell.dark-mode input,
+.app-shell.dark-mode textarea,
+.app-shell.dark-mode select {
+  background: var(--apple-card-strong);
+  color: var(--apple-text);
+  border-color: var(--apple-line);
+}
+
+.app-shell.dark-mode .bottom-nav,
+.app-shell.dark-mode .settings-drawer,
+.app-shell.dark-mode .admin-tabs {
+  background: rgba(15, 23, 42, 0.82);
+  border-color: var(--apple-line);
+}
+
+@media (min-width: 900px) {
+  .student-screen {
+    max-width: none;
+    padding-left: clamp(180px, 16vw, 232px);
+    padding-right: clamp(56px, 7vw, 96px);
+  }
+
+  .managed-study-list,
+  .subject-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .bottom-nav {
+    top: 50%;
+    right: auto;
+    bottom: auto;
+    left: 24px;
+    width: 92px;
+    grid-template-columns: 1fr;
+    transform: translateY(-50%);
+  }
+}
+
+.lesson-detail-card {
+  overflow: hidden;
+}
+
+.lesson-detail-card h1 {
+  max-width: 100%;
+  font-size: clamp(2rem, 4.1vw, 3.35rem);
+  line-height: 1.04;
+  overflow-wrap: anywhere;
+}
+
+.dashboard-hero,
+.score-summary,
+.subject-section,
+.managed-study-section,
+.lesson-detail-card,
+.quiz-setup-panel,
+.result-score,
+.profile-hero,
+.profile-settings-hint {
+  width: 100%;
+}
+
+@media (max-width: 760px) {
+  .app-shell {
+    padding: 0;
+  }
+
+  .phone-frame {
+    width: 100%;
+    height: 100svh;
+    min-height: 100svh;
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+  }
+
+  .student-screen {
+    padding: 24px 18px 104px;
+  }
+
+  .admin-shell {
+    border-radius: 0;
+  }
+
+  .admin-header,
+  .admin-tabs,
+  .admin-grid {
+    width: calc(100vw - 28px);
+  }
+
+  .lesson-review-item {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

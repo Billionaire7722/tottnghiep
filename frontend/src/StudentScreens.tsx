@@ -200,7 +200,6 @@ export function AvatarPickerDialog({
 
 export function StartScreen({
   user,
-  attempts,
   subjectCounts,
   studiedCounts,
   onSubjectSelect,
@@ -210,7 +209,6 @@ export function StartScreen({
   onAvatarClick
 }: {
   user: User;
-  attempts: Attempt[];
   subjectCounts: SubjectCountMap;
   studiedCounts: SubjectCountMap;
   onSubjectSelect: (value: SubjectCode) => void;
@@ -219,9 +217,6 @@ export function StartScreen({
   onProfile: () => void;
   onAvatarClick: () => void;
 }) {
-  const latest = attempts[0];
-  const bestPercentage = attempts.reduce((best, attempt) => Math.max(best, Math.round(attempt.percentage)), 0);
-
   return (
     <div className="student-screen dashboard-screen">
       <header className="dashboard-hero">
@@ -235,11 +230,6 @@ export function StartScreen({
           </div>
         </div>
       </header>
-
-      <section className="score-summary" aria-label="Tổng quan học tập">
-        <SummaryMetric icon="clipboard" label="Điểm gần nhất" value={latest ? `${latest.score}/${latest.total}` : "--"} />
-        <SummaryMetric icon="trophy" label="Điểm tốt nhất" value={bestPercentage ? `${bestPercentage}%` : "--"} />
-      </section>
 
       <section className="subject-section">
         <div className="section-heading">
@@ -480,7 +470,11 @@ export function StudyScreen({
   const filteredLessons = useMemo(
     () =>
       normalizedSearch
-        ? lessons.filter((lesson) => `${lesson.title} ${lesson.summary} ${lesson.content}`.toLowerCase().includes(normalizedSearch))
+        ? lessons.filter((lesson) =>
+            `${lesson.title} ${lesson.summary} ${lesson.content} ${(lesson.reviewQuestions ?? [])
+              .map((question) => `${question.content} ${question.answer}`)
+              .join(" ")}`.toLowerCase().includes(normalizedSearch)
+          )
         : lessons,
     [lessons, normalizedSearch]
   );
@@ -557,7 +551,9 @@ export function StudyScreen({
                     <strong>{lesson.title}</strong>
                   </span>
                   <span className="lesson-card-meta">
-                    {lesson.attachments?.length ? (
+                    {lesson.reviewQuestions?.length ? (
+                      <span>{lesson.reviewQuestions.length} câu ôn tập</span>
+                    ) : lesson.attachments?.length ? (
                       <span>{lesson.attachments.length} tài liệu</span>
                     ) : (
                       <span>{lesson.content ? "Bài đọc" : "Đang cập nhật"}</span>
@@ -695,6 +691,8 @@ function LessonDetailScreen({
             <p>Nội dung chữ sẽ hiển thị tại đây khi người chỉnh sửa bổ sung.</p>
           </div>
         )}
+
+        <LessonReviewSection lesson={lesson} />
       </article>
 
       <button className="sticky-primary" type="button" onClick={onStartQuiz}>
@@ -703,6 +701,41 @@ function LessonDetailScreen({
 
       <BottomNav active="study" onHome={onHome} onStudy={onBack} onTest={onStartQuiz} onProfile={onHistory} />
     </div>
+  );
+}
+
+function LessonReviewSection({ lesson }: { lesson: StudyLesson }) {
+  const reviewQuestions = (lesson.reviewQuestions ?? []).filter((question) => question.isActive);
+
+  if (reviewQuestions.length === 0) {
+    return null;
+  }
+
+  return (
+    <section className="lesson-review-section" aria-label="Câu hỏi ôn tập">
+      <div className="lesson-review-heading">
+        <span>
+          <Icon name="clipboard" />
+          Câu hỏi ôn tập
+        </span>
+        <small>{reviewQuestions.length} câu</small>
+      </div>
+      <div className="lesson-review-list">
+        {reviewQuestions.map((question, index) => (
+          <article className="lesson-review-item" key={question.id}>
+            <span className="lesson-review-index">{String(index + 1).padStart(2, "0")}</span>
+            <div>
+              <strong>{question.content}</strong>
+              {question.answer && (
+                <div className="lesson-review-answer">
+                  <RichQuestionContent content={question.answer} />
+                </div>
+              )}
+            </div>
+          </article>
+        ))}
+      </div>
+    </section>
   );
 }
 

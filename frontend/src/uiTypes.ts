@@ -137,6 +137,12 @@ export type StudyLessonForm = {
   isActive: boolean;
 };
 
+export type StudyLessonReviewQuestionForm = {
+  content: string;
+  answer: string;
+  isActive: boolean;
+};
+
 export type ImportedStudyLessonForm = StudyLessonForm & {
   warnings?: string[];
 };
@@ -175,6 +181,12 @@ export const emptyStudyLessonForm = (): StudyLessonForm => ({
   title: "",
   summary: "",
   content: "",
+  isActive: true
+});
+
+export const emptyStudyLessonReviewQuestionForm = (): StudyLessonReviewQuestionForm => ({
+  content: "",
+  answer: "",
   isActive: true
 });
 

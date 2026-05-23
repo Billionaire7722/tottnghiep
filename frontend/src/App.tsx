@@ -42,6 +42,7 @@ import {
   emptyStudyLessonForm,
   subjectOptions,
   type QuestionForm,
+  type StudyLessonReviewQuestionForm,
   type StudyLessonForm,
   type SubjectCode
 } from "./uiTypes";
@@ -906,6 +907,73 @@ function App() {
     }
   }
 
+  async function addStudyLessonReviewQuestion(lessonId: number, input: StudyLessonReviewQuestionForm) {
+    setAdminBusy(true);
+
+    try {
+      const data = await authedRequest<{ lesson: StudyLesson }>(`/api/study-lessons/${lessonId}/review-questions`, {
+        method: "POST",
+        body: input
+      });
+      setAdminStudyLessons((current) => current.map((lesson) => (lesson.id === lessonId ? data.lesson : lesson)));
+      setNotice("Đã thêm câu hỏi ôn tập");
+    } catch (error) {
+      handleError(error);
+    } finally {
+      setAdminBusy(false);
+    }
+  }
+
+  async function updateStudyLessonReviewQuestion(
+    lessonId: number,
+    questionId: number,
+    input: StudyLessonReviewQuestionForm
+  ) {
+    setAdminBusy(true);
+
+    try {
+      const data = await authedRequest<{ lesson: StudyLesson }>(
+        `/api/study-lessons/${lessonId}/review-questions/${questionId}`,
+        {
+          method: "PUT",
+          body: input
+        }
+      );
+      setAdminStudyLessons((current) => current.map((lesson) => (lesson.id === lessonId ? data.lesson : lesson)));
+      setNotice("Đã cập nhật câu hỏi ôn tập");
+    } catch (error) {
+      handleError(error);
+    } finally {
+      setAdminBusy(false);
+    }
+  }
+
+  async function deleteStudyLessonReviewQuestion(lessonId: number, questionId: number) {
+    const confirmed = await requestConfirmation({
+      title: "Xóa câu hỏi ôn tập?",
+      message: "Câu hỏi này sẽ không còn hiển thị trong phần ôn tập của bài học.",
+      confirmLabel: "Xóa câu hỏi",
+      tone: "danger"
+    });
+
+    if (!confirmed) {
+      return;
+    }
+
+    setAdminBusy(true);
+
+    try {
+      await authedRequest(`/api/study-lessons/${lessonId}/review-questions/${questionId}`, { method: "DELETE" });
+      const data = await authedRequest<{ lesson: StudyLesson }>(`/api/study-lessons/${lessonId}`);
+      setAdminStudyLessons((current) => current.map((lesson) => (lesson.id === lessonId ? data.lesson : lesson)));
+      setNotice("Đã xóa câu hỏi ôn tập");
+    } catch (error) {
+      handleError(error);
+    } finally {
+      setAdminBusy(false);
+    }
+  }
+
   async function importQuestionFile(file: File) {
     setImportBusy(true);
 
@@ -1170,7 +1238,6 @@ function App() {
               {screen === "start" && (
                 <StartScreen
                   user={auth.user}
-                  attempts={attempts}
                   subjectCounts={subjectCounts}
                   studiedCounts={getStudiedCounts(studyProgress)}
                   onSubjectSelect={openSubject}
@@ -1365,6 +1432,13 @@ function App() {
               onDeleteStudyLesson={deleteStudyLessonById}
               onUploadStudyLessonAttachment={(lessonId, file) => void uploadStudyLessonAttachment(lessonId, file)}
               onDeleteStudyLessonAttachment={(lessonId, attachmentId) => void deleteStudyLessonAttachment(lessonId, attachmentId)}
+              onAddStudyLessonReviewQuestion={(lessonId, input) => void addStudyLessonReviewQuestion(lessonId, input)}
+              onUpdateStudyLessonReviewQuestion={(lessonId, questionId, input) =>
+                void updateStudyLessonReviewQuestion(lessonId, questionId, input)
+              }
+              onDeleteStudyLessonReviewQuestion={(lessonId, questionId) =>
+                void deleteStudyLessonReviewQuestion(lessonId, questionId)
+              }
               onSaveAccount={saveAccount}
               onEditAccount={editAccount}
               onDeleteAccount={deleteAccountById}

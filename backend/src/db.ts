@@ -240,6 +240,25 @@ async function initializeDatabase() {
   `);
 
   await pool.query(`
+    CREATE TABLE IF NOT EXISTS study_lesson_review_questions (
+      id serial PRIMARY KEY,
+      lesson_id integer NOT NULL REFERENCES study_lessons(id) ON DELETE CASCADE,
+      content text NOT NULL,
+      answer text NOT NULL DEFAULT '',
+      is_active boolean NOT NULL DEFAULT true,
+      created_by uuid REFERENCES users(id) ON DELETE SET NULL,
+      created_at timestamptz NOT NULL DEFAULT now(),
+      updated_at timestamptz NOT NULL DEFAULT now()
+    )
+  `);
+  await pool.query("ALTER TABLE study_lesson_review_questions ADD COLUMN IF NOT EXISTS answer text NOT NULL DEFAULT ''");
+  await pool.query("ALTER TABLE study_lesson_review_questions ADD COLUMN IF NOT EXISTS is_active boolean NOT NULL DEFAULT true");
+  await pool.query(`
+    CREATE INDEX IF NOT EXISTS study_lesson_review_questions_lesson_idx
+    ON study_lesson_review_questions (lesson_id, is_active, created_at)
+  `);
+
+  await pool.query(`
     CREATE TABLE IF NOT EXISTS options (
       id serial PRIMARY KEY,
       question_id integer NOT NULL REFERENCES questions(id) ON DELETE CASCADE,

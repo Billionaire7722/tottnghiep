@@ -8,7 +8,7 @@ import { ApiError, corsHeaders, writeServerError } from "@/src/http";
 import type { Role } from "@/src/roles";
 import { canManageQuestions } from "@/src/roles";
 import type { SubjectCode } from "@/src/subjects";
-import type { StudyLessonInput } from "@/src/validation";
+import type { StudyLessonInput, StudyLessonReviewQuestionInput } from "@/src/validation";
 
 export type StudyLessonAttachment = {
   id: string;
@@ -18,6 +18,16 @@ export type StudyLessonAttachment = {
   size: number;
   kind: StudyLessonAttachmentKind;
   createdAt: string;
+};
+
+export type StudyLessonReviewQuestion = {
+  id: number;
+  lessonId: number;
+  content: string;
+  answer: string;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
 };
 
 type StudyLessonAttachmentKind = "image" | "video" | "audio" | "pdf" | "document" | "file";
@@ -37,6 +47,7 @@ type StudyLessonRow = {
   createdAt: Date | string;
   updatedAt: Date | string;
   attachments: unknown;
+  reviewQuestions: unknown;
 };
 
 type AttachmentRow = {
@@ -49,6 +60,16 @@ type AttachmentRow = {
   storageKey: string;
   isLessonActive: boolean;
   createdAt: Date | string;
+};
+
+type ReviewQuestionRow = {
+  id: number;
+  lessonId: number;
+  content: string;
+  answer: string;
+  isActive: boolean;
+  createdAt: Date | string;
+  updatedAt: Date | string;
 };
 
 const maxUploadBytes = 100 * 1024 * 1024;
@@ -118,7 +139,27 @@ export async function listStudyLessons(includeInactive: boolean, subject?: Subje
             WHERE a.lesson_id = sl.id
           ),
           '[]'::json
-        ) AS attachments
+        ) AS attachments,
+        COALESCE(
+          (
+            SELECT json_agg(
+              json_build_object(
+                'id', rq.id,
+                'lessonId', rq.lesson_id,
+                'content', rq.content,
+                'answer', rq.answer,
+                'isActive', rq.is_active,
+                'createdAt', rq.created_at,
+                'updatedAt', rq.updated_at
+              )
+              ORDER BY rq.created_at ASC, rq.id ASC
+            )
+            FROM study_lesson_review_questions rq
+            WHERE rq.lesson_id = sl.id
+              AND ($1::boolean = true OR rq.is_active = true)
+          ),
+          '[]'::json
+        ) AS "reviewQuestions"
       FROM study_lessons sl
       WHERE ($1::boolean = true OR sl.is_active = true)
         AND ($2::text IS NULL OR sl.subject = $2)
@@ -160,7 +201,27 @@ export async function getStudyLesson(id: number, includeInactive: boolean) {
             WHERE a.lesson_id = sl.id
           ),
           '[]'::json
-        ) AS attachments
+        ) AS attachments,
+        COALESCE(
+          (
+            SELECT json_agg(
+              json_build_object(
+                'id', rq.id,
+                'lessonId', rq.lesson_id,
+                'content', rq.content,
+                'answer', rq.answer,
+                'isActive', rq.is_active,
+                'createdAt', rq.created_at,
+                'updatedAt', rq.updated_at
+              )
+              ORDER BY rq.created_at ASC, rq.id ASC
+            )
+            FROM study_lesson_review_questions rq
+            WHERE rq.lesson_id = sl.id
+              AND ($2::boolean = true OR rq.is_active = true)
+          ),
+          '[]'::json
+        ) AS "reviewQuestions"
       FROM study_lessons sl
       WHERE sl.id = $1
         AND ($2::boolean = true OR sl.is_active = true)
@@ -229,6 +290,82 @@ export async function deleteStudyLesson(id: number) {
   }
 
   await Promise.all(attachments.map((attachment) => removeAttachmentFile(attachment.storageKey)));
+}
+
+export async function createStudyLessonReviewQuestion(
+  lessonId: number,
+  input: StudyLessonReviewQuestionInput,
+  adminId: string
+) {
+  await ensureStudyLessonExistsForManager(lessonId);
+
+  const result = await dbQuery<ReviewQuestionRow>(
+    `
+      INSERT INTO study_lesson_review_questions (lesson_id, content, answer, is_active, created_by)
+      VALUES ($1, $2, $3, $4, $5)
+      RETURNING
+        id,
+        lesson_id AS "lessonId",
+        content,
+        answer,
+        is_active AS "isActive",
+        created_at AS "createdAt",
+        updated_at AS "updatedAt"
+    `,
+    [lessonId, input.content, input.answer ?? "", input.isActive ?? true, adminId]
+  );
+
+  return toPublicReviewQuestion(result.rows[0]);
+}
+
+export async function updateStudyLessonReviewQuestion(
+  lessonId: number,
+  questionId: number,
+  input: StudyLessonReviewQuestionInput
+) {
+  const result = await dbQuery<ReviewQuestionRow>(
+    `
+      UPDATE study_lesson_review_questions
+      SET content = $1,
+          answer = $2,
+          is_active = $3,
+          updated_at = now()
+      WHERE id = $4
+        AND lesson_id = $5
+      RETURNING
+        id,
+        lesson_id AS "lessonId",
+        content,
+        answer,
+        is_active AS "isActive",
+        created_at AS "createdAt",
+        updated_at AS "updatedAt"
+    `,
+    [input.content, input.answer ?? "", input.isActive ?? true, questionId, lessonId]
+  );
+
+  const question = result.rows[0];
+
+  if (!question) {
+    throw new ApiError(404, "REVIEW_QUESTION_NOT_FOUND", "Không tìm thấy câu hỏi ôn tập");
+  }
+
+  return toPublicReviewQuestion(question);
+}
+
+export async function deleteStudyLessonReviewQuestion(lessonId: number, questionId: number) {
+  const result = await dbQuery(
+    `
+      DELETE FROM study_lesson_review_questions
+      WHERE id = $1
+        AND lesson_id = $2
+    `,
+    [questionId, lessonId]
+  );
+
+  if (result.rowCount === 0) {
+    throw new ApiError(404, "REVIEW_QUESTION_NOT_FOUND", "Không tìm thấy câu hỏi ôn tập");
+  }
 }
 
 export async function saveStudyLessonAttachment(lessonId: number, file: File, adminId: string) {
@@ -403,7 +540,8 @@ function mapStudyLesson(row: StudyLessonRow) {
     isActive: row.isActive,
     createdAt: toIsoString(row.createdAt),
     updatedAt: toIsoString(row.updatedAt),
-    attachments: parseAttachments(row.attachments)
+    attachments: parseAttachments(row.attachments),
+    reviewQuestions: parseReviewQuestions(row.reviewQuestions)
   };
 }
 
@@ -421,6 +559,28 @@ function parseAttachments(value: unknown): StudyLessonAttachment[] {
       isLessonActive: true
     } as AttachmentRow)
   );
+}
+
+function parseReviewQuestions(value: unknown): StudyLessonReviewQuestion[] {
+  const items = typeof value === "string" ? JSON.parse(value) : value;
+
+  if (!Array.isArray(items)) {
+    return [];
+  }
+
+  return items.map((item) => toPublicReviewQuestion(item as ReviewQuestionRow));
+}
+
+function toPublicReviewQuestion(row: ReviewQuestionRow): StudyLessonReviewQuestion {
+  return {
+    id: row.id,
+    lessonId: row.lessonId,
+    content: row.content,
+    answer: row.answer,
+    isActive: row.isActive,
+    createdAt: toIsoString(row.createdAt),
+    updatedAt: toIsoString(row.updatedAt)
+  };
 }
 
 function toPublicAttachment(row: AttachmentRow): StudyLessonAttachment {

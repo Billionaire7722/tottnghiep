@@ -71,6 +71,12 @@ export const studyLessonSchema = z.object({
   isActive: z.boolean().optional()
 });
 
+export const studyLessonReviewQuestionSchema = z.object({
+  content: z.string().trim().min(3, "Câu hỏi ôn tập cần ít nhất 3 ký tự").max(2000, "Câu hỏi ôn tập tối đa 2.000 ký tự"),
+  answer: z.string().trim().max(6000, "Gợi ý trả lời tối đa 6.000 ký tự").optional().default(""),
+  isActive: z.boolean().optional()
+});
+
 export const accountCreateSchema = z.object({
   username: usernameSchema,
   displayName: z.string().trim().min(2, "Tên hiển thị cần ít nhất 2 ký tự").max(80),
@@ -120,6 +126,7 @@ export const questionTextImportSchema = z.object({
 
 export type QuestionInput = z.infer<typeof questionSchema>;
 export type StudyLessonInput = z.infer<typeof studyLessonSchema>;
+export type StudyLessonReviewQuestionInput = z.infer<typeof studyLessonReviewQuestionSchema>;
 export type AccountCreateInput = z.infer<typeof accountCreateSchema>;
 export type AccountUpdateInput = z.infer<typeof accountUpdateSchema>;
 export type ProfileAvatarInput = z.infer<typeof profileAvatarSchema>;
