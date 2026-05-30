@@ -1255,6 +1255,7 @@ function App() {
               )}
               {screen === "mode" && (
                 <ModeScreen
+                  key={selectedSubject}
                   subject={selectedSubject}
                   totalQuestions={subjectCounts[selectedSubject] ?? 0}
                   studiedQuestions={studyProgress[selectedSubject]?.length ?? 0}
@@ -1271,6 +1272,7 @@ function App() {
               )}
               {screen === "quizSetup" && (
                 <QuizSetupScreen
+                  key={selectedSubject}
                   subject={selectedSubject}
                   totalQuestions={subjectCounts[selectedSubject]}
                   selectedLimit={quizQuestionLimit}
@@ -1284,6 +1286,7 @@ function App() {
               )}
               {screen === "study" && (
                 <StudyScreen
+                  key={selectedSubject}
                   subject={selectedSubject}
                   lessons={studentStudyLessons}
                   slides={studentStudySlides}
@@ -1353,7 +1356,15 @@ function App() {
                   onStudy={() => openModeFromNav("study")}
                   onTest={() => openModeFromNav("test")}
                   onAvatarClick={() => setAvatarPickerOpen(true)}
-                  onOpenSettings={() => setSettingsDrawerOpen(true)}
+                  darkMode={darkMode}
+                  onToggleDarkMode={() => setDarkMode((curr) => !curr)}
+                  onAccount={() => setScreen("account")}
+                  onPolicies={() => setScreen("policies")}
+                  onHistory={openHistory}
+                  onLogout={() => void logout()}
+                  onManageQuestions={() => openAdminTab("questions")}
+                  onManageStudy={() => openAdminTab("study")}
+                  onManageAccounts={() => openAdminTab("accounts")}
                 />
               )}
               {screen === "account" && (

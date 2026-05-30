@@ -219,58 +219,60 @@ export function StartScreen({
 }) {
   return (
     <div className="student-screen dashboard-screen">
-      <header className="dashboard-hero">
-        <div className="dashboard-identity">
-          <button className="avatar-trigger" type="button" aria-label="Chọn ảnh đại diện" onClick={onAvatarClick}>
-            <StudentAvatar user={user} />
-          </button>
-          <div>
-            <p>Xin chào, {user.displayName || "bạn"}!</p>
-            <span>{roleLabel(user.role)}</span>
+      <div className="screen-content">
+        <header className="dashboard-hero">
+          <div className="dashboard-identity">
+            <button className="avatar-trigger" type="button" aria-label="Chọn ảnh đại diện" onClick={onAvatarClick}>
+              <StudentAvatar user={user} />
+            </button>
+            <div>
+              <p>Xin chào, {user.displayName || "bạn"}!</p>
+              <span>{roleLabel(user.role)}</span>
+            </div>
           </div>
-        </div>
-      </header>
+        </header>
 
-      <section className="subject-section">
-        <div className="section-heading">
-          <h2>Chọn môn học</h2>
-          <small>Chọn môn rồi vào ôn tập hoặc làm bài kiểm tra</small>
-        </div>
-        <div className="subject-grid">
-          {subjectOptions.map((subject) => {
-            const total = subjectCounts[subject.value];
-            const isLoading = total === undefined;
-            const questionCount = total ?? 0;
-            const visual = subjectVisualMap[subject.value];
-            const cardStyle = {
-              "--subject-image": `url(${visual.imageUrl})`,
-              "--subject-accent": visual.accent
-            } as CSSProperties;
-            return (
-              <button
-                className="subject-card"
-                key={subject.value}
-                type="button"
-                style={cardStyle}
-                onClick={() => onSubjectSelect(subject.value)}
-              >
-                <span className="subject-card-image" aria-hidden="true" />
-                <span className="subject-card-kicker">{subject.shortLabel}</span>
-                <span className="subject-card-icon" aria-hidden="true">
-                  <Icon name={subjectIconMap[subject.value]} />
-                </span>
-                <strong>{subject.label}</strong>
-                <small>{subject.description}</small>
-                <em>{isLoading ? "Đang tải dữ liệu" : questionCount > 0 ? `${questionCount} câu hỏi trắc nghiệm` : "Chưa có câu hỏi"}</em>
-                <span className="subject-card-cta">
-                  Vào môn
-                  <Icon name="arrowLeft" />
-                </span>
-              </button>
-            );
-          })}
-        </div>
-      </section>
+        <section className="subject-section">
+          <div className="section-heading">
+            <h2>Chọn môn học</h2>
+            <small>Chọn môn rồi vào ôn tập hoặc làm bài kiểm tra</small>
+          </div>
+          <div className="subject-grid">
+            {subjectOptions.map((subject) => {
+              const total = subjectCounts[subject.value];
+              const isLoading = total === undefined;
+              const questionCount = total ?? 0;
+              const visual = subjectVisualMap[subject.value];
+              const cardStyle = {
+                "--subject-image": `url(${visual.imageUrl})`,
+                "--subject-accent": visual.accent
+              } as CSSProperties;
+              return (
+                <button
+                  className="subject-card"
+                  key={subject.value}
+                  type="button"
+                  style={cardStyle}
+                  onClick={() => onSubjectSelect(subject.value)}
+                >
+                  <span className="subject-card-image" aria-hidden="true" />
+                  <span className="subject-card-kicker">{subject.shortLabel}</span>
+                  <span className="subject-card-icon" aria-hidden="true">
+                    <Icon name={subjectIconMap[subject.value]} />
+                  </span>
+                  <strong>{subject.label}</strong>
+                  <small>{subject.description}</small>
+                  <em>{isLoading ? "Đang tải dữ liệu" : questionCount > 0 ? `${questionCount} câu hỏi trắc nghiệm` : "Chưa có câu hỏi"}</em>
+                  <span className="subject-card-cta">
+                    Vào môn
+                    <Icon name="arrowLeft" />
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        </section>
+      </div>
 
       <BottomNav active="home" onHome={() => undefined} onStudy={onStudyTab} onTest={onTestTab} onProfile={onProfile} />
     </div>
@@ -311,51 +313,53 @@ export function ModeScreen({
     <div className="student-screen mode-screen">
       <ScreenHeader title="Chọn chế độ học" onBack={onBack} />
 
-      <section className="mode-intro">
-        <h1>{currentSubject.label}</h1>
-        <div className="progress-row">
-          <span>Tiến độ: {progress}% hoàn thành</span>
-          <span>
-            {Math.min(studiedQuestions, totalQuestions)}/{totalQuestions || 0} đã ôn
+      <div className="screen-content">
+        <section className="mode-intro">
+          <h1>{currentSubject.label}</h1>
+          <div className="progress-row">
+            <span>Tiến độ: {progress}% hoàn thành</span>
+            <span>
+              {Math.min(studiedQuestions, totalQuestions)}/{totalQuestions || 0} đã ôn
+            </span>
+          </div>
+          <span className="wide-progress" aria-hidden="true">
+            <span style={{ width: `${progress}%` }} />
           </span>
-        </div>
-        <span className="wide-progress" aria-hidden="true">
-          <span style={{ width: `${progress}%` }} />
-        </span>
-      </section>
+        </section>
 
-      <div className="mode-grid">
-        <button className="mode-card study-mode-card" type="button" onClick={onStudy} disabled={studyBusy}>
-          <span className="mode-card-icon" aria-hidden="true">
-            <Icon name="book" />
-          </span>
-          <strong>Ôn tập kiến thức</strong>
-          <small>Xem bài học, ghi chú và tài liệu do admin hoặc người chỉnh sửa đăng lên.</small>
-        </button>
-        <button className="mode-card quiz-mode-card" type="button" onClick={onStartQuiz} disabled={quizBusy}>
-          <span className="mode-card-icon" aria-hidden="true">
-            <Icon name="clipboard" />
-          </span>
-          <strong>Làm bài kiểm tra</strong>
-          <small>Thử thách bản thân với bộ câu hỏi trắc nghiệm.</small>
-        </button>
+        <div className="mode-grid">
+          <button className="mode-card study-mode-card" type="button" onClick={onStudy} disabled={studyBusy}>
+            <span className="mode-card-icon" aria-hidden="true">
+              <Icon name="book" />
+            </span>
+            <strong>Ôn tập kiến thức</strong>
+            <small>Xem bài học, ghi chú và tài liệu do admin hoặc người chỉnh sửa đăng lên.</small>
+          </button>
+          <button className="mode-card quiz-mode-card" type="button" onClick={onStartQuiz} disabled={quizBusy}>
+            <span className="mode-card-icon" aria-hidden="true">
+              <Icon name="clipboard" />
+            </span>
+            <strong>Làm bài kiểm tra</strong>
+            <small>Thử thách bản thân với bộ câu hỏi trắc nghiệm.</small>
+          </button>
+        </div>
+
+        <section className="related-section">
+          <h2>Chủ đề liên quan</h2>
+          <div className="related-list">
+            {subjectOptions
+              .filter((option) => option.value !== subject)
+              .map((option) => (
+                <button className="related-card" key={option.value} type="button" onClick={() => onSubjectSelect(option.value)}>
+                  <strong>{option.label}</strong>
+                  <span aria-hidden="true" className="related-card-arrow">
+                    <Icon name="arrowLeft" />
+                  </span>
+                </button>
+              ))}
+          </div>
+        </section>
       </div>
-
-      <section className="related-section">
-        <h2>Chủ đề liên quan</h2>
-        <div className="related-list">
-          {subjectOptions
-            .filter((option) => option.value !== subject)
-            .map((option) => (
-              <button className="related-card" key={option.value} type="button" onClick={() => onSubjectSelect(option.value)}>
-                <strong>{option.label}</strong>
-                <span aria-hidden="true" className="related-card-arrow">
-                  <Icon name="arrowLeft" />
-                </span>
-              </button>
-            ))}
-        </div>
-      </section>
 
       <BottomNav active={navActive} onHome={onHome} onStudy={onStudy} onTest={onStartQuiz} onProfile={onHistory} />
     </div>
@@ -392,51 +396,53 @@ export function QuizSetupScreen({
     <div className="student-screen quiz-setup-screen">
       <ScreenHeader title="Thiết lập bài kiểm tra" subtitle={currentSubject.label} onBack={onBack} />
 
-      <section className="quiz-setup-panel">
-        <div className="lesson-detail-kicker">
-          <Icon name="clipboard" />
-          <span>{currentSubject.label}</span>
-        </div>
-        <h1>Chọn số lượng câu hỏi</h1>
-        <p>
-          {questionCountKnown
-            ? availableQuestions > 0
-              ? `Hiện có ${availableQuestions} câu hỏi khả dụng.`
-              : "Môn này chưa có câu hỏi khả dụng."
-            : "Đang cập nhật số câu hỏi khả dụng."}
-        </p>
+      <div className="screen-content">
+        <section className="quiz-setup-panel">
+          <div className="lesson-detail-kicker">
+            <Icon name="clipboard" />
+            <span>{currentSubject.label}</span>
+          </div>
+          <h1>Chọn số lượng câu hỏi</h1>
+          <p>
+            {questionCountKnown
+              ? availableQuestions > 0
+                ? `Hiện có ${availableQuestions} câu hỏi khả dụng.`
+                : "Môn này chưa có câu hỏi khả dụng."
+              : "Đang cập nhật số câu hỏi khả dụng."}
+          </p>
 
-        <div className="quiz-limit-grid" role="radiogroup" aria-label="Số lượng câu hỏi">
-          {quizQuestionLimitOptions.map((option) => {
-            const disabled = !isQuizQuestionLimitAvailable(option, totalQuestions);
-            const isSelected = selectedLimit === option;
+          <div className="quiz-limit-grid" role="radiogroup" aria-label="Số lượng câu hỏi">
+            {quizQuestionLimitOptions.map((option) => {
+              const disabled = !isQuizQuestionLimitAvailable(option, totalQuestions);
+              const isSelected = selectedLimit === option;
 
-            return (
-              <button
-                className={isSelected ? "quiz-limit-option active" : "quiz-limit-option"}
-                key={String(option)}
-                type="button"
-                onClick={() => onLimitChange(option)}
-                disabled={disabled || quizBusy}
-                role="radio"
-                aria-checked={isSelected}
-              >
-                <strong>{option === "all" ? "Tất cả" : option}</strong>
-                <span>{quizLimitDescription(option, totalQuestions)}</span>
-              </button>
-            );
-          })}
-        </div>
+              return (
+                <button
+                  className={isSelected ? "quiz-limit-option active" : "quiz-limit-option"}
+                  key={String(option)}
+                  type="button"
+                  onClick={() => onLimitChange(option)}
+                  disabled={disabled || quizBusy}
+                  role="radio"
+                  aria-checked={isSelected}
+                >
+                  <strong>{option === "all" ? "Tất cả" : option}</strong>
+                  <span>{quizLimitDescription(option, totalQuestions)}</span>
+                </button>
+              );
+            })}
+          </div>
 
-        <button
-          className="quiz-setup-start"
-          type="button"
-          onClick={() => onStartQuiz(selectedLimit)}
-          disabled={quizBusy || !selectedLimitAvailable}
-        >
-          {quizBusy ? "Đang tạo bài" : "Bắt đầu làm bài"}
-        </button>
-      </section>
+          <button
+            className="quiz-setup-start"
+            type="button"
+            onClick={() => onStartQuiz(selectedLimit)}
+            disabled={quizBusy || !selectedLimitAvailable}
+          >
+            {quizBusy ? "Đang tạo bài" : "Bắt đầu làm bài"}
+          </button>
+        </section>
+      </div>
 
       <BottomNav active="test" onHome={onHome} onStudy={onBack} onTest={() => undefined} onProfile={onHistory} />
     </div>
@@ -447,6 +453,9 @@ export function StudyScreen({
   subject,
   lessons,
   slides,
+  questions,
+  studiedQuestionIds,
+  onMarkStudied,
   onBack,
   onStartQuiz,
   onHome,
@@ -521,76 +530,78 @@ export function StudyScreen({
     <div className="student-screen study-screen">
       <ScreenHeader title="Bài học" subtitle={currentSubject.label} onBack={onBack} />
 
-      <label className="study-search">
-        <span>
-          <Icon name="search" />
-          Tìm bài học
-        </span>
-        <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Nhập tên bài hoặc từ khóa..." />
-      </label>
+      <div className="screen-content">
+        <label className="study-search">
+          <span>
+            <Icon name="search" />
+            Tìm bài học
+          </span>
+          <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Nhập tên bài hoặc từ khóa..." />
+        </label>
 
-      <section className="managed-study-section">
-        <div className="section-heading">
-          <h2>Danh sách ôn tập</h2>
-          <small>{totalItems} mục</small>
-        </div>
-        {totalItems === 0 ? (
-          <div className="study-empty-state">
-            <Icon name="book" />
-            <strong>Chưa có bài học phù hợp</strong>
-            <p>Admin hoặc người chỉnh sửa có thể thêm bài học và tài liệu trong khu vực quản trị.</p>
+        <section className="managed-study-section">
+          <div className="section-heading">
+            <h2>Danh sách ôn tập</h2>
+            <small>{totalItems} mục</small>
           </div>
-        ) : (
-          <div className="managed-study-list">
-            {filteredLessons.map((lesson, index) => (
-              <article className="managed-study-card" key={lesson.id}>
-                <button type="button" onClick={() => setSelectedItem({ type: "lesson", id: lesson.id })}>
-                  <span className="lesson-card-index">{String(index + 1).padStart(2, "0")}</span>
-                  <span className="lesson-card-body">
-                    <small>{currentSubject.label}</small>
-                    <strong>{lesson.title}</strong>
-                  </span>
-                  <span className="lesson-card-meta">
-                    {lesson.reviewQuestions?.length ? (
-                      <span>{lesson.reviewQuestions.length} câu ôn tập</span>
-                    ) : lesson.attachments?.length ? (
-                      <span>{lesson.attachments.length} tài liệu</span>
-                    ) : (
-                      <span>{lesson.content ? "Bài đọc" : "Đang cập nhật"}</span>
-                    )}
-                    <b>
-                      Mở bài
-                      <Icon name="arrowLeft" />
-                    </b>
-                  </span>
-                </button>
-              </article>
-            ))}
-            {filteredSlides.map((slide, index) => (
-              <article className="managed-study-card slide-study-card" key={slide.id}>
-                <button type="button" onClick={() => setSelectedItem({ type: "slide", id: slide.id })}>
-                  <span className="lesson-card-index">{String(filteredLessons.length + index + 1).padStart(2, "0")}</span>
-                  <span className="lesson-card-body">
-                    <small>{currentSubject.label} · PDF</small>
-                    <strong>{slide.title}</strong>
-                  </span>
-                  <span className="lesson-card-meta">
-                    <span>{formatFileSize(slide.size)}</span>
-                    <b>
-                      Mở PDF
-                      <Icon name="fileText" />
-                    </b>
-                  </span>
-                </button>
-              </article>
-            ))}
-          </div>
-        )}
-      </section>
+          {totalItems === 0 ? (
+            <div className="study-empty-state">
+              <Icon name="book" />
+              <strong>Chưa có bài học phù hợp</strong>
+              <p>Admin hoặc người chỉnh sửa có thể thêm bài học và tài liệu trong khu vực quản trị.</p>
+            </div>
+          ) : (
+            <div className="managed-study-list">
+              {filteredLessons.map((lesson, index) => (
+                <article className="managed-study-card" key={lesson.id}>
+                  <button type="button" onClick={() => setSelectedItem({ type: "lesson", id: lesson.id })}>
+                    <span className="lesson-card-index">{String(index + 1).padStart(2, "0")}</span>
+                    <span className="lesson-card-body">
+                      <small>{currentSubject.label}</small>
+                      <strong>{lesson.title}</strong>
+                    </span>
+                    <span className="lesson-card-meta">
+                      {lesson.reviewQuestions?.length ? (
+                        <span>{lesson.reviewQuestions.length} câu ôn tập</span>
+                      ) : lesson.attachments?.length ? (
+                        <span>{lesson.attachments.length} tài liệu</span>
+                      ) : (
+                        <span>{lesson.content ? "Bài đọc" : "Đang cập nhật"}</span>
+                      )}
+                      <b>
+                        Mở bài
+                        <Icon name="arrowLeft" />
+                      </b>
+                    </span>
+                  </button>
+                </article>
+              ))}
+              {filteredSlides.map((slide, index) => (
+                <article className="managed-study-card slide-study-card" key={slide.id}>
+                  <button type="button" onClick={() => setSelectedItem({ type: "slide", id: slide.id })}>
+                    <span className="lesson-card-index">{String(filteredLessons.length + index + 1).padStart(2, "0")}</span>
+                    <span className="lesson-card-body">
+                      <small>{currentSubject.label} · PDF</small>
+                      <strong>{slide.title}</strong>
+                    </span>
+                    <span className="lesson-card-meta">
+                      <span>{formatFileSize(slide.size)}</span>
+                      <b>
+                        Mở PDF
+                        <Icon name="fileText" />
+                      </b>
+                    </span>
+                  </button>
+                </article>
+              ))}
+            </div>
+          )}
+        </section>
 
-      <button className="sticky-primary" type="button" onClick={onStartQuiz}>
-        Làm bài kiểm tra
-      </button>
+        <button className="sticky-primary" type="button" onClick={onStartQuiz}>
+          Làm bài kiểm tra
+        </button>
+      </div>
 
       <BottomNav active="study" onHome={onHome} onStudy={() => undefined} onTest={onStartQuiz} onProfile={onHistory} />
     </div>
@@ -619,32 +630,34 @@ function SlideDetailScreen({
     <div className="student-screen study-screen lesson-detail-screen">
       <ScreenHeader title="Slide bài giảng" subtitle={subjectLabel} onBack={onBack} />
 
-      <article className="lesson-detail-card slide-detail-card">
-        <div className="lesson-detail-kicker">
-          <Icon name="fileText" />
-          <span>{subjectLabel}</span>
-        </div>
-        <h1>{slide.title}</h1>
-        <p className="lesson-detail-summary">{formatFileSize(slide.size)}</p>
+      <div className="screen-content">
+        <article className="lesson-detail-card slide-detail-card">
+          <div className="lesson-detail-kicker">
+            <Icon name="fileText" />
+            <span>{subjectLabel}</span>
+          </div>
+          <h1>{slide.title}</h1>
+          <p className="lesson-detail-summary">{formatFileSize(slide.size)}</p>
 
-        <div className="slide-detail-actions">
-          <a className="slide-download-button" href={downloadUrl}>
-            <Icon name="download" />
-            Tải PDF
-          </a>
-          <a className="slide-open-link" href={viewUrl} target="_blank" rel="noreferrer">
-            Mở tab mới
-          </a>
-        </div>
+          <div className="slide-detail-actions">
+            <a className="slide-download-button" href={downloadUrl}>
+              <Icon name="download" />
+              Tải PDF
+            </a>
+            <a className="slide-open-link" href={viewUrl} target="_blank" rel="noreferrer">
+              Mở tab mới
+            </a>
+          </div>
 
-        <div className="pdf-viewer-shell">
-          <iframe title={slide.title} src={viewUrl} loading="lazy" />
-        </div>
-      </article>
+          <div className="pdf-viewer-shell">
+            <iframe title={slide.title} src={viewUrl} loading="lazy" />
+          </div>
+        </article>
 
-      <button className="sticky-primary" type="button" onClick={onStartQuiz}>
-        Làm bài kiểm tra
-      </button>
+        <button className="sticky-primary" type="button" onClick={onStartQuiz}>
+          Làm bài kiểm tra
+        </button>
+      </div>
 
       <BottomNav active="study" onHome={onHome} onStudy={onBack} onTest={onStartQuiz} onProfile={onHistory} />
     </div>
@@ -840,59 +853,61 @@ export function QuizScreen({
 
   return (
     <div className="student-screen quiz-screen">
-      <header className="quiz-top">
-        <button className="icon-button" type="button" onClick={index === 0 ? onExit : onBack} aria-label={index === 0 ? "Thoát bài kiểm tra" : "Câu trước"}>
-          <Icon name="arrowLeft" />
-        </button>
-        <strong>
-          {index + 1}/{total}
-        </strong>
-        <button className="quiz-exit-button" type="button" onClick={onExit}>
-          <Icon name="home" />
-          <span>Thoát</span>
-        </button>
-      </header>
+      <div className="quiz-container">
+        <header className="quiz-top">
+          <button className="icon-button" type="button" onClick={index === 0 ? onExit : onBack} aria-label={index === 0 ? "Thoát bài kiểm tra" : "Câu trước"}>
+            <Icon name="arrowLeft" />
+          </button>
+          <strong>
+            {index + 1}/{total}
+          </strong>
+          <button className="quiz-exit-button" type="button" onClick={onExit}>
+            <Icon name="home" />
+            <span>Thoát</span>
+          </button>
+        </header>
 
-      <div className="quiz-meter">
-        <span aria-hidden="true">
-          <span style={{ width: `${progress}%` }} />
-        </span>
-        <strong>{total - index} câu còn lại</strong>
+        <div className="quiz-meter">
+          <span aria-hidden="true">
+            <span style={{ width: `${progress}%` }} />
+          </span>
+          <strong>{total - index} câu còn lại</strong>
+        </div>
+
+        <section className="question-bubble">
+          <RichQuestionContent content={question.content} />
+        </section>
+
+        <div className="answer-list">
+          {question.options.map((option) => {
+            const optionState = getOptionState(option.id);
+
+            return (
+              <button
+                className={optionState ? `answer-option ${optionState}` : "answer-option"}
+                key={option.id}
+                type="button"
+                onClick={() => onSelect(option.id)}
+                disabled={busy || isAnswered}
+                aria-pressed={selectedOptionId === option.id}
+              >
+                <span aria-hidden="true">{optionState === "correct" ? <Icon name="check" /> : optionState === "wrong" ? <Icon name="x" /> : ""}</span>
+                <strong>{option.content}</strong>
+              </button>
+            );
+          })}
+        </div>
+
+        <div className={feedback ? `answer-feedback ${feedback}` : "answer-feedback"} role="status" aria-live="polite">
+          {feedback === "correct" ? "Chính xác" : feedback === "wrong" ? "Chưa đúng" : ""}
+        </div>
+
+        <footer className="quiz-footer">
+          <button type="button" onClick={onNext} disabled={!selectedOptionId || busy}>
+            {index === total - 1 ? "Nộp bài" : "Tiếp theo"}
+          </button>
+        </footer>
       </div>
-
-      <section className="question-bubble">
-        <RichQuestionContent content={question.content} />
-      </section>
-
-      <div className="answer-list">
-        {question.options.map((option) => {
-          const optionState = getOptionState(option.id);
-
-          return (
-            <button
-              className={optionState ? `answer-option ${optionState}` : "answer-option"}
-              key={option.id}
-              type="button"
-              onClick={() => onSelect(option.id)}
-              disabled={busy || isAnswered}
-              aria-pressed={selectedOptionId === option.id}
-            >
-              <span aria-hidden="true">{optionState === "correct" ? <Icon name="check" /> : optionState === "wrong" ? <Icon name="x" /> : ""}</span>
-              <strong>{option.content}</strong>
-            </button>
-          );
-        })}
-      </div>
-
-      <div className={feedback ? `answer-feedback ${feedback}` : "answer-feedback"} role="status" aria-live="polite">
-        {feedback === "correct" ? "Chính xác" : feedback === "wrong" ? "Chưa đúng" : ""}
-      </div>
-
-      <footer className="quiz-footer">
-        <button type="button" onClick={onNext} disabled={!selectedOptionId || busy}>
-          {index === total - 1 ? "Nộp bài" : "Tiếp theo"}
-        </button>
-      </footer>
     </div>
   );
 }
@@ -912,53 +927,57 @@ export function ResultScreen({
 }) {
   const correctCount = result.score;
   const wrongCount = Math.max(result.total - result.score, 0);
-  const scoreStyle = {
-    "--score-angle": `${Math.max(0, Math.min(100, result.percentage)) * 3.6}deg`
-  } as CSSProperties;
+  const pct = Math.max(0, Math.min(100, result.percentage));
+  const circumference = 2 * Math.PI * 50; // r=50, c=314.159
+  const strokeDashoffset = circumference - (pct / 100) * circumference;
 
   return (
     <div className="student-screen result-screen">
       <ScreenHeader title="Kết quả bài kiểm tra" onBack={onHome} />
 
-      <section className="result-hero">
-        <div className="score-ring" style={scoreStyle}>
-          <div>
-            <strong>{Math.round(result.percentage)}/100</strong>
-            <span>Score</span>
+      <div className="screen-content">
+        <section className="result-score">
+          <div className="result-score-circle">
+            <svg viewBox="0 0 120 120">
+              <circle className="bg-circle" cx="60" cy="60" r="50" />
+              <circle className="fg-circle" cx="60" cy="60" r="50" strokeDasharray={circumference} strokeDashoffset={strokeDashoffset} />
+            </svg>
+            <strong>{Math.round(result.percentage)}%</strong>
           </div>
+          <span>Kết quả ôn thi</span>
+          <p>Bạn đã hoàn thành bài thi với kết quả dưới đây!</p>
+        </section>
+
+        <section className="summary-metric-grid" aria-label="Thống kê kết quả">
+          <SummaryMetric icon="check" label="Số câu đúng" value={String(correctCount)} />
+          <SummaryMetric icon="x" label="Số câu sai" value={String(wrongCount)} />
+        </section>
+
+        <div className="review-list">
+          {result.answers.map((answer, index) => (
+            <article className={answer.isCorrect ? "review-item good" : "review-item bad"} key={answer.questionId}>
+              <span aria-hidden="true">{answer.isCorrect ? <Icon name="check" /> : <Icon name="x" />}</span>
+              <div>
+                <strong>
+                  {index + 1}. {summarizeQuestion(answer.questionContent)}
+                </strong>
+                {!answer.isCorrect && <p>Đáp án đúng: {answer.correctOptionContent}</p>}
+              </div>
+            </article>
+          ))}
         </div>
-      </section>
 
-      <section className="result-stats" aria-label="Thống kê kết quả">
-        <SummaryMetric icon="check" label="Số câu đúng" value={String(correctCount)} />
-        <SummaryMetric icon="x" label="Số câu sai" value={String(wrongCount)} />
-        <SummaryMetric icon="clipboard" label="Tổng câu" value={String(result.total)} />
-      </section>
-
-      <div className="review-list">
-        {result.answers.map((answer, index) => (
-          <article className={answer.isCorrect ? "review-item good" : "review-item bad"} key={answer.questionId}>
-            <span aria-hidden="true">{answer.isCorrect ? <Icon name="check" /> : <Icon name="x" />}</span>
-            <div>
-              <strong>
-                {index + 1}. {summarizeQuestion(answer.questionContent)}
-              </strong>
-              {!answer.isCorrect && <p>Đáp án đúng: {answer.correctOptionContent}</p>}
-            </div>
-          </article>
-        ))}
-      </div>
-
-      <div className="result-actions">
-        <button type="button" onClick={onRetry}>
-          Làm lại
-        </button>
-        <button className="secondary-button" type="button" onClick={onHistory}>
-          Lịch sử
-        </button>
-        <button className="ghost-button" type="button" onClick={onHome}>
-          Trang chủ
-        </button>
+        <div className="result-actions">
+          <button type="button" onClick={onRetry}>
+            Làm lại
+          </button>
+          <button className="secondary-button" type="button" onClick={onHistory}>
+            Lịch sử
+          </button>
+          <button className="ghost-button" type="button" onClick={onHome}>
+            Trang chủ
+          </button>
+        </div>
       </div>
 
       <BottomNav active="test" onHome={onHome} onStudy={onHome} onTest={onRetry} onProfile={onProfile} />
@@ -972,37 +991,151 @@ export function ProfileScreen({
   onStudy,
   onTest,
   onAvatarClick,
-  onOpenSettings
+  darkMode,
+  onToggleDarkMode,
+  onAccount,
+  onPolicies,
+  onHistory,
+  onLogout,
+  onManageQuestions,
+  onManageStudy,
+  onManageAccounts
 }: {
   user: User;
   onHome: () => void;
   onStudy: () => void;
   onTest: () => void;
   onAvatarClick: () => void;
-  onOpenSettings: () => void;
+  darkMode: boolean;
+  onToggleDarkMode: () => void;
+  onAccount: () => void;
+  onPolicies: () => void;
+  onHistory: () => void;
+  onLogout: () => void;
+  onManageQuestions?: () => void;
+  onManageStudy?: () => void;
+  onManageAccounts?: () => void;
 }) {
+  const canManageContent = user.role === "admin" || user.role === "editor";
+  const canManageAccounts = user.role === "admin";
+
   return (
     <div className="student-screen profile-screen">
       <header className="section-title">
         <div>
           <span>Cá nhân</span>
-          <h2>Hồ sơ của bạn</h2>
+          <h2>Hồ sơ & Thiết lập</h2>
         </div>
-        <button className="secondary-button settings-open-button" type="button" onClick={onOpenSettings}>
-          <Icon name="more" />
-          Cài đặt
-        </button>
       </header>
-      <section className="profile-hero">
-        <button className="avatar-trigger profile-avatar-trigger" type="button" aria-label="Chọn ảnh đại diện" onClick={onAvatarClick}>
-          <StudentAvatar user={user} className="profile-avatar-preview" />
-        </button>
-        <div>
-          <span>Hồ sơ học tập</span>
-          <h3>{user.displayName || user.username}</h3>
-          <p>{roleLabel(user.role)}</p>
-        </div>
-      </section>
+
+      <div className="screen-content">
+        <section className="profile-card">
+          <button className="avatar-trigger profile-avatar-trigger" type="button" aria-label="Chọn ảnh đại diện" onClick={onAvatarClick}>
+            <StudentAvatar user={user} className="profile-avatar-preview" />
+          </button>
+          <div>
+            <span>Hồ sơ học tập</span>
+            <h3>{user.displayName || user.username}</h3>
+            <p>{roleLabel(user.role)}</p>
+          </div>
+        </section>
+
+        <section className="settings-section">
+          <div className="settings-section-title">Tài khoản & Bảo mật</div>
+          <div className="settings-group">
+            <button className="settings-row" type="button" onClick={onAccount}>
+              <span className="settings-row-label">
+                <span><Icon name="user" /></span>
+                <strong>Quản lý tài khoản (Đổi mật khẩu)</strong>
+              </span>
+              <span className="settings-row-arrow"><Icon name="arrowLeft" /></span>
+            </button>
+            <button className="settings-row" type="button" onClick={onHistory}>
+              <span className="settings-row-label">
+                <span><Icon name="clipboard" /></span>
+                <strong>Lịch sử làm bài trắc nghiệm</strong>
+              </span>
+              <span className="settings-row-arrow"><Icon name="arrowLeft" /></span>
+            </button>
+          </div>
+        </section>
+
+        <section className="settings-section">
+          <div className="settings-section-title">Giao diện</div>
+          <div className="settings-group">
+            <div className="settings-row switch-row" onClick={onToggleDarkMode}>
+              <span className="settings-row-label">
+                <span><Icon name="spark" /></span>
+                <strong>Giao diện tối (Dark Mode)</strong>
+              </span>
+              <div className={`switch-toggle ${darkMode ? 'on' : 'off'}`}>
+                <div className="switch-handle" />
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section className="settings-section">
+          <div className="settings-section-title">Thông tin ứng dụng</div>
+          <div className="settings-group">
+            <button className="settings-row" type="button" onClick={onPolicies}>
+              <span className="settings-row-label">
+                <span><Icon name="fileText" /></span>
+                <strong>Chính sách sử dụng và bảo mật</strong>
+              </span>
+              <span className="settings-row-arrow"><Icon name="arrowLeft" /></span>
+            </button>
+          </div>
+        </section>
+
+        {canManageContent && (
+          <section className="settings-section">
+            <div className="settings-section-title">Khu vực quản trị</div>
+            <div className="settings-group">
+              {onManageQuestions && (
+                <button className="settings-row" type="button" onClick={onManageQuestions}>
+                  <span className="settings-row-label">
+                    <span><Icon name="shield" /></span>
+                    <strong>Quản trị danh sách câu hỏi</strong>
+                  </span>
+                  <span className="settings-row-arrow"><Icon name="arrowLeft" /></span>
+                </button>
+              )}
+              {onManageStudy && (
+                <button className="settings-row" type="button" onClick={onManageStudy}>
+                  <span className="settings-row-label">
+                    <span><Icon name="book" /></span>
+                    <strong>Quản trị tài liệu ôn tập</strong>
+                  </span>
+                  <span className="settings-row-arrow"><Icon name="arrowLeft" /></span>
+                </button>
+              )}
+              {canManageAccounts && onManageAccounts && (
+                <button className="settings-row" type="button" onClick={onManageAccounts}>
+                  <span className="settings-row-label">
+                    <span><Icon name="user" /></span>
+                    <strong>Quản trị tài khoản hệ thống</strong>
+                  </span>
+                  <span className="settings-row-arrow"><Icon name="arrowLeft" /></span>
+                </button>
+              )}
+            </div>
+          </section>
+        )}
+
+        <section className="settings-section">
+          <div className="settings-group">
+            <button className="settings-row logout-row" type="button" onClick={onLogout}>
+              <span className="settings-row-label red-text">
+                <span><Icon name="logOut" /></span>
+                <strong>Đăng xuất tài khoản</strong>
+              </span>
+              <span className="settings-row-arrow red-text"><Icon name="arrowLeft" /></span>
+            </button>
+          </div>
+        </section>
+      </div>
+
       <BottomNav
         active="profile"
         onHome={onHome}
@@ -1159,29 +1292,33 @@ export function AccountManagementScreen({
   return (
     <div className="student-screen account-screen">
       <ScreenHeader title="Quản lý tài khoản" onBack={onBack} />
-      <section className="account-security-card">
-        <span>Bảo mật tài khoản</span>
-        <h2>Đổi mật khẩu</h2>
-        <p>Mật khẩu mới nên có ít nhất 8 ký tự, không dùng lại mật khẩu cũ và không chia sẻ với người khác.</p>
-      </section>
-      <form className="password-form" onSubmit={submitPassword}>
-        <label>
-          Mật khẩu hiện tại
-          <input type="password" value={currentPassword} onChange={(event) => setCurrentPassword(event.target.value)} autoComplete="current-password" required />
-        </label>
-        <label>
-          Mật khẩu mới
-          <input type="password" value={newPassword} onChange={(event) => setNewPassword(event.target.value)} autoComplete="new-password" minLength={8} required />
-        </label>
-        <label>
-          Nhập lại mật khẩu mới
-          <input type="password" value={confirmPassword} onChange={(event) => setConfirmPassword(event.target.value)} autoComplete="new-password" minLength={8} required />
-        </label>
-        {formError && <p className="form-error">{formError}</p>}
-        <button type="submit" disabled={busy}>
-          {busy ? "Đang lưu" : "Lưu mật khẩu mới"}
-        </button>
-      </form>
+
+      <div className="screen-content">
+        <section className="account-security-card">
+          <span>Bảo mật tài khoản</span>
+          <h2>Đổi mật khẩu</h2>
+          <p>Mật khẩu mới nên có ít nhất 8 ký tự, không dùng lại mật khẩu cũ và không chia sẻ với người khác.</p>
+        </section>
+        <form className="password-form" onSubmit={submitPassword}>
+          <label>
+            Mật khẩu hiện tại
+            <input type="password" value={currentPassword} onChange={(event) => setCurrentPassword(event.target.value)} autoComplete="current-password" required />
+          </label>
+          <label>
+            Mật khẩu mới
+            <input type="password" value={newPassword} onChange={(event) => setNewPassword(event.target.value)} autoComplete="new-password" minLength={8} required />
+          </label>
+          <label>
+            Nhập lại mật khẩu mới
+            <input type="password" value={confirmPassword} onChange={(event) => setConfirmPassword(event.target.value)} autoComplete="new-password" minLength={8} required />
+          </label>
+          {formError && <p className="form-error">{formError}</p>}
+          <button type="submit" disabled={busy}>
+            {busy ? "Đang lưu" : "Lưu mật khẩu mới"}
+          </button>
+        </form>
+      </div>
+
       <BottomNav active="profile" onHome={onHome} onStudy={onStudy} onTest={onTest} onProfile={onProfile} />
     </div>
   );
@@ -1246,19 +1383,23 @@ export function PoliciesScreen({
   return (
     <div className="student-screen policies-screen">
       <ScreenHeader title="Policies" onBack={onBack} />
-      <section className="policy-intro">
-        <span>Chính sách sử dụng và bảo mật</span>
-        <h2>Minh bạch về dữ liệu và trách nhiệm sử dụng</h2>
-        <p>Các nội dung dưới đây mô tả cách ứng dụng xử lý tài khoản, lịch sử học tập, phiên đăng nhập và quyền của người dùng.</p>
-      </section>
-      <div className="policy-list">
-        {policySections.map((section) => (
-          <article className="policy-card" key={section.title}>
-            <h3>{section.title}</h3>
-            <p>{section.content}</p>
-          </article>
-        ))}
+
+      <div className="screen-content">
+        <section className="policy-intro">
+          <span>Chính sách sử dụng và bảo mật</span>
+          <h2>Minh bạch về dữ liệu và trách nhiệm sử dụng</h2>
+          <p>Các nội dung dưới đây mô tả cách ứng dụng xử lý tài khoản, lịch sử học tập, phiên đăng nhập và quyền của người dùng.</p>
+        </section>
+        <div className="policy-list">
+          {policySections.map((section) => (
+            <article className="policy-card" key={section.title}>
+              <h3>{section.title}</h3>
+              <p>{section.content}</p>
+            </article>
+          ))}
+        </div>
       </div>
+
       <BottomNav active="profile" onHome={onHome} onStudy={onStudy} onTest={onTest} onProfile={onProfile} />
     </div>
   );
@@ -1290,23 +1431,29 @@ export function HistoryScreen({
           Tải lại
         </button>
       </header>
-      <div className="history-list">
-        {attempts.length === 0 ? (
-          <p className="empty-text">Chưa có lần làm bài nào.</p>
-        ) : (
-          attempts.map((attempt) => (
-            <article className="history-item" key={attempt.id}>
-              <div>
-                <strong>
-                  {attempt.score}/{attempt.total}
-                </strong>
-                <span>{formatDate(attempt.createdAt)}</span>
-              </div>
-              <p>{Math.round(attempt.percentage)}%</p>
-            </article>
-          ))
-        )}
+
+      <div className="screen-content">
+        <div className="history-list">
+          {attempts.length === 0 ? (
+            <p className="empty-text">Chưa có lần làm bài nào.</p>
+          ) : (
+            attempts.map((attempt) => (
+              <article className="history-item" key={attempt.id}>
+                <div>
+                  <strong>
+                    {attempt.score}/{attempt.total}
+                  </strong>
+                  <span>{formatDate(attempt.createdAt)}</span>
+                </div>
+                <p className={attempt.percentage >= 50 ? "pass" : "fail"}>
+                  {Math.round(attempt.percentage)}%
+                </p>
+              </article>
+            ))
+          )}
+        </div>
       </div>
+
       <BottomNav active="profile" onHome={onHome} onStudy={onStudy} onTest={onTest} onProfile={onProfile} />
     </div>
   );
