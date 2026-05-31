@@ -2784,6 +2784,23 @@ button:disabled {
   border-radius: 12px;
 }
 
+.review-item > span:first-child {
+  width: 38px;
+  height: 38px;
+  display: grid;
+  place-items: center;
+  flex: 0 0 38px;
+  border-radius: 12px;
+}
+
+.review-item svg {
+  width: 18px;
+  height: 18px;
+  max-width: 18px;
+  max-height: 18px;
+  display: block;
+}
+
 .review-status-icon svg {
   width: 18px;
   height: 18px;
@@ -2795,7 +2812,17 @@ button:disabled {
   color: var(--success);
 }
 
+.review-item.good > span:first-child {
+  background: var(--success-light);
+  color: var(--success);
+}
+
 .review-item.bad .review-status-icon {
+  background: var(--danger-light);
+  color: var(--danger);
+}
+
+.review-item.bad > span:first-child {
   background: var(--danger-light);
   color: var(--danger);
 }
