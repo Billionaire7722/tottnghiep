@@ -109,14 +109,17 @@ export function AdminWorkspace(props: AdminWorkspaceProps) {
       </header>
       <nav className="admin-tabs" aria-label="Khu vực quản trị">
         <button className={activeTab === "questions" ? "active" : ""} type="button" onClick={() => setTab("questions")}>
-          Câu hỏi
+          <Icon name="clipboard" />
+          <span>Câu hỏi</span>
         </button>
         <button className={activeTab === "study" ? "active" : ""} type="button" onClick={() => setTab("study")}>
-          Ôn tập
+          <Icon name="book" />
+          <span>Ôn tập</span>
         </button>
         {canManageAccounts && (
           <button className={activeTab === "accounts" ? "active" : ""} type="button" onClick={() => setTab("accounts")}>
-            Tài khoản
+            <Icon name="user" />
+            <span>Tài khoản</span>
           </button>
         )}
       </nav>
@@ -1161,8 +1164,8 @@ function AccountAdmin({
   }
 
   return (
-    <div className="admin-grid">
-      <form className="admin-panel form-panel" onSubmit={onSaveAccount}>
+    <div className="admin-grid account-admin-grid">
+      <form className="admin-panel form-panel account-form-panel" onSubmit={onSaveAccount}>
         <div className="panel-title">
           <span>{editingAccountId ? "Sửa tài khoản" : "Tạo tài khoản"}</span>
           {editingAccountId && (
@@ -1227,7 +1230,7 @@ function AccountAdmin({
           {busy ? "Đang lưu" : editingAccountId ? "Lưu tài khoản" : "Tạo tài khoản"}
         </button>
       </form>
-      <section className="admin-panel list-panel">
+      <section className="admin-panel list-panel account-list-panel">
         <div className="panel-title">
           <span>Danh sách tài khoản</span>
           <small>{accounts.length} tài khoản</small>
@@ -1240,28 +1243,56 @@ function AccountAdmin({
             <span>Phiên</span>
             <span>Thao tác</span>
           </div>
-          {accounts.map((account) => (
-            <div className="account-row" role="row" key={account.id}>
-              <span data-label="Tài khoản">
-                <strong>{account.displayName}</strong>
-                <small>{account.username}</small>
-              </span>
-              <span data-label="Quyền">{roleLabel(account.role)}</span>
-              <span data-label="Trạng thái">{account.isActive ? "Hoạt động" : "Đã khóa"}</span>
-              <span data-label="Phiên">{account.activeSessions}</span>
-              <span className="row-actions" data-label="Thao tác">
-                <button className="secondary-button" type="button" onClick={() => onEditAccount(account)}>
-                  Sửa
-                </button>
-                <button className="secondary-button" type="button" onClick={() => onViewAccountDetail(account.id)}>
-                  Chi tiết
-                </button>
-                <button className="ghost-button" type="button" onClick={() => onDeleteAccount(account.id)}>
-                  Xóa
-                </button>
-              </span>
+          {accounts.length === 0 ? (
+            <div className="admin-empty-state">
+              <Icon name="user" />
+              <strong>Chưa có tài khoản</strong>
+              <span>Tạo tài khoản đầu tiên từ biểu mẫu bên trái.</span>
             </div>
-          ))}
+          ) : (
+            accounts.map((account) => {
+              const displayName = account.displayName || account.username;
+              const initial = displayName.trim().charAt(0).toUpperCase() || "U";
+
+              return (
+                <div className="account-row" role="row" key={account.id}>
+                  <span className="account-user-cell" data-label="Tài khoản">
+                    <span className="account-avatar-chip">{initial}</span>
+                    <span>
+                      <strong>{displayName}</strong>
+                      <small>@{account.username}</small>
+                    </span>
+                  </span>
+                  <span className="account-meta-cell" data-label="Quyền">
+                    <span className={`account-role-badge role-${account.role}`}>{roleLabel(account.role)}</span>
+                  </span>
+                  <span className="account-meta-cell" data-label="Trạng thái">
+                    <span className={account.isActive ? "account-status active" : "account-status locked"}>
+                      {account.isActive ? "Hoạt động" : "Đã khóa"}
+                    </span>
+                  </span>
+                  <span className="account-meta-cell account-session-cell" data-label="Phiên">
+                    <strong>{account.activeSessions}</strong>
+                    <small>phiên</small>
+                  </span>
+                  <span className="row-actions" data-label="Thao tác">
+                    <button className="secondary-button" type="button" onClick={() => onEditAccount(account)}>
+                      <Icon name="edit" />
+                      Sửa
+                    </button>
+                    <button className="secondary-button" type="button" onClick={() => onViewAccountDetail(account.id)}>
+                      <Icon name="search" />
+                      Chi tiết
+                    </button>
+                    <button className="ghost-button" type="button" onClick={() => onDeleteAccount(account.id)}>
+                      <Icon name="trash" />
+                      Xóa
+                    </button>
+                  </span>
+                </div>
+              );
+            })
+          )}
         </div>
       </section>
     </div>

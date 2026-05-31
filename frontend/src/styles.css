@@ -250,6 +250,11 @@ button:disabled {
   justify-content: flex-start;
 }
 
+.workspace-wide {
+  min-width: 0;
+  overflow: hidden;
+}
+
 /* Full screen viewport container */
 .phone-frame {
   position: relative;
@@ -3309,13 +3314,14 @@ button:disabled {
  * ========================================== */
 .admin-shell {
   width: 100%;
-  max-width: 1200px;
+  max-width: none;
+  min-width: 0;
   height: 100%;
   max-height: 100vh;
   display: flex;
   flex-direction: column;
-  gap: 20px;
-  padding: 24px;
+  gap: clamp(16px, 2vw, 24px);
+  padding: clamp(16px, 2.6vw, 40px);
   overflow-y: auto;
   overflow-x: hidden;
   scrollbar-gutter: stable;
@@ -3324,7 +3330,7 @@ button:disabled {
 
 @media (min-width: 768px) {
   .admin-shell {
-    padding: 40px 48px;
+    padding-inline: clamp(28px, 3.2vw, 64px);
   }
 }
 
@@ -3332,6 +3338,8 @@ button:disabled {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
   flex-shrink: 0;
   border-bottom: 1px solid var(--apple-line);
   padding-bottom: 16px;
@@ -3350,12 +3358,16 @@ button:disabled {
 .admin-header-actions {
   display: flex;
   gap: 10px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
 }
 
 /* Sleek sliding Segmented Control */
 .admin-tabs {
   display: inline-flex;
   flex-shrink: 0;
+  flex-wrap: wrap;
+  max-width: 100%;
   padding: 2px;
   background: var(--apple-sidebar-bg);
   border-radius: 8px;
@@ -3372,6 +3384,7 @@ button:disabled {
   padding: 6px 16px;
   border-radius: 6px;
   min-height: 28px;
+  min-width: 98px;
 }
 
 .admin-tabs button.active {
@@ -3380,9 +3393,15 @@ button:disabled {
   box-shadow: var(--apple-shadow-sm);
 }
 
+.admin-tabs svg {
+  width: 15px;
+  height: 15px;
+}
+
 .admin-grid {
   display: grid;
   flex-shrink: 0;
+  width: 100%;
   grid-template-columns: 1fr;
   gap: 24px;
   align-items: start;
@@ -3390,9 +3409,16 @@ button:disabled {
   padding-bottom: 40px;
 }
 
-@media (min-width: 900px) {
+@media (min-width: 1120px) {
   .admin-grid {
-    grid-template-columns: 360px 1fr; /* Left Sidebar Panel, Right Content List */
+    grid-template-columns: minmax(320px, 420px) minmax(0, 1fr);
+  }
+}
+
+@media (min-width: 1540px) {
+  .admin-grid {
+    grid-template-columns: minmax(340px, 440px) minmax(0, 1fr);
+    gap: 28px;
   }
 }
 
@@ -3412,6 +3438,11 @@ button:disabled {
   border: 1px solid var(--apple-border);
   border-radius: var(--radius-lg);
   box-shadow: var(--apple-shadow-sm);
+  min-width: 0;
+}
+
+.list-panel {
+  width: 100%;
   min-width: 0;
 }
 
@@ -3494,12 +3525,514 @@ button:disabled {
 .row-actions {
   display: flex;
   gap: 8px;
+  flex-wrap: wrap;
 }
 
 .row-actions button {
   padding: 6px 12px;
   font-size: 12.5px;
   border-radius: var(--radius-sm);
+}
+
+.row-actions button svg {
+  width: 14px;
+  height: 14px;
+}
+
+.admin-empty-state {
+  display: grid;
+  justify-items: center;
+  gap: 8px;
+  padding: 42px 18px;
+  color: var(--apple-text-muted);
+  text-align: center;
+  border: 1px dashed var(--apple-border-strong);
+  border-radius: var(--radius-md);
+  background: rgba(255, 255, 255, 0.38);
+}
+
+.admin-empty-state svg {
+  width: 34px;
+  height: 34px;
+  padding: 8px;
+  border-radius: 12px;
+  color: var(--accent-primary);
+  background: var(--accent-light);
+}
+
+.admin-empty-state strong {
+  color: var(--apple-text);
+  font-size: 15px;
+}
+
+.account-admin-grid {
+  grid-template-columns: 1fr;
+}
+
+@media (min-width: 1320px) {
+  .account-admin-grid {
+    grid-template-columns: minmax(320px, 400px) minmax(0, 1fr);
+  }
+}
+
+.account-form-panel,
+.account-list-panel {
+  animation: cardRise 0.38s ease both;
+}
+
+.account-table {
+  display: grid;
+  gap: 10px;
+  min-width: 0;
+}
+
+.account-row {
+  display: grid;
+  grid-template-columns:
+    minmax(200px, 1.45fr)
+    minmax(108px, 0.7fr)
+    minmax(112px, 0.7fr)
+    minmax(60px, 0.35fr)
+    minmax(190px, auto);
+  gap: 14px;
+  align-items: center;
+  min-width: 0;
+  padding: 14px 16px;
+  border: 1px solid var(--apple-border);
+  border-radius: var(--radius-md);
+  background: rgba(255, 255, 255, 0.64);
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.035);
+  transition: var(--hover-transition);
+}
+
+.account-row:hover:not(.table-head) {
+  border-color: var(--apple-border-strong);
+  background: var(--apple-card-hover-bg);
+  transform: translateY(-1px);
+}
+
+.account-row.table-head {
+  padding: 0 16px 2px;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  color: var(--apple-text-muted);
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.account-user-cell {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.account-user-cell > span:last-child {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.account-user-cell strong,
+.account-user-cell small {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.account-user-cell small {
+  color: var(--apple-text-muted);
+  font-size: 12px;
+}
+
+.account-avatar-chip {
+  flex: 0 0 38px;
+  width: 38px;
+  height: 38px;
+  display: grid;
+  place-items: center;
+  border-radius: 12px;
+  color: var(--accent-primary);
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.86), rgba(255, 255, 255, 0.38)),
+    var(--accent-light);
+  border: 1px solid var(--apple-border);
+  font-family: var(--font-display);
+  font-size: 16px;
+  font-weight: 800;
+}
+
+.account-meta-cell {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+}
+
+.account-role-badge,
+.account-status {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 28px;
+  padding: 5px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.account-role-badge.role-admin {
+  color: var(--apple-indigo);
+  background: rgba(88, 86, 214, 0.1);
+}
+
+.account-role-badge.role-editor {
+  color: var(--apple-blue);
+  background: rgba(0, 122, 255, 0.1);
+}
+
+.account-role-badge.role-user {
+  color: var(--apple-text-muted);
+  background: var(--apple-sidebar-bg);
+}
+
+.account-status.active {
+  color: var(--success);
+  background: var(--success-light);
+}
+
+.account-status.locked {
+  color: var(--danger);
+  background: var(--danger-light);
+}
+
+.account-session-cell {
+  display: grid;
+  justify-items: start;
+  gap: 2px;
+}
+
+.account-session-cell strong {
+  font-size: 16px;
+  line-height: 1;
+}
+
+.account-session-cell small {
+  color: var(--apple-text-muted);
+  font-size: 11px;
+  line-height: 1;
+}
+
+.account-row .row-actions {
+  justify-content: flex-end;
+}
+
+.account-detail-page {
+  width: 100%;
+  gap: 18px;
+}
+
+.detail-title {
+  align-items: flex-start;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.detail-title > div:first-child {
+  display: grid;
+  gap: 4px;
+}
+
+.detail-title .row-actions {
+  margin-left: auto;
+  justify-content: flex-end;
+}
+
+.detail-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.detail-card {
+  display: grid;
+  gap: 7px;
+  min-width: 0;
+  padding: 16px;
+  border: 1px solid var(--apple-border);
+  border-radius: var(--radius-md);
+  background: rgba(255, 255, 255, 0.58);
+}
+
+.detail-card span {
+  color: var(--apple-text-muted);
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.detail-card strong {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  min-width: 0;
+  overflow-wrap: anywhere;
+  font-size: 16px;
+}
+
+.detail-card small {
+  color: var(--apple-text-muted);
+  overflow-wrap: anywhere;
+}
+
+.detail-section {
+  display: grid;
+  gap: 14px;
+  min-width: 0;
+  padding-top: 4px;
+}
+
+.session-list,
+.attempt-history-list {
+  display: grid;
+  gap: 10px;
+}
+
+.session-item {
+  display: grid;
+  gap: 10px;
+  min-width: 0;
+  padding: 14px;
+  border: 1px solid var(--apple-border);
+  border-radius: var(--radius-md);
+  background: rgba(255, 255, 255, 0.54);
+}
+
+.session-main {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.session-meta {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px 12px;
+  color: var(--apple-text-muted);
+  font-size: 12px;
+}
+
+.session-item p,
+.mono-text {
+  min-width: 0;
+  color: var(--apple-text-muted);
+  overflow-wrap: anywhere;
+}
+
+.mono-text {
+  font-family: ui-monospace, SFMono-Regular, "SF Mono", Consolas, "Liberation Mono", monospace;
+}
+
+.online-text,
+.offline-text {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.online-text {
+  color: var(--success);
+}
+
+.offline-text {
+  color: var(--apple-text-muted);
+}
+
+.online-dot {
+  width: 8px;
+  height: 8px;
+  flex: 0 0 8px;
+  border-radius: 99px;
+  background: var(--success);
+  box-shadow: 0 0 0 4px var(--success-light);
+}
+
+.online-dot.offline {
+  background: var(--apple-text-muted);
+  box-shadow: 0 0 0 4px var(--apple-line);
+}
+
+.attempt-history-item {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  gap: 12px;
+  align-items: center;
+  padding: 12px 14px;
+  border: 1px solid var(--apple-border);
+  border-radius: var(--radius-md);
+  background: rgba(255, 255, 255, 0.54);
+}
+
+.attempt-history-item strong {
+  font-size: 15px;
+}
+
+.attempt-history-item span {
+  font-weight: 800;
+  color: var(--accent-primary);
+}
+
+.attempt-history-item small {
+  color: var(--apple-text-muted);
+}
+
+.dark-mode .admin-empty-state,
+.dark-mode .account-row,
+.dark-mode .detail-card,
+.dark-mode .session-item,
+.dark-mode .attempt-history-item {
+  background: rgba(44, 44, 46, 0.58);
+}
+
+@media (max-width: 1080px) {
+  .admin-shell {
+    max-height: 100%;
+  }
+
+  .admin-grid,
+  .account-admin-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .detail-summary-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 900px) {
+  .account-row.table-head {
+    display: none;
+  }
+
+  .account-row {
+    grid-template-columns: 1fr;
+    gap: 12px;
+    padding: 16px;
+  }
+
+  .account-meta-cell {
+    justify-content: space-between;
+    gap: 12px;
+    padding-top: 10px;
+    border-top: 1px solid var(--apple-line);
+  }
+
+  .account-session-cell {
+    display: flex;
+    align-items: center;
+  }
+
+  .account-meta-cell::before,
+  .account-row .row-actions::before {
+    content: attr(data-label);
+    color: var(--apple-text-muted);
+    font-size: 11px;
+    font-weight: 800;
+    text-transform: uppercase;
+  }
+
+  .account-row .row-actions {
+    justify-content: stretch;
+    padding-top: 10px;
+    border-top: 1px solid var(--apple-line);
+  }
+
+  .account-row .row-actions::before {
+    flex: 1 0 100%;
+  }
+
+  .account-row .row-actions button {
+    flex: 1 1 96px;
+  }
+}
+
+@media (max-width: 760px) {
+  .admin-shell {
+    padding: 16px;
+    gap: 16px;
+  }
+
+  .admin-header {
+    align-items: flex-start;
+  }
+
+  .admin-header > div:first-child {
+    width: 100%;
+  }
+
+  .admin-header-actions {
+    width: 100%;
+    justify-content: stretch;
+  }
+
+  .admin-header-actions button {
+    flex: 1 1 120px;
+    padding-inline: 12px;
+  }
+
+  .admin-tabs {
+    width: 100%;
+  }
+
+  .admin-tabs button {
+    flex: 1 1 0;
+    min-width: 0;
+    padding-inline: 10px;
+  }
+
+  .admin-grid {
+    gap: 16px;
+    padding-bottom: 24px;
+  }
+
+  .admin-panel {
+    padding: 16px;
+    border-radius: var(--radius-md);
+  }
+
+  .panel-title {
+    align-items: flex-start;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+
+  .admin-question-item {
+    display: grid;
+  }
+
+  .detail-title .row-actions {
+    width: 100%;
+    margin-left: 0;
+    justify-content: stretch;
+  }
+
+  .detail-title .row-actions button {
+    flex: 1 1 130px;
+  }
+
+  .detail-summary-grid,
+  .session-meta {
+    grid-template-columns: 1fr;
+  }
+
+  .attempt-history-item {
+    grid-template-columns: 1fr;
+    gap: 4px;
+  }
 }
 
 /* Pagination bar styles */
