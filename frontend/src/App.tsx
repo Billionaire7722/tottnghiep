@@ -498,15 +498,22 @@ function App() {
     setStudyBusy(true);
 
     try {
-      const [lessonData, slideData] = await Promise.all([
+      const [lessonData, slideData, questionData] = await Promise.all([
         authedRequest<{ lessons: StudyLesson[] }>(`/api/study-lessons?subject=${encodeURIComponent(selectedSubject)}`),
-        authedRequest<{ slides: StudySlide[] }>(`/api/slides?subject=${encodeURIComponent(selectedSubject)}`)
+        authedRequest<{ slides: StudySlide[] }>(`/api/slides?subject=${encodeURIComponent(selectedSubject)}`),
+        authedRequest<{ questions: Question[] }>(`/api/questions?subject=${encodeURIComponent(selectedSubject)}`)
       ]);
-      setStudyQuestions([]);
+      const usableQuestions = questionData.questions.filter((question) => question.options.length >= 2);
+
+      setStudyQuestions(usableQuestions);
       setStudentStudyLessons(lessonData.lessons);
       setStudentStudySlides(slideData.slides);
+      setSubjectCounts((current) => ({
+        ...current,
+        [selectedSubject]: usableQuestions.length
+      }));
 
-      if (lessonData.lessons.length === 0 && slideData.slides.length === 0) {
+      if (lessonData.lessons.length === 0 && slideData.slides.length === 0 && usableQuestions.length === 0) {
         setNotice("Chưa có nội dung ôn tập khả dụng cho môn đã chọn");
         return;
       }

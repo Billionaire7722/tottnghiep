@@ -217,6 +217,10 @@ export function StartScreen({
   onProfile: () => void;
   onAvatarClick: () => void;
 }) {
+  const totalAvailableQuestions = subjectOptions.reduce((sum, subject) => sum + (subjectCounts[subject.value] ?? 0), 0);
+  const totalStudiedQuestions = subjectOptions.reduce((sum, subject) => sum + (studiedCounts[subject.value] ?? 0), 0);
+  const readySubjectCount = subjectOptions.filter((subject) => (subjectCounts[subject.value] ?? 0) > 0).length;
+
   return (
     <div className="student-screen dashboard-screen">
       <div className="screen-content">
@@ -230,7 +234,28 @@ export function StartScreen({
               <span>{roleLabel(user.role)}</span>
             </div>
           </div>
+          <span className="dashboard-hero-mark" aria-hidden="true">
+            <img src={cnxhMark} alt="" />
+          </span>
         </header>
+
+        <section className="dashboard-stat-grid" aria-label="Tổng quan học tập">
+          <div className="dashboard-stat-card">
+            <span><Icon name="clipboard" /></span>
+            <strong>{totalAvailableQuestions}</strong>
+            <small>Câu hỏi</small>
+          </div>
+          <div className="dashboard-stat-card">
+            <span><Icon name="check" /></span>
+            <strong>{totalStudiedQuestions}</strong>
+            <small>Đã ôn</small>
+          </div>
+          <div className="dashboard-stat-card">
+            <span><Icon name="spark" /></span>
+            <strong>{readySubjectCount}/{subjectOptions.length}</strong>
+            <small>Môn sẵn sàng</small>
+          </div>
+        </section>
 
         <section className="subject-section">
           <div className="section-heading">
@@ -242,10 +267,14 @@ export function StartScreen({
               const total = subjectCounts[subject.value];
               const isLoading = total === undefined;
               const questionCount = total ?? 0;
+              const studiedCount = Math.min(studiedCounts[subject.value] ?? 0, questionCount);
+              const progress = questionCount > 0 ? Math.round((studiedCount / questionCount) * 100) : 0;
               const visual = subjectVisualMap[subject.value];
+              const topicCount = subjectStudyTopics[subject.value]?.length ?? 0;
               const cardStyle = {
                 "--subject-image": `url(${visual.imageUrl})`,
-                "--subject-accent": visual.accent
+                "--subject-accent": visual.accent,
+                "--subject-progress": `${progress}%`
               } as CSSProperties;
               return (
                 <button
@@ -256,13 +285,23 @@ export function StartScreen({
                   onClick={() => onSubjectSelect(subject.value)}
                 >
                   <span className="subject-card-image" aria-hidden="true" />
-                  <span className="subject-card-kicker">{subject.shortLabel}</span>
-                  <span className="subject-card-icon" aria-hidden="true">
-                    <Icon name={subjectIconMap[subject.value]} />
+                  <span className="subject-card-sheen" aria-hidden="true" />
+                  <span className="subject-card-head">
+                    <span className="subject-card-icon" aria-hidden="true">
+                      <Icon name={subjectIconMap[subject.value]} />
+                    </span>
+                    <span className="subject-card-count">
+                      {isLoading ? "Đang tải" : questionCount > 0 ? `${questionCount} câu` : "Chưa có câu"}
+                    </span>
                   </span>
-                  <strong>{subject.label}</strong>
-                  <small>{subject.description}</small>
-                  <em>{isLoading ? "Đang tải dữ liệu" : questionCount > 0 ? `${questionCount} câu hỏi trắc nghiệm` : "Chưa có câu hỏi"}</em>
+                  <span className="subject-card-copy">
+                    <strong>{subject.label}</strong>
+                    <small>{subject.description}</small>
+                  </span>
+                  <span className="subject-card-progress" aria-hidden="true">
+                    <span />
+                  </span>
+                  <em>{topicCount} chủ đề · {progress}% đã ôn</em>
                   <span className="subject-card-cta">
                     Vào môn
                     <Icon name="arrowLeft" />
@@ -308,14 +347,30 @@ export function ModeScreen({
 }) {
   const currentSubject = getSubjectOption(subject);
   const progress = totalQuestions > 0 ? Math.round((Math.min(studiedQuestions, totalQuestions) / totalQuestions) * 100) : 0;
+  const visual = subjectVisualMap[subject];
+  const introStyle = {
+    "--subject-image": `url(${visual.imageUrl})`,
+    "--subject-accent": visual.accent,
+    "--subject-progress": `${progress}%`
+  } as CSSProperties;
 
   return (
     <div className="student-screen mode-screen">
       <ScreenHeader title="Chọn chế độ học" onBack={onBack} />
 
       <div className="screen-content">
-        <section className="mode-intro">
+        <section className="mode-intro" style={introStyle}>
+          <span className="mode-intro-image" aria-hidden="true" />
+          <div className="lesson-detail-kicker">
+            <Icon name={subjectIconMap[subject]} />
+            <span>Lộ trình ôn tập</span>
+          </div>
           <h1>{currentSubject.label}</h1>
+          <p>{currentSubject.description}</p>
+          <div className="mode-metric-row" aria-label="Tổng quan môn học">
+            <span><Icon name="clipboard" />{totalQuestions || 0} câu hỏi</span>
+            <span><Icon name="check" />{Math.min(studiedQuestions, totalQuestions)} đã ôn</span>
+          </div>
           <div className="progress-row">
             <span>Tiến độ: {progress}% hoàn thành</span>
             <span>
@@ -334,6 +389,7 @@ export function ModeScreen({
             </span>
             <strong>Ôn tập kiến thức</strong>
             <small>Xem bài học, ghi chú và tài liệu do admin hoặc người chỉnh sửa đăng lên.</small>
+            <span className="mode-card-cta">Mở thư viện <Icon name="arrowLeft" /></span>
           </button>
           <button className="mode-card quiz-mode-card" type="button" onClick={onStartQuiz} disabled={quizBusy}>
             <span className="mode-card-icon" aria-hidden="true">
@@ -341,6 +397,7 @@ export function ModeScreen({
             </span>
             <strong>Làm bài kiểm tra</strong>
             <small>Thử thách bản thân với bộ câu hỏi trắc nghiệm.</small>
+            <span className="mode-card-cta">Bắt đầu kiểm tra <Icon name="arrowLeft" /></span>
           </button>
         </div>
 
@@ -391,13 +448,19 @@ export function QuizSetupScreen({
   const questionCountKnown = typeof totalQuestions === "number";
   const availableQuestions = totalQuestions ?? 0;
   const selectedLimitAvailable = isQuizQuestionLimitAvailable(selectedLimit, totalQuestions);
+  const visual = subjectVisualMap[subject];
+  const setupStyle = {
+    "--subject-image": `url(${visual.imageUrl})`,
+    "--subject-accent": visual.accent
+  } as CSSProperties;
 
   return (
     <div className="student-screen quiz-setup-screen">
       <ScreenHeader title="Thiết lập bài kiểm tra" subtitle={currentSubject.label} onBack={onBack} />
 
       <div className="screen-content">
-        <section className="quiz-setup-panel">
+        <section className="quiz-setup-panel" style={setupStyle}>
+          <span className="quiz-setup-image" aria-hidden="true" />
           <div className="lesson-detail-kicker">
             <Icon name="clipboard" />
             <span>{currentSubject.label}</span>
@@ -499,6 +562,13 @@ export function StudyScreen({
   const selectedSlide =
     selectedItem?.type === "slide" ? slides.find((slide) => slide.id === selectedItem.id) ?? null : null;
   const totalItems = filteredLessons.length + filteredSlides.length;
+  const visual = subjectVisualMap[subject];
+  const studyProgress = questions.length > 0 ? Math.round((Math.min(studiedQuestionIds.size, questions.length) / questions.length) * 100) : 0;
+  const overviewStyle = {
+    "--subject-image": `url(${visual.imageUrl})`,
+    "--subject-accent": visual.accent,
+    "--subject-progress": `${studyProgress}%`
+  } as CSSProperties;
 
   if (selectedLesson) {
     return (
@@ -531,6 +601,26 @@ export function StudyScreen({
       <ScreenHeader title="Bài học" subtitle={currentSubject.label} onBack={onBack} />
 
       <div className="screen-content">
+        <section className="study-overview-panel" style={overviewStyle}>
+          <span className="study-overview-image" aria-hidden="true" />
+          <div>
+            <div className="lesson-detail-kicker">
+              <Icon name={subjectIconMap[subject]} />
+              <span>{currentSubject.label}</span>
+            </div>
+            <h1>Thư viện ôn tập</h1>
+            <p>{currentSubject.description}</p>
+          </div>
+          <div className="study-overview-stats" aria-label="Tổng quan tài liệu">
+            <span><strong>{lessons.length}</strong>Bài học</span>
+            <span><strong>{slides.length}</strong>Slide</span>
+            <span><strong>{questions.length}</strong>Câu hỏi</span>
+          </div>
+          <span className="subject-card-progress" aria-hidden="true">
+            <span />
+          </span>
+        </section>
+
         <label className="study-search">
           <span>
             <Icon name="search" />
@@ -597,6 +687,33 @@ export function StudyScreen({
             </div>
           )}
         </section>
+
+        {questions.length > 0 && (
+          <section className="quick-question-section">
+            <div className="section-heading">
+              <h2>Câu hỏi ôn nhanh</h2>
+              <small>{studiedQuestionIds.size}/{questions.length} câu đã đánh dấu</small>
+            </div>
+            <div className="quick-question-list">
+              {questions.slice(0, 3).map((question, index) => {
+                const studied = studiedQuestionIds.has(question.id);
+
+                return (
+                  <button
+                    className={studied ? "quick-question-card studied" : "quick-question-card"}
+                    key={question.id}
+                    type="button"
+                    onClick={() => onMarkStudied(question.id)}
+                  >
+                    <span>{String(index + 1).padStart(2, "0")}</span>
+                    <strong>{summarizeQuestion(question.content)}</strong>
+                    <em>{studied ? "Đã ôn" : "Đánh dấu đã ôn"}</em>
+                  </button>
+                );
+              })}
+            </div>
+          </section>
+        )}
 
         <button className="sticky-primary" type="button" onClick={onStartQuiz}>
           Làm bài kiểm tra
@@ -683,34 +800,36 @@ function LessonDetailScreen({
     <div className="student-screen study-screen lesson-detail-screen">
       <ScreenHeader title="Chi tiết bài học" subtitle={subjectLabel} onBack={onBack} />
 
-      <article className="lesson-detail-card">
-        <div className="lesson-detail-kicker">
-          <Icon name="book" />
-          <span>{subjectLabel}</span>
-        </div>
-        <h1>{lesson.title}</h1>
-        {lesson.summary && <p className="lesson-detail-summary">{lesson.summary}</p>}
-
-        {lesson.attachments?.length > 0 && <AttachmentGallery lesson={lesson} />}
-
-        {lesson.content ? (
-          <div className="lesson-detail-content">
-            <RichQuestionContent content={lesson.content} />
+      <div className="screen-content lesson-detail-content-wrap">
+        <article className="lesson-detail-card">
+          <div className="lesson-detail-kicker">
+            <Icon name="book" />
+            <span>{subjectLabel}</span>
           </div>
-        ) : (
-          <div className="study-empty-state compact">
-            <Icon name="fileText" />
-            <strong>Bài học này đang dùng tài liệu đính kèm</strong>
-            <p>Nội dung chữ sẽ hiển thị tại đây khi người chỉnh sửa bổ sung.</p>
-          </div>
-        )}
+          <h1>{lesson.title}</h1>
+          {lesson.summary && <p className="lesson-detail-summary">{lesson.summary}</p>}
 
-        <LessonReviewSection lesson={lesson} />
-      </article>
+          {lesson.attachments?.length > 0 && <AttachmentGallery lesson={lesson} />}
 
-      <button className="sticky-primary" type="button" onClick={onStartQuiz}>
-        Làm bài kiểm tra
-      </button>
+          {lesson.content ? (
+            <div className="lesson-detail-content">
+              <RichQuestionContent content={lesson.content} />
+            </div>
+          ) : (
+            <div className="study-empty-state compact">
+              <Icon name="fileText" />
+              <strong>Bài học này đang dùng tài liệu đính kèm</strong>
+              <p>Nội dung chữ sẽ hiển thị tại đây khi người chỉnh sửa bổ sung.</p>
+            </div>
+          )}
+
+          <LessonReviewSection lesson={lesson} />
+        </article>
+
+        <button className="sticky-primary" type="button" onClick={onStartQuiz}>
+          Làm bài kiểm tra
+        </button>
+      </div>
 
       <BottomNav active="study" onHome={onHome} onStudy={onBack} onTest={onStartQuiz} onProfile={onHistory} />
     </div>
@@ -1487,6 +1606,13 @@ function BottomNav({
 
   return (
     <nav className="bottom-nav" aria-label="Điều hướng chính">
+      <div className="nav-brand" aria-hidden="true">
+        <img src={cnxhMark} alt="" />
+        <span>
+          <strong>CNXH</strong>
+          <small>Learning</small>
+        </span>
+      </div>
       {items.map((item) => (
         <button
           className={`${active === item.id ? "active" : ""} ${item.tone === "danger" ? "danger-nav-item" : ""}`.trim()}
