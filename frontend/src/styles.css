@@ -2696,6 +2696,11 @@ button:disabled {
   justify-content: center;
 }
 
+.summary-metric svg {
+  width: 18px;
+  height: 18px;
+}
+
 .summary-metric div {
   display: flex;
   flex-direction: column;
@@ -2743,14 +2748,16 @@ button:disabled {
 }
 
 .review-item {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
+  display: grid;
+  grid-template-columns: 38px minmax(0, 1fr);
+  align-items: start;
+  gap: 14px;
   padding: 16px;
   background: var(--apple-card-bg);
   border: 1px solid var(--apple-border);
   border-radius: var(--radius-lg);
   box-shadow: var(--apple-shadow-sm);
+  overflow: hidden;
 }
 
 .review-item-header {
@@ -2758,13 +2765,6 @@ button:disabled {
   justify-content: space-between;
   align-items: flex-start;
   gap: 12px;
-}
-
-.review-item span {
-  font-size: 12px;
-  font-weight: 700;
-  text-transform: uppercase;
-  color: var(--apple-text-muted);
 }
 
 .review-item.good {
@@ -2775,12 +2775,48 @@ button:disabled {
   border-left: 4px solid var(--danger);
 }
 
-.review-item.good span {
+.review-status-icon {
+  width: 38px;
+  height: 38px;
+  display: grid;
+  place-items: center;
+  flex: 0 0 38px;
+  border-radius: 12px;
+}
+
+.review-status-icon svg {
+  width: 18px;
+  height: 18px;
+  display: block;
+}
+
+.review-item.good .review-status-icon {
+  background: var(--success-light);
   color: var(--success);
 }
 
-.review-item.bad span {
+.review-item.bad .review-status-icon {
+  background: var(--danger-light);
   color: var(--danger);
+}
+
+.review-item-body {
+  min-width: 0;
+  display: grid;
+  gap: 6px;
+}
+
+.review-item-body strong {
+  color: var(--apple-text);
+  font-size: 14.5px;
+  font-weight: 750;
+  line-height: 1.45;
+}
+
+.review-item-body p {
+  color: var(--apple-text-muted);
+  font-size: 13.5px;
+  font-weight: 600;
 }
 
 /* History listing */
@@ -3247,10 +3283,15 @@ button:disabled {
 .admin-shell {
   width: 100%;
   max-width: 1200px;
+  height: 100%;
+  max-height: 100vh;
   display: flex;
   flex-direction: column;
   gap: 20px;
   padding: 24px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-gutter: stable;
   animation: screenIn 0.4s ease both;
 }
 
@@ -3264,6 +3305,7 @@ button:disabled {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  flex-shrink: 0;
   border-bottom: 1px solid var(--apple-line);
   padding-bottom: 16px;
 }
@@ -3286,6 +3328,7 @@ button:disabled {
 /* Sleek sliding Segmented Control */
 .admin-tabs {
   display: inline-flex;
+  flex-shrink: 0;
   padding: 2px;
   background: var(--apple-sidebar-bg);
   border-radius: 8px;
@@ -3312,15 +3355,25 @@ button:disabled {
 
 .admin-grid {
   display: grid;
+  flex-shrink: 0;
   grid-template-columns: 1fr;
   gap: 24px;
   align-items: start;
+  min-height: 0;
+  padding-bottom: 40px;
 }
 
 @media (min-width: 900px) {
   .admin-grid {
     grid-template-columns: 360px 1fr; /* Left Sidebar Panel, Right Content List */
   }
+}
+
+.admin-left-column {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 24px;
 }
 
 .admin-panel {
@@ -3332,6 +3385,7 @@ button:disabled {
   border: 1px solid var(--apple-border);
   border-radius: var(--radius-lg);
   box-shadow: var(--apple-shadow-sm);
+  min-width: 0;
 }
 
 .panel-title {

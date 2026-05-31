@@ -1075,8 +1075,10 @@ export function ResultScreen({
         <div className="review-list">
           {result.answers.map((answer, index) => (
             <article className={answer.isCorrect ? "review-item good" : "review-item bad"} key={answer.questionId}>
-              <span aria-hidden="true">{answer.isCorrect ? <Icon name="check" /> : <Icon name="x" />}</span>
-              <div>
+              <span className="review-status-icon" aria-hidden="true">
+                {answer.isCorrect ? <Icon name="check" /> : <Icon name="x" />}
+              </span>
+              <div className="review-item-body">
                 <strong>
                   {index + 1}. {summarizeQuestion(answer.questionContent)}
                 </strong>
